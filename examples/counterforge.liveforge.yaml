@@ -177,40 +177,63 @@ actions:
   help: { description: Help the player in a fight., args: {} }
 
 reactions:
-  - id: pickpocket_rich
-    when: trait(rich) > 0.6 & stat(zone) == "courtyard"
-    then:
-      kind: npc.action
-      target: npc:kit
-      args: { npc: kit, action: { action: steal, args: { gold: 50 } } }
-    cooldown: 600
-    flavour: true
-    description: Flash your marks in the courtyard and Kit comes calling.
-  - id: porters_gossip_famous
-    when: trait(famous) > 0.7
-    then:
-      kind: npc.bark
-      target: npc:pell
-      args: { npc: pell, text: "Everyone's talking about you, young master!" }
-    cooldown: 900
-    flavour: true
-  - id: feared_wardens_keep_distance
-    when: trait(feared) > 0.6
-    then:
-      kind: world.reaction
-      target: world
-      args: { rule: feared_wardens_keep_distance, effect: guards_keep_distance, data: { radius: 6 } }
-    cooldown: 300
-    description: The wardens give a feared student a wide berth.
-  - id: famous_challenger
-    when: trait(famous) > 0.6 & stat(zone) == "forge_hall"
-    then:
-      kind: world.reaction
-      target: spawner:forge_hall
-      args: { rule: famous_challenger, effect: challenger, data: { title: "A rival student" } }
-    once: true
-    flavour: true
-    description: Fame draws a rival student to the Forge Hall, once.
+  # Designer rules (when <player-model condition> then <directive>).
+  rules:
+    - id: pickpocket_rich
+      when: trait(rich) > 0.6 & stat(zone) == "courtyard"
+      then:
+        kind: npc.action
+        target: npc:kit
+        args: { npc: kit, action: { action: steal, args: { gold: 50 } } }
+      cooldown: 600
+      flavour: true
+      description: Flash your marks in the courtyard and Kit comes calling.
+    - id: porters_gossip_famous
+      when: trait(famous) > 0.7
+      then:
+        kind: npc.bark
+        target: npc:pell
+        args: { npc: pell, text: "Everyone's talking about you, young master!" }
+      cooldown: 900
+      flavour: true
+    - id: feared_wardens_keep_distance
+      when: trait(feared) > 0.6
+      then:
+        kind: world.reaction
+        target: world
+        args: { rule: feared_wardens_keep_distance, effect: guards_keep_distance, data: { radius: 6 } }
+      cooldown: 300
+      description: The wardens give a feared student a wide berth.
+    - id: famous_challenger
+      when: trait(famous) > 0.6 & stat(zone) == "forge_hall"
+      then:
+        kind: world.reaction
+        target: spawner:forge_hall
+        args: { rule: famous_challenger, effect: challenger, data: { title: "A rival student" } }
+      once: true
+      flavour: true
+      description: Fame draws a rival student to the Forge Hall, once.
+
+  # R1 Reaction Library: one line switches on the top 20 recipes (docs/reactions.md). Each combines the player's
+  # facets (traits, gear, weather, rumours, nickname ...) into a different line every time.
+  library: [outfit_comments, appearance_state, deed_nicknames, lies_caught, promises_remembered, town_mood,
+            rich_attention, broke_support, collector_interest, haggle_memory, boss_attempt_memory, dodge_bait,
+            flawless_secret_phase, coward_rumour, companion_grief, time_weather_barks, inn_regular, absence_recap,
+            property_damage, avoided_area]
+  params:
+    appearance_state: { healer: pell }
+    rich_attention: { pickpocket: kit, merchant: pell, gold: 400 }
+    broke_support: { loanShark: kit, loanAmount: 100, interestPct: 25, dueSec: 600 }
+    collector_interest: { thief: kit, offerGold: 400, theftAfterSec: 240 }
+    boss_attempt_memory: { hintAfter: 3, respectAfter: 5 }
+    dodge_bait: { minShare: 0.45, minDodges: 6 }
+    coward_rumour: { flees: 3, challenger: "a bounty hunter from the Undercroft", challengerUnit: slag_imp }
+    companion_grief: { giver: marrow }
+    inn_regular: { visits: 3, owners: { inn: pell, lodge: pell, market: pell, shop: pell } }
+    absence_recap: { companion: vale, minHours: 6 }
+    property_damage: { guardsAfter: 3, repairOver: 50 }
+    avoided_area: { giver: pell, afterMin: 15 }
+  engine: { ledgerSize: 16, traitThreshold: 0.5 }
 
 items:
   families: [dagger, sword, greatsword, axe, hammer, spear, scythe, whip, fist, bow, crossbow, gun, cannon, thrown, staff, focus, shield_small, shield_large]

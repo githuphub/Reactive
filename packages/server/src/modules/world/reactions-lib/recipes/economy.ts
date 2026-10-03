@@ -301,10 +301,15 @@ export const haggleMemory: RecipeDef = {
     "economy.haggled"(run, ev) {
       const npc = str(ev.data.npc);
       const h = run.l.haggles[npc];
-      if (!npc || !h || !personaById(run.m, npc)) return;
+      if (!npc || !h) return;
       const won = str(ev.data.outcome) === "won";
       const pool = `${h.count > 1 ? "repeat" : "first"}_${won ? "won" : "lost"}`;
       const mult = haggleMult(run, npc);
+      if (!personaById(run.m, npc)) {
+        // a merchant the manifest doesn't declare: no voice, but the game still gets the price memory
+        run.effect(`npc:${npc}`, "price_adjust", { npc, multiplier: mult, haggles: h.count, won: h.won, lost: h.lost }, { reason: `haggle #${h.count}` });
+        return;
+      }
       run.attitude(npc, won ? -0.03 : 0.02, { text: `They haggled ${won ? "me down" : "and lost"} (${Math.round(Number(ev.data.delta_pct) || 0)}%).`, kind: "trade", salience: 0.45 });
       run.say(npc, pool, { vars: { count: h.count }, emote: won ? "grumble" : "laugh", reason: `haggle #${h.count} (${h.won} won, ${h.lost} lost)`, effect: { effect: "price_adjust", payload: { npc, multiplier: mult, haggles: h.count, won: h.won, lost: h.lost } } });
     },
