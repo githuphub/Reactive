@@ -9,9 +9,8 @@ import {
 } from "@liveforge/protocol";
 import type { AskContext, AskHandler } from "../../module.js";
 import { isReplayModel, modelBadge } from "../../providers/cassette.js";
-import { brain } from "./brain-shim.js";
 import { clamp, factionsOptions, pickBy, raidFaction, round2, type ResolvedFaction } from "./config.js";
-import { mindOf } from "./council.js";
+import { brain, mindOf } from "./council.js";
 import { readHabits, type Habit, type HabitRead } from "./habits.js";
 
 type Params = AskParams<"faction.raid_plan">;
@@ -163,10 +162,10 @@ function recordPlan(ctx: AskContext, rf: ResolvedFaction, player: string, plan: 
   }
   const badge = source === "rules" ? "rules" : modelBadge(model);
   if (plan.habits?.length && source === "rules") {
-    brain(ctx, { source: "factions", actor: rf.id, kind: "thought", text: `Threat model for ${player}: ${plan.habits.map((h) => `${h.habit} ${h.score.toFixed(2)} (${h.evidence})`).join("; ")}`, data: { player, habits: plan.habits }, model: "rules" });
+    brain(ctx, { ref: ctx.askId, source: "factions", actor: rf.id, kind: "thought", text: `Threat model for ${player}: ${plan.habits.map((h) => `${h.habit} ${h.score.toFixed(2)} (${h.evidence})`).join("; ")}`, data: { player, habits: plan.habits }, model: "rules" });
   }
-  brain(ctx, { source: "factions", actor: rf.id, kind: "plan", text: `${summary}${plan.captain ? ` · ${plan.captain.name}: "${plan.captain.taunt}"` : ""}`, data: { player, plan }, model: badge, ...(ms !== undefined ? { ms } : {}) });
-  brain(ctx, { source: "factions", actor: rf.id, kind: "decision", text: `why: ${plan.why}`, data: { player, counters: plan.counters }, model: badge });
+  brain(ctx, { ref: ctx.askId, source: "factions", actor: rf.id, kind: "plan", text: `${summary}${plan.captain ? ` · ${plan.captain.name}: "${plan.captain.taunt}"` : ""}`, data: { player, plan }, model: badge, ...(ms !== undefined ? { ms } : {}) });
+  brain(ctx, { ref: ctx.askId, source: "factions", actor: rf.id, kind: "decision", text: `why: ${plan.why}`, data: { player, counters: plan.counters }, model: badge });
 }
 
 export const raidPlanAsk: AskHandler<"faction.raid_plan"> = {

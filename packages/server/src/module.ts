@@ -4,12 +4,14 @@ import type {
   AskKind, AskParams, AskResult, AskSource, Directive, DirectiveDraft, ForgeJob, LooseDirectiveDraft,
   ProjectionName, ProjectionState, StoredEvent,
 } from "@liveforge/protocol";
+import type { BrainDraft, BrainEntry } from "@liveforge/protocol";
 import type { Manifest } from "@liveforge/manifest";
 import type { Hono } from "hono";
 import type { Logger } from "./log.js";
 import type { KvScope } from "./store/db.js";
 import type { EventQuery } from "./store/events.js";
 import type { LlmCallOptions, LlmJsonResult, LlmStreamOptions, LlmTextResult, SttProvider, TtsProvider } from "./providers/index.js";
+import type { LlmToolsOptions, LlmToolsResult } from "./providers/index.js";
 import type { Cache } from "./core/cache.js";
 import type { Moderator } from "./core/moderation.js";
 
@@ -70,6 +72,14 @@ export interface ScopedLlm {
   readonly provider: string;
   json<T = unknown>(schema: object, system: string, user: string, opts?: ScopedLlmOptions): Promise<LlmJsonResult<T>>;
   stream(system: string, user: string, opts?: LlmStreamOptions & { task?: string; player?: string | null }): Promise<LlmTextResult>;
+  /**
+   * One native tool-use call (K6 agents): `{system, messages, tools, tier, maxTokens, timeoutMs, task, player, signal}`
+   * -> `{content, stopReason, usage, model, ms}`. Tier mapping, budgets and metrics as json(); no retries. Throws
+   * when the provider has no tool use (check `supportsTools`).
+   */
+  tools(opts: LlmToolsOptions & { task?: string; player?: string | null }): Promise<LlmToolsResult>;
+  /** True when the provider implements native tool use. */
+  readonly supportsTools: boolean;
 }
 
 // ---------------------------------------------------------------- contexts
@@ -119,6 +129,11 @@ export interface ModuleContext {
   emit(draft: DirectiveDraft | LooseDirectiveDraft, scope: { world: string; player?: string | null }): Directive | null;
   /** Append an internal event ("lf.<module>.<what>") so projections can fold it. Returns the stored event. */
   record(type: string, data: Record<string, unknown>, scope: { world: string; player?: string | null; session?: string | null }): StoredEvent;
+  /**
+   * Push a Brain feed entry (agent step, plan, decision) to the world's WS subscribers (`{t:"brain"}`) and the
+   * per-world ring buffer behind GET /v1/brain. `model` badge: brainModel(modelId, source) from the protocol.
+   */
+  brain(entry: BrainDraft, scope: { world: string }): BrainEntry | null;
 }
 
 /** A context bound to one world (+ player). emit/record default to this scope. */
@@ -128,6 +143,7 @@ export interface ScopedContext extends Omit<ModuleContext, "emit" | "record"> {
   readonly session: string | null;
   emit(draft: DirectiveDraft | LooseDirectiveDraft, scope?: { world?: string; player?: string | null }): Directive | null;
   record(type: string, data: Record<string, unknown>, scope?: { world?: string; player?: string | null }): StoredEvent;
+  brain(entry: BrainDraft, scope?: { world?: string }): BrainEntry | null;
 }
 
 export interface AskContext extends ScopedContext {

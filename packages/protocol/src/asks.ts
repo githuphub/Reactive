@@ -10,6 +10,7 @@ import { EngineMoveRef, MoveSpec } from "./moves.js";
 import { DirectiveDraftSchema } from "./directives.js";
 import { PlayerModel } from "./state.js";
 import { RaidPlanParams, RaidPlanResult } from "./factions.js";
+import { VoxelPlan } from "./voxel.js";
 
 /** Free-form habits bag (keys of MoveHabits in moves.ts, or game-specific numbers). Cleaned with cleanHabits. */
 const Habits = z.record(z.string(), z.unknown());
@@ -241,6 +242,58 @@ export const ASKS = {
       directives: z.array(DirectiveDraftSchema).default([]),
       /** npc id -> attitude toward the player (-1..1). */
       attitudes: z.record(z.string(), z.number().min(-1).max(1)).default({}),
+    }),
+  },
+  /**
+   * Voxel build plan (K6 builder). Instant: a parametric template sized to the site; upgrade: an AI-designed plan
+   * (Voxel DSL, see voxel.ts). For statues, `palette` holds the colours [shirt, trousers, skin, hair].
+   */
+  "builder.plan": {
+    params: z.object({
+      /** What to build ("a cosy house with a tower"). */
+      prompt: z.string().min(1).max(600),
+      /** Plot size [x, y, z] in blocks (y = height budget); `ground` = the ground block id. */
+      site: z.object({ size: z.tuple([z.number().int().min(1).max(64), z.number().int().min(1).max(64), z.number().int().min(1).max(64)]), ground: z.string().max(48).optional() }),
+      /** Block ids by role: wall, trim, roof, floor, glass, accent (default: manifest builder.palette). */
+      palette: z.array(z.string().max(48)).max(8).optional(),
+      /** Style hint ("rustic", "elven", "desert"). */
+      style: z.string().max(200).optional(),
+      /** Builder NPC (persona voice + lore in the AI prompt). */
+      npc: z.string().max(64).optional(),
+      /** Free game context (nearby buildings, biome, who it is for). */
+      context: z.string().max(2000).optional(),
+    }),
+    result: z.object({
+      plan: VoxelPlan,
+      /** One sentence for chat / Brain View. */
+      summary: z.string().max(300),
+      /** block id -> count (air excluded), after mapping to manifest builder.blockIds. */
+      materials: z.record(z.string(), z.number().int()),
+      /** Rules template used (instant answers). */
+      template: z.string().max(32).optional(),
+    }),
+  },
+  /**
+   * Give an NPC a goal (K6 agents). Starts a server-run tool loop (Sonnet with native tool use, or the scripted rules
+   * plan without a key); each step arrives as an `agent.tool_call` directive. A new goal interrupts the NPC's
+   * previous run. The answer is final (no upgrade).
+   */
+  "agent.goal": {
+    params: z.object({
+      npc: z.string().min(1).max(64),
+      goal: z.string().min(1).max(500),
+      /** Situation text for this goal (merged with the world context from POST /v1/m/agents/context). */
+      context: z.string().max(4000).optional(),
+      /** Step budget (default manifest agents.maxSteps, 12). */
+      maxSteps: z.number().int().min(1).max(40).optional(),
+    }),
+    result: z.object({
+      runId: z.string(),
+      accepted: z.boolean(),
+      /** The rules plan (what the NPC does without AI; with AI, the model may choose differently). */
+      plan: z.array(z.string()).optional(),
+      /** Why a goal was not accepted. */
+      reason: z.string().max(200).optional(),
     }),
   },
 } as const;

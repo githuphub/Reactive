@@ -2,7 +2,7 @@
 // Bram builds a cosy house with a tower, Oakhollow's mind turns wary after griefing and calms down again, and a
 // night raid counters a pillaring archer. Pure in-browser; DemoSource delegates to it.
 import { mulberry32, type FactionMind, type FactionMindState } from "@liveforge/protocol";
-import type { AgentRun, AgentStep, BrainEntry, BuildEntry, CassetteInfo, CassetteMode, VoxelPlanLike } from "./brain";
+import type { AgentRun, AgentStep, BrainEntry, BrainModel, BuildEntry, CassetteInfo, CassetteMode, VoxelPlanLike } from "./brain";
 
 const HOUSE: VoxelPlanLike = {
   name: "Cosy tower house",
@@ -19,7 +19,7 @@ const HOUSE: VoxelPlanLike = {
 };
 const STATUE: VoxelPlanLike = {
   name: "Statue of the Mender",
-  palette: { body: "wool_blue", skin: "sandstone", base: "stone_bricks", hair: "wool_yellow" },
+  palette: { body: "blue_wool", skin: "sandstone", base: "stone_bricks", hair: "yellow_wool" },
   ops: [
     { op: "box", from: [0, 0, 0], to: [4, 0, 2], block: "base" },
     { op: "box", from: [1, 1, 1], to: [1, 3, 1], block: "body" },
@@ -32,7 +32,7 @@ const STATUE: VoxelPlanLike = {
   ],
 };
 
-interface ScriptStep { kind: AgentStep["kind"]; text?: string; tool?: string; input?: unknown; output?: unknown; model: string; ms: number }
+interface ScriptStep { kind: BrainEntry["kind"]; text?: string; tool?: string; input?: unknown; output?: unknown; model: BrainModel; ms: number }
 
 const BRAM_SCRIPT: ScriptStep[] = [
   { kind: "thought", text: "A cosy house with a tower. I'll plan it first, then check what I have.", model: "sonnet", ms: 1180 },
@@ -120,7 +120,7 @@ export class LivecraftMock {
       return;
     }
     const s = BRAM_SCRIPT[this.step++];
-    const model = this.cassette.mode === "replay" && s.model !== "rules" ? "replay" : s.model;
+    const model: BrainModel = this.cassette.mode === "replay" && s.model !== "rules" ? "replay" : s.model;
     const st: AgentStep = { i: run.steps.length, kind: s.kind, tool: s.tool, input: s.input, output: s.output, text: s.text, model, ms: s.ms, ts: Date.now() };
     run.steps.push(st);
     run.updatedAt = Date.now();

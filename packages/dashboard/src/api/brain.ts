@@ -1,25 +1,9 @@
-// Brain feed + Livecraft-era shapes the new panels read (Agents, Builds, Brain, cassette badge).
-// TODO(merge): K6 adds `BrainEntry`, the `agents.runs` projection and `lf.builder.planned` to @liveforge/protocol.
-// Until then these local mirrors are deliberately loose (every field optional except the essentials) so the panels
-// render whatever the server sends.
-import type { StoredEvent } from "@liveforge/protocol";
+// Brain feed + view models for the K7 panels (Agents, Builds, Brain, cassette badge). Brain entries are the protocol
+// BrainEntry (K6): pushed over WS {t:"brain"} and kept in the server ring (GET /v1/brain). Agent runs and builds are
+// read tolerantly (normaliseRuns / buildFromEvent) so the panels render whatever the server version sends.
+import type { BrainEntry, StoredEvent, VoxelPlan } from "@liveforge/protocol";
 
-export const BRAIN_SOURCES = ["agents", "builder", "factions", "director", "reactions", "forge", "persona"] as const;
-export type BrainSource = (typeof BRAIN_SOURCES)[number];
-export type BrainModel = "sonnet" | "haiku" | "rules" | "cache" | "replay";
-
-/** Spec §4 BrainEntry. */
-export interface BrainEntry {
-  id: string;
-  ts: number;
-  source: BrainSource | string;
-  actor: string;
-  kind: "goal" | "thought" | "tool_call" | "tool_result" | "plan" | "decision" | "line" | string;
-  text: string;
-  data?: Record<string, unknown>;
-  model?: BrainModel | string;
-  ms?: number;
-}
+export { BRAIN_SOURCES, type BrainEntry, type BrainModel } from "@liveforge/protocol";
 
 /** One step of an agent run (agents.runs projection, lf.agents.step). */
 export interface AgentStep {
@@ -62,11 +46,8 @@ export interface BuildEntry {
 }
 
 /** Spec §3 Voxel DSL v1 (loose mirror). */
-export interface VoxelPlanLike {
-  name?: string;
-  palette?: Record<string, string>;
-  ops: Record<string, unknown>[];
-}
+/** A Voxel DSL plan as stored in lf.builder.planned (validated with clampVoxelPlan before expanding). */
+export type VoxelPlanLike = VoxelPlan;
 
 export type CassetteMode = "live" | "record" | "replay";
 export interface CassetteInfo {
@@ -80,56 +61,6 @@ export interface CassetteInfo {
 
 const isObj = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
 const s = (v: unknown): string => (typeof v === "string" ? v : typeof v === "number" ? String(v) : "");
-const badge = (model: unknown, source?: unknown): BrainModel => {
-  const m = s(model);
-  if (m.startsWith("replay:") || s(source) === "replay") return "replay";
-  if (/haiku/i.test(m)) return "haiku";
-  if (/sonnet|opus|claude/i.test(m)) return "sonnet";
-  if (s(source) === "cache") return "cache";
-  if (s(source) === "ai") return "sonnet";
-  return "rules";
-};
-
-/**
- * Derive a Brain entry from a stored event, so the feed works even before (or without) the K6 `brain` WS message:
- * K6/K7 module events and Director decisions all carry enough to show.
- */
-export function brainFromEvent(e: StoredEvent): BrainEntry | null {
-  const d = e.data;
-  const id = `ev${e.seq}`;
-  switch (e.type) {
-    case "lf.brain":
-    case "lf.brain.entry": {
-      const b = (isObj(d.entry) ? d.entry : d) as Partial<BrainEntry>;
-      if (!b.text) return null;
-      return { id: s(b.id) || id, ts: b.ts ?? e.ts, source: s(b.source) || "agents", actor: s(b.actor) || "?", kind: s(b.kind) || "line", text: s(b.text), ...(isObj(b.data) ? { data: b.data } : {}), ...(b.model ? { model: b.model } : {}), ...(typeof b.ms === "number" ? { ms: b.ms } : {}) };
-    }
-    case "lf.agents.step": {
-      const kind = s(d.kind) || (d.tool ? "tool_call" : "thought");
-      const text = s(d.text) || (d.tool ? `${s(d.tool)}(${JSON.stringify(d.input ?? {}).slice(0, 120)})${d.output !== undefined ? ` -> ${JSON.stringify(d.output).slice(0, 120)}` : ""}` : kind);
-      return { id, ts: e.ts, source: "agents", actor: s(d.npc) || s(d.agent) || s(d.runId), kind, text, data: d, model: badge(d.model, d.source), ...(typeof d.ms === "number" ? { ms: d.ms } : {}) };
-    }
-    case "lf.agents.run":
-      return { id, ts: e.ts, source: "agents", actor: s(d.npc), kind: "goal", text: `${s(d.state) || "run"}: ${s(d.goal)}`, data: d, model: badge(d.model, d.source) };
-    case "lf.builder.planned":
-      return { id, ts: e.ts, source: "builder", actor: s(d.npc) || "builder", kind: "plan", text: s(d.summary) || `plan for "${s(d.prompt)}"`, data: d, model: badge(d.model, d.source) };
-    case "lf.factions.decision":
-      return { id, ts: e.ts, source: "factions", actor: s(d.faction), kind: "decision", text: `${s(d.faction)} → ${s(d.posture)} (prices x${s(d.priceMult)}). ${s(d.announcement)}`, data: d, model: badge(d.model, d.source) };
-    case "lf.factions.raid_plan": {
-      const plan = isObj(d.plan) ? d.plan : {};
-      const waves = Array.isArray(plan.waves) ? (plan.waves as Record<string, unknown>[]) : [];
-      return { id, ts: e.ts, source: "factions", actor: s(d.faction), kind: "plan", text: `raid vs ${s(d.player) || e.player}: ${waves.map((w) => `${s(w.count)} ${s(w.mob)} (${s(w.tactic)})`).join(", ")} — ${s(plan.why)}`, data: d, model: badge(d.model, d.source) };
-    }
-    case "lf.director.decision": {
-      const dec = isObj(d.decision) ? d.decision : {};
-      if (["faction_posture", "raid_plan"].includes(s(dec.kind))) return null; // already shown from lf.factions.*
-      return { id, ts: e.ts, source: "director", actor: s(dec.kind) || "director", kind: "decision", text: `${s(dec.summary)} — ${s(dec.why)}`, data: dec, model: badge((dec.data as Record<string, unknown> | undefined)?.model, dec.source) };
-    }
-    default:
-      return null;
-  }
-}
-
 /** De-dupe key: the same step can arrive as a WS brain entry and as an event. */
 export const brainSig = (b: BrainEntry): string => `${b.source}|${b.kind}|${b.actor}|${b.text.slice(0, 80)}`;
 

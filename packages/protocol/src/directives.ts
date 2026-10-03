@@ -81,6 +81,30 @@ export const DIRECTIVE_ARGS = {
    * `{recipe, target, payload: {effect, ...}, line?, reaction?}`. See docs/reactions.md for every effect.
    */
   "custom.reaction": ReactionDirectiveArgs,
+  /**
+   * Agents (K6): run one tool for an NPC's goal. Execute it and answer with signal `agent.tool_result
+   * {runId, callId, ok, output}` or POST /v1/m/agents/result (the JS SDK's agents.register does both for you).
+   */
+  "agent.tool_call": z.object({
+    /** The NPC (also in the target, "npc:<id>"). */
+    agent: z.string(),
+    runId: z.string(),
+    callId: z.string(),
+    tool: z.string(),
+    input: Bag,
+    /** The server waits this long for the result (progress updates extend it). */
+    timeoutMs: z.number().int().optional(),
+    /** Loop step index. */
+    step: z.number().int().optional(),
+  }),
+  /** Agents (K6): an NPC's run ended (finished, failed, interrupted or out of steps). */
+  "agent.done": z.object({
+    runId: z.string(),
+    npc: z.string(),
+    ok: z.boolean(),
+    summary: z.string().max(300),
+    state: z.enum(["done", "failed", "interrupted"]).optional(),
+  }),
 } as const;
 
 export type DirectiveKind = keyof typeof DIRECTIVE_ARGS;

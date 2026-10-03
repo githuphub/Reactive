@@ -1,8 +1,7 @@
 # K7 report: village mind (factions) + record/replay cassettes + dashboard panels + Livecraft manifest
 
-**Status:** done. Branch `K7` in worktree `F:/Development/Liveforge-K7`. `npm run typecheck` and `npm run build` pass.
-All three example manifests validate with `liveforge-validate`. The only warnings are for `modules.agents` and
-`modules.builder`, which are not built-in until K6 merges.
+**Status:** done, and merged with main after K6 (`a6c6a47`); the K6 shims are gone. Branch `K7` in worktree `F:/Development/Liveforge-K7`. `npm run typecheck` and `npm run build` pass.
+All three example manifests validate with `liveforge-validate`, with no warnings.
 Per the user rules, no tests were written or run, and no server or browser was started. No live API calls were made,
 and no key files were read. `npm install` needed `--ignore-scripts` (the better-sqlite3 native build fails on Node 26,
 the same as K5).
@@ -48,8 +47,8 @@ the same as K5).
   - `POST /v1/m/factions/threat`
   - `GET /admin/m/factions/state`
   - `POST /admin/m/factions/council` (force)
-- **Brain:** `brain-shim.ts` calls `ctx.brain(entry)` when K6's core has it and no-ops otherwise.
-  `TODO(merge)`: switch to the real `BrainEntry` type.
+- **Brain:** decisions and raid plans go out through `ctx.brain(draft, {world})` (K6 core), source `factions`.
+  Raid entries carry `ref: askId`.
 
 ### 2. Record/replay cassettes (`packages/server/src/providers/cassette.ts`)
 
@@ -85,9 +84,8 @@ the same as K5).
 - **Factions** now opens with a **Village mind** card per faction: posture, prices, mood, trust bars, guard posts,
   damage, threats, the last decision with its why, history, and raid plans with counters, taunt and why.
 - **Top bar:** a LIVE/RECORD/REPLAY badge with cassette count and a runtime mode switch.
-- **Brain entries** come from WS `{t:"brain", entry}` (handled before the typed switch) and are derived from events
-  (`lf.agents.*`, `lf.builder.planned`, `lf.factions.*`, `lf.director.decision`, `lf.brain*`). They are
-  de-duplicated by id and content. History comes from `GET /v1/brain` when K6 has it.
+- **Brain entries** come from the WS `brain` topic. History comes from `GET /v1/brain`. Entries are de-duplicated
+  by id and by content.
 - **`?demo`:** `demo-livecraft.ts` scripts Bram's build run, Oakhollow going wary → calm, and a raid vs a pillaring
   archer, all in replay mode.
 
@@ -114,8 +112,8 @@ the same as K5).
 - **Items** for forge, with an effect enum as tags. **Quests** config, 6 **achievements**, generous **clamps**, and
   rating E.
 - **Models:** overrides set `agent.goal`, `builder.plan`, `npc.reply` and every `forge.*` kind to rich.
-- **K6 sections:** top-level `agents.tools` (14 tools with JSON schemas) and `builder.palette` (25 block ids). The
-  schema strips these silently until K6's schema lands, so validation passes now.
+- **Agents and builder:** an `agents` section (loop limits, guidance, 14 tools with JSON schemas) and a `builder`
+  section (palette by role, Livecraft `blockIds`, aliases, styleGuide). See "After merging K6" below.
 
 ### 5. Docs
 
@@ -152,25 +150,27 @@ the same as K5).
   and `styles.css`.
 - **Repo:** `cassettes/.gitkeep`.
 
-## Merge notes for the controller (K6 reconciliation)
+## After merging K6 (main a6c6a47 into K7)
 
-- **Shims to replace:**
-  - `modules/factions/brain-shim.ts`: use K6's `ctx.brain` and `BrainEntry`.
-  - `dashboard/src/api/brain.ts`: the local `BrainEntry`, `AgentRun` and `BuildEntry` types.
-  - `dashboard/src/viz/voxel-expand.ts`, imported in `panels/builds.ts` under
-    `// TODO(merge): use @liveforge/protocol expandVoxelPlan`.
-- **Likely conflicts:**
-  - `protocol/state.ts` PROJECTIONS (`agents.runs`)
-  - `protocol/asks.ts` ASKS
-  - `manifest/schema.ts` MODULE_IDS / ModulesSchema
-  - `sdk-js/client.ts` fields
-  - `providers/llm.ts`/`claude.ts`: mine is only the construction line plus an import.
-  - All of these are additive on both sides; keep both.
-- **Brain over WS for the dashboard:** the dashboard subscribes with topics `["events","directives"]`. K6's hub
-  should deliver `{t:"brain"}` to admin world subscribers on those topics. If K6 adds a `brain` topic, add it to
-  that subscribe call in `api/admin.ts`. Even without it, the Brain panel still fills from events.
-- **Brain model badge:** K6 should map the model with `modelBadge()` from `providers/cassette.ts`, so replayed steps
-  read `replay`.
+- **Shims dropped:**
+  - factions `brain-shim.ts` is gone; the module calls `ctx.brain`.
+  - The dashboard's local `BrainEntry` is now the protocol type.
+  - The dashboard's local voxel expander is gone; Builds uses `clampVoxelPlan` + `expandVoxelPlan` from the protocol.
+  - The dashboard no longer derives Brain entries from events: the server pushes them.
+- **Cassettes cover `tools()`:** it calls the wrapped client's `messages.create`. `ClaudeProvider.tools()` now returns
+  `source: "replay"` for cassette answers. Protocol `brainModel()` also maps any `replay:<model>` id to the `replay`
+  badge, so json() callers (builder, factions) badge correctly too.
+- **Dashboard WS:** subscribes with topics `["events", "directives", "brain"]` and handles the typed `brain` message.
+- **No duplicate Brain entries:** `core/brain.ts` (K6) skips `lf.director.decision` of kinds `faction_posture` /
+  `raid_plan`, because factions pushes richer entries itself.
+- **Manifest:** `livecraft.liveforge.yaml` now matches K6's schema:
+  - `modules.agents: true`, `modules.builder: true`
+  - `agents` {maxSteps, toolTimeoutMs, maxTokens, guidance, 14 tools}
+  - `builder`: `palette` is by role (6 entries; K6 caps it at 8), `blockIds` holds 44 Livecraft ids taken from
+    Livecraft's `src/engine/blocks.ts` (`white_wool`, `hay_bale`, `glow_lamp` ...), plus `aliases`,
+    `fallbackBlock` and `styleGuide`.
+- **Merge conflicts** were all additive (protocol index/state/asks/emitSchemas, manifest MODULE_IDS, modules
+  registry, fallbacks, runtime imports, sdk client fields, claude.ts imports); both sides were kept.
 
 ## How to try it
 

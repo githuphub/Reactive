@@ -6,9 +6,10 @@ import { WebSocketServer, WebSocket } from "ws";
 import {
   PROTOCOL_ID, WS_PATH, WsClientMessage, type AnyAskResponse, type Directive, type StoredEvent, type WsServerMessage, type WsTopic,
 } from "@liveforge/protocol";
+import type { BrainEntry } from "@liveforge/protocol";
 import type { Logger } from "../log.js";
 
-const DEFAULT_TOPICS: WsTopic[] = ["directives", "upgrades", "chunks", "jobs"];
+const DEFAULT_TOPICS: WsTopic[] = ["directives", "upgrades", "chunks", "jobs", "brain"];
 
 interface Sub {
   world: string;
@@ -142,6 +143,11 @@ export class WsHub {
 
   job(game: string, world: string, player: string | null, id: string, state: "queued" | "generating" | "done" | "failed", url?: string): number {
     return this.deliver(game, world, player, "jobs", { t: "job", id, state, ...(url ? { url } : {}) });
+  }
+
+  /** Brain feed: every socket subscribed to the world with the "brain" topic (players and spectators). */
+  brain(game: string, world: string, entry: BrainEntry): number {
+    return this.deliver(game, world, null, "brain", { t: "brain", entry });
   }
 
   /** Admin firehose. */

@@ -11,7 +11,7 @@ import {
   AdminError, type BakeRequest, type BakeResult, type ConnStatus, type DataSource, type EventQuery, type GameInfo, type LiveHandlers, type ManifestDoc,
   type ReactionLibraryState, type SimulateResult, type WorldSummary,
 } from "./types";
-import { brainFromEvent, buildFromEvent, normaliseRuns, type AgentRun, type BrainEntry, type BuildEntry, type CassetteInfo, type CassetteMode } from "./brain";
+import { buildFromEvent, normaliseRuns, type AgentRun, type BrainEntry, type BuildEntry, type CassetteInfo, type CassetteMode } from "./brain";
 
 /** The admin HTTP surface the dashboard relies on (all require the admin key). */
 export const ADMIN_ROUTES = {
@@ -32,7 +32,7 @@ export const ADMIN_ROUTES = {
   reactionLibrary: "GET /admin/m/world/reactions-lib?world=&player=",
   agentRuns: "GET /admin/projections/agents.runs?world= (K6)",
   builds: "GET /admin/events?type=lf.builder.planned (K6)",
-  brain: "GET /v1/brain?world= (K6 ring; falls back to module events)",
+  brain: "GET /v1/brain?world=&limit= (+ WS topic brain)",
   cassettes: "GET /admin/cassettes, POST /admin/cassettes/mode {mode}",
 } as const;
 
@@ -344,23 +344,15 @@ export class LiveSource implements DataSource {
     return page.events.map(buildFromEvent).filter((b): b is BuildEntry => !!b).sort((a, b) => b.ts - a.ts);
   }
 
-  /** Brain history: the server ring (K6 GET /v1/brain) when present, plus entries derived from module events. */
+  /** Brain history: the server's per-world ring (GET /v1/brain). */
   async brainHistory(world: string): Promise<BrainEntry[]> {
-    const out: BrainEntry[] = [];
     try {
       const r = await this.client.get<unknown>("/v1/brain", { world, limit: 300 });
       const list = Array.isArray(r) ? r : isObj(r) && Array.isArray(r.entries) ? r.entries : [];
-      for (const x of list) if (isObj(x) && typeof x.text === "string") out.push(x as unknown as BrainEntry);
+      return list.filter((x): x is BrainEntry => isObj(x) && typeof x.text === "string").sort((a, b) => a.ts - b.ts);
     } catch {
-      /* no ring on this server (pre-K6) */
+      return [];
     }
-    const types = ["lf.factions.*", "lf.agents.*", "lf.builder.planned", "lf.director.decision", "lf.brain"];
-    const pages = await Promise.all(types.map((type) => this.events({ world, type, limit: 80, desc: true }).catch(() => null)));
-    for (const p of pages) for (const e of p?.events ?? []) {
-      const b = brainFromEvent(e);
-      if (b) out.push(b);
-    }
-    return out.sort((a, b) => a.ts - b.ts);
   }
 
   /** LLM provider mode + cassettes (null on servers without K7). */
@@ -443,7 +435,7 @@ export class LiveSource implements DataSource {
       }
       ws.onopen = () => {
         retry = 0;
-        const sub: WsClientMessage = { t: "subscribe", world, topics: ["events", "directives"] };
+        const sub: WsClientMessage = { t: "subscribe", world, topics: ["events", "directives", "brain"] };
         ws?.send(JSON.stringify(sub));
         pingTimer = setInterval(() => ws?.readyState === WebSocket.OPEN && ws.send(JSON.stringify({ t: "ping", ts: Date.now() })), 20_000);
       };
@@ -454,17 +446,14 @@ export class LiveSource implements DataSource {
         } catch {
           return;
         }
-        // K6 Brain feed: {t:"brain", entry} (not in this branch's protocol union yet)
-        const raw = msg as unknown as { t: string; entry?: BrainEntry };
-        if (raw.t === "brain") {
-          if (raw.entry) h.onBrain?.(raw.entry);
-          return;
-        }
         switch (msg.t) {
           case "subscribed":
             stopPolling();
             h.onStatus("live");
             void poll(); // catch up on anything between the snapshot and the socket
+            break;
+          case "brain":
+            h.onBrain?.(msg.entry);
             break;
           case "event":
             emitEvent(msg.event);

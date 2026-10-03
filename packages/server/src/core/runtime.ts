@@ -25,6 +25,8 @@ import { WsHub } from "./hub.js";
 import { JobRunner } from "./jobs.js";
 import { fallbackAnswer } from "./fallbacks.js";
 import { isReplayModel, priceFor, type Providers } from "../providers/index.js";
+import { BrainBuffer, brainFromEvent } from "./brain.js";
+import type { BrainDraft, BrainEntry } from "@liveforge/protocol";
 import type {
   AskContext, AskHandler, BudgetView, EventContext, LiveforgeModule, ModuleContext, Projection, ProjectionReader,
   ScopedContext, ScopedLlm, TickContext,
@@ -92,6 +94,8 @@ export class Liveforge {
   readonly jobs: JobRunner;
   readonly kv: Kv;
   readonly moderator: Moderator;
+  /** Brain feed ring buffers (300 per world). */
+  readonly brainBuffer = new BrainBuffer(300);
   readonly games = new Map<string, GameRuntime>();
   private readonly pending = new Map<string, PendingUpgrade>();
   private readonly rate = new Map<string, { start: number; n: number }>();
@@ -251,7 +255,24 @@ export class Liveforge {
     this.projections.apply(ev);
     this.hub.event(ev);
     this.dispatch(game, ev);
+    const rt = this.games.get(game);
+    if (rt) {
+      try {
+        const b = brainFromEvent(ev, rt.manifest);
+        if (b) this.brain(game, ev.world, b);
+      } catch (err) {
+        this.log.debug("brain hook failed", { type: ev.type, error: err as Error });
+      }
+    }
     return ev;
+  }
+
+  /** Push a Brain feed entry: ring buffer + WS `{t:"brain"}` to the world's subscribers. */
+  brain(game: string, world: string | null | undefined, draft: BrainDraft): BrainEntry | null {
+    if (!world) return null;
+    const entry = this.brainBuffer.push(game, world, draft);
+    if (entry) this.hub.brain(game, world, entry);
+    return entry;
   }
 
   private dispatch(game: string, ev: StoredEvent): void {
@@ -429,6 +450,20 @@ export class Liveforge {
           throw e;
         }
       },
+      supportsTools: typeof provider.tools === "function",
+      async tools(opts) {
+        if (typeof provider.tools !== "function") throw new Error(`LLM provider "${provider.id}" has no native tool use`);
+        const { pl, effTier, models } = prepare(opts.task, opts.player, opts.tier);
+        const started = Date.now();
+        try {
+          const r = await provider.tools({ ...opts, tier: effTier, models, signal: opts.signal ?? signal });
+          account(opts.task, pl, r.model, r.ms, r.usage);
+          return r;
+        } catch (e) {
+          self.metrics.log({ id: randomUUID(), game, world: null, player: pl, kind: opts.task ?? module, module, stage: "llm", source: "ai", ms: Date.now() - started, error: (e as Error).message.slice(0, 200) });
+          throw e;
+        }
+      },
     };
   }
 
@@ -461,6 +496,7 @@ export class Liveforge {
       moderation: this.moderator,
       emit: (draft, scope) => self.emit(game, module, draft, scope),
       record: (type, data, scope) => self.appendEvent(game, { world: scope.world, player: scope.player ?? null, session: scope.session ?? null, type, data, ts: Date.now(), origin: "module" }),
+      brain: (entry, scope) => self.brain(game, scope?.world, entry),
     };
   }
 
@@ -474,6 +510,7 @@ export class Liveforge {
         this.emit(game, module, draft, { world: scope?.world ?? world, player: scope && "player" in scope ? scope.player : player }),
       record: (type: string, data: Record<string, unknown>, scope?: { world?: string; player?: string | null }) =>
         this.appendEvent(game, { world: scope?.world ?? world, player: scope && "player" in scope ? (scope.player ?? null) : player, session, type, data, ts: Date.now(), origin: "module" }),
+      brain: (entry: BrainDraft, scope?: { world?: string }) => this.brain(game, scope?.world ?? world, entry),
     }) as ScopedContext;
   }
 

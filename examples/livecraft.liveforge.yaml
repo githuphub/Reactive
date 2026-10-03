@@ -411,9 +411,14 @@ models:
     forge.prop: rich
     forge.loot: rich
 
-# ---------------------------------------------------------------- K6: agents + builder (keys owned by K6)
+# ---------------------------------------------------------------- agents + builder (K6 modules)
 agents:
-  # Allow-list: villagers may only call these tools; the game registers the implementations (lf.agents.register).
+  maxSteps: 14
+  toolTimeoutMs: 45000      # build calls report progress, which extends this
+  maxTokens: 1500
+  guidance: >-
+    Villagers of Oakhollow are practical and cheerful and narrate what they do in one short line. Plan with build,
+    gather what is missing, then place. Never break other villagers' houses.
   tools:
     - name: walk_to
       description: Walk to a place (named spot, NPC id, or x,y,z).
@@ -459,11 +464,20 @@ agents:
       schema: { type: object, properties: { seconds: { type: number } }, required: [seconds] }
 
 builder:
-  # Livecraft block ids the builder may use (about 25).
-  palette: [oak_planks, oak_log, spruce_planks, spruce_log, birch_planks, birch_log, cobblestone, stone, stone_bricks,
-            bricks, glass, sandstone, wool_white, wool_red, wool_blue, wool_yellow, hay, bookshelf, torch, door,
-            ladder, farmland, iron_block, gold_block, obsidian]
+  # by role: wall, trim, roof, floor, glass, accent
+  palette: [oak_planks, spruce_log, bricks, cobblestone, glass, torch]
+  # every Livecraft block id a plan may use (plans are mapped onto these)
+  blockIds: [grass, dirt, stone, cobblestone, mossy_cobblestone, sand, gravel, clay, sandstone, snow, ice, oak_log,
+             oak_planks, birch_log, birch_planks, spruce_log, spruce_planks, glass, bricks, stone_bricks, white_wool,
+             red_wool, blue_wool, yellow_wool, green_wool, black_wool, hay_bale, bookshelf, pumpkin, torch, glow_lamp,
+             door, ladder, farmland, wheat, crafting_table, furnace, chest, iron_block, gold_block, diamond_block,
+             obsidian, water, dirt_path]
+  aliases: { thatch: hay_bale, hay: hay_bale, straw: hay_bale, lantern: glow_lamp, lamp: glow_lamp, path: dirt_path, wool: white_wool }
   maxBlocks: 4000
+  fallbackBlock: oak_planks
+  styleGuide: >-
+    Oakhollow builds timber houses: oak plank walls, spruce log corners, brick or plank gable roofs, cobblestone
+    foundations, glass windows and a torch by every door. Towers are round stone brick.
 
 modules:
   observer:
@@ -493,6 +507,6 @@ modules:
   factions:
     enabled: true
     options: { council: true, councilCooldownSec: 30, postureMinSec: 20, windowMin: 10, directorTimeline: true }
-  # K6 (agents + builder)
+  # NPC agents (tool use) and voxel build plans
   agents: true
   builder: true

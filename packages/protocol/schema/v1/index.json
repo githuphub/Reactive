@@ -348,6 +348,31 @@
         "kind?": "string",
         "zone?": "string"
       }
+    },
+    "agent.tool_result": {
+      "description": "The game finished an agent.tool_call. ok=false = the tool failed (output = the error message).",
+      "data": {
+        "runId": "string",
+        "callId": "string",
+        "ok": "boolean",
+        "output?": "object"
+      }
+    },
+    "agent.tool_progress": {
+      "description": "A long tool (build, gather) is still working; extends the call's timeout and shows in the Brain feed.",
+      "data": {
+        "runId": "string",
+        "callId": "string",
+        "text?": "string"
+      }
+    },
+    "agent.interrupt": {
+      "description": "Stop an NPC's agent run (by npc or runId), e.g. the player attacked it.",
+      "data": {
+        "npc?": "string",
+        "runId?": "string",
+        "reason?": "string"
+      }
     }
   },
   "askKinds": [
@@ -369,7 +394,9 @@
     "achievement.check",
     "player.model",
     "faction.raid_plan",
-    "world.reactions"
+    "world.reactions",
+    "builder.plan",
+    "agent.goal"
   ],
   "directiveKinds": [
     "npc.action",
@@ -388,7 +415,9 @@
     "difficulty.set",
     "moment",
     "world.reaction",
-    "custom.reaction"
+    "custom.reaction",
+    "agent.tool_call",
+    "agent.done"
   ],
   "npcActions": [
     "emote",
@@ -1165,6 +1194,56 @@
     "fog",
     "heat"
   ],
+  "voxelOps": [
+    "box",
+    "hollow_box",
+    "edges",
+    "line",
+    "cylinder",
+    "sphere",
+    "roof",
+    "door",
+    "window",
+    "stairs",
+    "fill_air",
+    "block",
+    "repeat",
+    "mirror"
+  ],
+  "voxelTemplates": [
+    "house",
+    "tower",
+    "wall",
+    "statue",
+    "bridge",
+    "farm",
+    "well"
+  ],
+  "brainKinds": [
+    "goal",
+    "thought",
+    "tool_call",
+    "tool_result",
+    "plan",
+    "decision",
+    "line"
+  ],
+  "brainModels": [
+    "sonnet",
+    "haiku",
+    "rules",
+    "cache",
+    "replay"
+  ],
+  "agentGoalTemplates": [
+    "build",
+    "fetch",
+    "follow",
+    "guard",
+    "trade",
+    "go_to",
+    "say"
+  ],
   "schemas": {
     "Signal": "Signal.json",
     "SignalBatch": "SignalBatch.json",
@@ -1200,6 +1279,14 @@
     "FactionMind": "FactionMind.json",
     "FactionPostureArgs": "FactionPostureArgs.json",
     "GuardPostsArgs": "GuardPostsArgs.json",
+    "VoxelPlan": "VoxelPlan.json",
+    "VoxelOp": "VoxelOp.json",
+    "VoxelBlock": "VoxelBlock.json",
+    "ExpandedPlan": "ExpandedPlan.json",
+    "BrainEntry": "BrainEntry.json",
+    "BrainPage": "BrainPage.json",
+    "AgentToolSpec": "AgentToolSpec.json",
+    "AgentRun": "AgentRun.json",
     "Projection_observer.player_model": "Projection_observer.player_model.json",
     "Projection_persona.memories": "Projection_persona.memories.json",
     "Projection_world.rumours": "Projection_world.rumours.json",
@@ -1210,6 +1297,7 @@
     "Projection_core.directives": "Projection_core.directives.json",
     "Projection_world.reaction_ledger": "Projection_world.reaction_ledger.json",
     "Projection_factions.mind": "Projection_factions.mind.json",
+    "Projection_agents.runs": "Projection_agents.runs.json",
     "ask.npc.bark.params": "ask.npc.bark.params.json",
     "ask.npc.bark.result": "ask.npc.bark.result.json",
     "ask.npc.reply.params": "ask.npc.reply.params.json",
@@ -1248,6 +1336,10 @@
     "ask.faction.raid_plan.result": "ask.faction.raid_plan.result.json",
     "ask.world.reactions.params": "ask.world.reactions.params.json",
     "ask.world.reactions.result": "ask.world.reactions.result.json",
+    "ask.builder.plan.params": "ask.builder.plan.params.json",
+    "ask.builder.plan.result": "ask.builder.plan.result.json",
+    "ask.agent.goal.params": "ask.agent.goal.params.json",
+    "ask.agent.goal.result": "ask.agent.goal.result.json",
     "directive.npc.action.args": "directive.npc.action.args.json",
     "directive.npc.bark.args": "directive.npc.bark.args.json",
     "directive.rumour.heard.args": "directive.rumour.heard.args.json",
@@ -1264,6 +1356,9 @@
     "directive.difficulty.set.args": "directive.difficulty.set.args.json",
     "directive.moment.args": "directive.moment.args.json",
     "directive.world.reaction.args": "directive.world.reaction.args.json",
-    "directive.custom.reaction.args": "directive.custom.reaction.args.json"
+    "directive.custom.reaction.args": "directive.custom.reaction.args.json",
+    "directive.agent.tool_call.args": "directive.agent.tool_call.args.json",
+    "directive.agent.done.args": "directive.agent.done.args.json",
+    "VoxelPlan.llm": "VoxelPlan.llm.json"
   }
 }

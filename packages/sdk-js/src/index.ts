@@ -21,5 +21,17 @@ export type { FetchLike } from "./http.js";
 export type { SignalData, CustomSignalType } from "./types.js";
 export type { StorageLike } from "./util.js";
 export { stableStringify, randomId } from "./util.js";
+// Agents, builder and the Brain feed (K6).
+export { AgentsApi } from "./agents.js";
+export type { AgentTool, AgentToolContext, AgentGoalOptions, AgentGoalResult, AgentDone } from "./agents.js";
+export { BuilderApi, localBuilderPlan } from "./builder.js";
+export type { BuilderPlanParams, BuilderPlanResult } from "./builder.js";
+export { BrainFeed } from "./brain.js";
+export type { BrainFilter } from "./brain.js";
+// Voxel DSL + keyless planners, re-exported so games need only @liveforge/sdk.
+export {
+  expandVoxelPlan, clampVoxelPlan, VOXEL_TEMPLATES, voxelTemplateFor, rulesVoxelPlan, chooseVoxelTemplate, colorToBlock,
+  voxelPlanJsonSchema, planAgentGoal, brainModel,
+} from "@liveforge/protocol";
 // Every protocol type (AskKind, Directive, Blueprint, ForgedItem ...), so `@liveforge/sdk` is enough for typical code.
 export type * from "@liveforge/protocol";

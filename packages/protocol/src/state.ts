@@ -2,6 +2,7 @@
 // Owner lanes may ADD optional fields; renaming / removing fields is a protocol change.
 import { ReactionLedger } from "./reactions.js";
 import { FactionMindState } from "./factions.js";
+import { AgentRuns } from "./agents.js";
 import { z } from "zod";
 import { Bag, Timestamp, Unit } from "./common.js";
 import { Achievement, Moment, Quest, Rumour } from "./content.js";
@@ -165,6 +166,7 @@ export const PROJECTIONS = {
   "core.directives": { scope: "world", owner: "K0 core", schema: DirectiveLog },
   "world.reaction_ledger": { scope: "player", owner: "R1 world reactions-lib", schema: ReactionLedger },
   "factions.mind": { scope: "world", owner: "K7 factions", schema: FactionMindState },
+  "agents.runs": { scope: "world", owner: "K6 agents", schema: AgentRuns },
 } as const;
 export type ProjectionName = keyof typeof PROJECTIONS;
 export type ProjectionState<N extends ProjectionName> = z.infer<(typeof PROJECTIONS)[N]["schema"]>;

@@ -5,15 +5,23 @@
 // timeline entry and a Brain entry.
 import {
   FACTION_POSTURES, cleanText, councilJsonSchema, isObj,
-  type FactionMind, type FactionMindState, type FactionPosture, type GuardPost,
+  type BrainDraft, type FactionMind, type FactionMindState, type FactionPosture, type GuardPost,
 } from "@liveforge/protocol";
 import type { ScopedContext } from "../../module.js";
 import { isReplayModel, modelBadge } from "../../providers/cassette.js";
-import { brain } from "./brain-shim.js";
 import { clamp, factionsOptions, humanise, personaName, pickBy, resolveFactions, round2, type ResolvedFaction } from "./config.js";
 import { freshMind } from "./mind.js";
 
 const MIN = 60_000;
+
+/** Push a Brain entry (source "factions") to this world's feed; best-effort. */
+export function brain(ctx: ScopedContext, entry: BrainDraft): void {
+  try {
+    ctx.brain(entry, { world: ctx.world });
+  } catch (e) {
+    ctx.log.debug("brain entry dropped", { error: (e as Error).message });
+  }
+}
 const BASE_PRICE: Record<FactionPosture, number> = { calm: 1, wary: 1.25, hostile: 1.6, festive: 0.85 };
 const SEVERITY: Record<FactionPosture, number> = { festive: -1, calm: 0, wary: 1, hostile: 2 };
 

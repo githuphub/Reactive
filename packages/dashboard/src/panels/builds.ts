@@ -2,8 +2,7 @@
 // order slider), the Voxel DSL listing and the materials bill.
 import { app, bus, live, throttle } from "../app";
 import type { BuildEntry } from "../api/brain";
-// TODO(merge): use @liveforge/protocol expandVoxelPlan
-import { expandVoxelPlan } from "../viz/voxel-expand";
+import { clampVoxelPlan, expandVoxelPlan, type VoxelBlock } from "@liveforge/protocol";
 import { blockColor, drawIso } from "../viz/iso";
 import { clock, h, jsonView, render, timeAgo } from "../ui/dom";
 import { card, empty, errorBox, pill, useLive, type PanelDef } from "./panel";
@@ -38,7 +37,7 @@ export const buildsPanel: PanelDef = {
     const canvas = h("canvas", { class: "iso-canvas" }) as HTMLCanvasElement;
     const slider = h("input", { type: "range", min: "0", max: "0", value: "0", class: "iso-slider" }) as HTMLInputElement;
     const sliderLabel = h("span", { class: "muted small" });
-    let blocks: ReturnType<typeof expandVoxelPlan>["blocks"] = [];
+    let blocks: VoxelBlock[] = [];
     const paint = () => {
       const n = Number(slider.value);
       drawIso(canvas, blocks, { upto: n });
@@ -63,7 +62,7 @@ export const buildsPanel: PanelDef = {
       const b = builds.find((x) => x.id === selected)!;
       if (shownId === b.id) return; // keep the slider where the user left it
       shownId = b.id;
-      const ex = expandVoxelPlan(b.plan);
+      const ex = expandVoxelPlan(clampVoxelPlan(b.plan));
       blocks = ex.blocks;
       const materials = b.materials && Object.keys(b.materials).length ? b.materials : ex.materials;
       slider.max = String(blocks.length);

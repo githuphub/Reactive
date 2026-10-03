@@ -27,7 +27,7 @@ The top bar holds:
 | Panel | Shows | Data |
 |---|---|---|
 | **Overview** | KPI tiles (signals/min, players, directives, AI upgrades and cache share, instant p95, spend vs budget), the tension curve, the aggression gauge, the **why feed** of recent directives, a live signal ticker, and each player's top traits. | stats, `director.state`, `observer.player_model`, WS |
-| **Brain** | One live feed of the kit's reasoning: agent goals, thoughts, tool calls and results, builder plans, village-mind decisions, raid plans (threat model → plan → why) and Director decisions. Each row has a source, the actor, a model badge (sonnet / haiku / rules / cache / replay) and latency; filter by source or text, pause, click for the data. | WS `brain` (K6), `GET /v1/brain`, `lf.*` events |
+| **Brain** | One live feed of the kit's reasoning: agent goals, thoughts, tool calls and results, builder plans, village-mind decisions, raid plans (threat model → plan → why) and Director decisions. Each row has a source, the actor, a model badge (sonnet / haiku / rules / cache / replay) and latency; filter by source or text, pause, click for the data. | WS `brain` topic, `GET /v1/brain` |
 | **Agents** | NPC agent runs: goal, plan, state and every step (thought, tool + input, result) with model badge and latency. | `agents.runs` (K6), Brain entries |
 | **Builds** | `builder.plan` results: an isometric preview of the expanded blocks coloured by block (a slider replays the build order), the Voxel DSL listing and the materials bill. | `lf.builder.planned` events (K6) |
 | **Signal stream** | Every event and directive as it arrives. Filter by player, namespace or text; pause and resume; click a row for its JSON. `lf.*` internal events are behind a toggle. | WS `events` topic, `/admin/events` |
@@ -74,8 +74,8 @@ npm run build -w @liveforge/dashboard      # typecheck + static build to package
 | `src/api/admin.ts` | The typed admin client and `LiveSource`. Every route is listed in `ADMIN_ROUTES`. |
 | `src/api/demo.ts` | The in-browser `DemoSource`. |
 | `src/api/demo-livecraft.ts` | Scripted Livecraft demo data for Brain, Agents, Builds and the village mind. |
-| `src/api/brain.ts` | Brain entries (from WS `brain` messages and from `lf.*` events), agent runs, builds, cassette status. |
+| `src/api/brain.ts` | Brain colours and view models: agent runs, builds (tolerant readers), cassette status. |
 | `src/panels/*` | One file per panel. |
-| `src/viz/*` | Charts, the force graph, the Three.js Blueprint/VFX renderer, and the isometric voxel preview (`iso.ts`, `voxel-expand.ts`). |
+| `src/viz/*` | Charts, the force graph, the Three.js Blueprint/VFX renderer, and the isometric voxel preview (`iso.ts`, using the protocol's `expandVoxelPlan`). |
 
 The code is vanilla TypeScript with Three.js and no framework.

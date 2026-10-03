@@ -1,6 +1,6 @@
 // Agents: live NPC agent loops (K6 agents module). Each run shows its goal, plan and every step - thought, tool
-// call with input, tool result - with the model badge and latency. Reads the agents.runs projection; until K6 is
-// on the server it rebuilds runs from Brain entries (source "agents").
+// call with input, tool result - with the model badge and latency. Reads the agents.runs projection; when that is
+// empty (an older server, demo data) it rebuilds runs from Brain entries (source "agents").
 import { app, bus, live, throttle } from "../app";
 import type { AgentRun, AgentStep } from "../api/brain";
 import { clock, h, jsonView, render, timeAgo } from "../ui/dom";

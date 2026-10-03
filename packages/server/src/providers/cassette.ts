@@ -14,6 +14,7 @@
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
+import { brainModel, type BrainModel } from "@liveforge/protocol";
 import type { Logger } from "../log.js";
 
 export type ProviderMode = "live" | "record" | "replay";
@@ -37,10 +38,8 @@ export const isReplayModel = (model: string | null | undefined): boolean => type
 export const baseModel = (model: string): string => (isReplayModel(model) ? model.slice(REPLAY_PREFIX.length) : model);
 
 /** Brain / dashboard badge for a model id: "replay" for cassettes, else "haiku" / "sonnet"; `fallback` for none. */
-export function modelBadge(model: string | null | undefined, fallback: "rules" | "cache" = "rules"): "sonnet" | "haiku" | "replay" | "rules" | "cache" {
-  if (!model) return fallback;
-  if (isReplayModel(model)) return "replay";
-  return /haiku/i.test(model) ? "haiku" : "sonnet";
+export function modelBadge(model: string | null | undefined, fallback: "rules" | "cache" = "rules"): BrainModel {
+  return model ? brainModel(model) : fallback;
 }
 
 // ------------------------------------------------------------------ canonical request + keys

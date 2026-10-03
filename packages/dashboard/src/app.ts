@@ -1,7 +1,7 @@
 // App state + a small pub/sub bus shared by every panel.
 import type { Directive, StoredEvent } from "@liveforge/protocol";
 import type { ConnStatus, DataSource, GameInfo, WorldSummary } from "./api/types";
-import { brainFromEvent, brainSig, type BrainEntry } from "./api/brain";
+import { brainSig, type BrainEntry } from "./api/brain";
 
 export interface AppState {
   source: DataSource;
@@ -23,7 +23,7 @@ export const live = {
   directives: [] as Directive[],
   /** Event arrival times for the rate meter. */
   arrivals: [] as number[],
-  /** Brain feed (K7): WS brain entries + entries derived from module events, oldest first. */
+  /** Brain feed: WS {t:"brain"} entries (+ GET /v1/brain history), oldest first. */
   brain: [] as BrainEntry[],
 };
 
@@ -87,8 +87,6 @@ export function pushEvent(e: StoredEvent): void {
   live.arrivals.push(now);
   while (live.arrivals.length && now - live.arrivals[0] > 60_000) live.arrivals.shift();
   bus.emit("event", e);
-  const b = brainFromEvent(e);
-  if (b) pushBrain(b);
 }
 
 const MAX_BRAIN = 600;

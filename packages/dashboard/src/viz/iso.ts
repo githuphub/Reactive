@@ -1,12 +1,12 @@
 // Isometric voxel preview on a 2D canvas (Builds panel): each block is a small cube with three shaded faces,
 // coloured by a hash of its block name (a few well-known blocks get recognisable colours). Painter's order.
-import type { VoxelBlock } from "./voxel-expand";
+import type { VoxelBlock } from "@liveforge/protocol";
 
 const KNOWN: Record<string, string> = {
   glass: "#a8d8f0", water: "#3a78c8", lava: "#ff6a1a", grass: "#5fa83a", dirt: "#8a5a35", stone: "#8d8f94", cobblestone: "#7b7d80",
   oak_planks: "#b88a4e", spruce_planks: "#7a5432", birch_planks: "#d8c690", oak_log: "#6e5230", spruce_log: "#4a3520", birch_log: "#e0dcc8",
-  bricks: "#a4513f", stone_bricks: "#8a8a8e", sandstone: "#dccb8c", sand: "#e3d49a", wool_white: "#eeeeee", wool_red: "#c23a2f",
-  wool_blue: "#3550b8", wool_yellow: "#e8c53a", hay: "#d8b23a", door: "#8a5a2b", torch: "#ffcf4a", leaves: "#3f8a2e", oak_leaves: "#3f8a2e",
+  bricks: "#a4513f", stone_bricks: "#8a8a8e", sandstone: "#dccb8c", sand: "#e3d49a", white_wool: "#eeeeee", red_wool: "#c23a2f", green_wool: "#4f9a3a", black_wool: "#222228",
+  blue_wool: "#3550b8", yellow_wool: "#e8c53a", hay_bale: "#d8b23a", glow_lamp: "#ffe27a", mossy_cobblestone: "#6f7d62", door: "#8a5a2b", torch: "#ffcf4a", leaves: "#3f8a2e", oak_leaves: "#3f8a2e",
   gold_block: "#f2c94a", iron_block: "#d8d8d8", diamond_block: "#6ee0e0", obsidian: "#2a1f3a", bookshelf: "#9c6b3c", pumpkin: "#e08a1e",
 };
 

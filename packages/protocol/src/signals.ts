@@ -95,11 +95,15 @@ export const BUILTIN_SIGNALS = {
   // ---- session
   "session.started": { description: "A play session started (the SDKs send it on connect). last_seen_ts = when the player last played; omitted = the server works it out from the log.", data: { "last_seen_ts?": "number" } },
   "movement.visited": { description: "The player visited a place (inn, shop, area ...). Counts visits for regular status and avoided areas.", data: { place: "string", "kind?": "string", "zone?": "string" } },
+  // ---- agents (K6): answers to agent.tool_call directives (or POST /v1/m/agents/result | progress | interrupt)
+  "agent.tool_result": { description: "The game finished an agent.tool_call. ok=false = the tool failed (output = the error message).", data: { runId: "string", callId: "string", ok: "boolean", "output?": "object" } },
+  "agent.tool_progress": { description: "A long tool (build, gather) is still working; extends the call's timeout and shows in the Brain feed.", data: { runId: "string", callId: "string", "text?": "string" } },
+  "agent.interrupt": { description: "Stop an NPC's agent run (by npc or runId), e.g. the player attacked it.", data: { "npc?": "string", "runId?": "string", "reason?": "string" } },
 } as const satisfies Record<string, SignalDoc>;
 
 export type BuiltinSignalType = keyof typeof BUILTIN_SIGNALS;
 export const BUILTIN_SIGNAL_TYPES = Object.keys(BUILTIN_SIGNALS) as BuiltinSignalType[];
-export const SIGNAL_NAMESPACES = ["combat", "economy", "social", "movement", "gear", "quest", "world", "appearance", "companion", "session"] as const;
+export const SIGNAL_NAMESPACES = ["combat", "economy", "social", "movement", "gear", "quest", "world", "appearance", "companion", "session", "agent"] as const;
 
 export const isBuiltinSignal = (type: string): type is BuiltinSignalType => type in BUILTIN_SIGNALS;
 

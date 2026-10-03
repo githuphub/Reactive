@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "pattern": "^[a-zA-Z0-9_-]{1,64}$"
+    },
+    "description": {
+      "default": "",
+      "type": "string",
+      "maxLength": 1000
+    },
+    "schema": {
+      "default": {
+        "type": "object",
+        "properties": {}
+      },
+      "type": "object",
+      "propertyNames": {
+        "type": "string"
+      },
+      "additionalProperties": {}
+    }
+  },
+  "required": [
+    "name"
+  ],
+  "$id": "https://liveforge.dev/schema/v1/AgentToolSpec.json",
+  "title": "AgentToolSpec"
+}

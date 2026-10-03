@@ -20,6 +20,8 @@ const top: Record<string, z.ZodType> = {
   WsClientMessage: P.WsClientMessage, WsServerMessage: P.WsServerMessage,
   ReactionInfo: P.ReactionInfo, ReactionDirectiveArgs: P.ReactionDirectiveArgs,
   FactionMind: P.FactionMind, FactionPostureArgs: P.FactionPostureArgs, GuardPostsArgs: P.GuardPostsArgs,
+  VoxelPlan: P.VoxelPlan, VoxelOp: P.VoxelOp, VoxelBlock: P.VoxelBlock, ExpandedPlan: P.ExpandedPlan,
+  BrainEntry: P.BrainEntry, BrainPage: P.BrainPage, AgentToolSpec: P.AgentToolSpec, AgentRun: P.AgentRun,
 };
 for (const [name, s] of Object.entries(P.PROJECTIONS)) top[`Projection_${name}`] = s.schema;
 
@@ -37,6 +39,14 @@ for (const [kind, k] of Object.entries(P.ASKS)) {
   write(`ask.${kind}.result`, k.result);
 }
 for (const [kind, s] of Object.entries(P.DIRECTIVE_ARGS)) write(`directive.${kind}.args`, s);
+// The flat structured-output form an LLM fills (pass the answer through clampVoxelPlan).
+{
+  const json = P.voxelPlanJsonSchema();
+  json.$id = "https://liveforge.dev/schema/v1/VoxelPlan.llm.json";
+  json.title = "VoxelPlan.llm";
+  writeFileSync(join(outDir, "VoxelPlan.llm.json"), JSON.stringify(json, null, 2) + "\n");
+  index["VoxelPlan.llm"] = "VoxelPlan.llm.json";
+}
 
 writeFileSync(
   join(outDir, "index.json"),
@@ -52,6 +62,11 @@ writeFileSync(
     reactionRecipes: P.REACTION_RECIPES,
     commonRecipeParams: P.COMMON_RECIPE_PARAMS,
     weathers: P.WEATHERS,
+    voxelOps: P.VOXEL_OPS,
+    voxelTemplates: P.VOXEL_TEMPLATE_NAMES,
+    brainKinds: P.BRAIN_KINDS,
+    brainModels: P.BRAIN_MODELS,
+    agentGoalTemplates: P.AGENT_GOAL_TEMPLATES,
     schemas: index,
   }, null, 2) + "\n",
 );

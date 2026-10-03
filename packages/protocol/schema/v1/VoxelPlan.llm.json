@@ -1,0 +1,455 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "summary": {
+      "type": "string"
+    },
+    "palette": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "block": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "block"
+        ]
+      }
+    },
+    "ops": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "op": {
+            "type": "string",
+            "enum": [
+              "box",
+              "hollow_box",
+              "edges",
+              "line",
+              "cylinder",
+              "sphere",
+              "roof",
+              "door",
+              "window",
+              "stairs",
+              "fill_air",
+              "block",
+              "repeat",
+              "mirror"
+            ]
+          },
+          "from": {
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "to": {
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "at": {
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "center": {
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "radius": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "height": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "hollow": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "style": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "gable",
+                  "hip",
+                  "flat"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "axis": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "x",
+                  "z"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "facing": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "north",
+                  "south",
+                  "east",
+                  "west"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "step": {
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "block": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "ops": {
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "op": {
+                      "type": "string",
+                      "enum": [
+                        "box",
+                        "hollow_box",
+                        "edges",
+                        "line",
+                        "cylinder",
+                        "sphere",
+                        "roof",
+                        "door",
+                        "window",
+                        "stairs",
+                        "fill_air",
+                        "block",
+                        "repeat",
+                        "mirror"
+                      ]
+                    },
+                    "from": {
+                      "anyOf": [
+                        {
+                          "type": "array",
+                          "items": {
+                            "type": "number"
+                          }
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "to": {
+                      "anyOf": [
+                        {
+                          "type": "array",
+                          "items": {
+                            "type": "number"
+                          }
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "at": {
+                      "anyOf": [
+                        {
+                          "type": "array",
+                          "items": {
+                            "type": "number"
+                          }
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "center": {
+                      "anyOf": [
+                        {
+                          "type": "array",
+                          "items": {
+                            "type": "number"
+                          }
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "radius": {
+                      "anyOf": [
+                        {
+                          "type": "integer"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "height": {
+                      "anyOf": [
+                        {
+                          "type": "integer"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "hollow": {
+                      "anyOf": [
+                        {
+                          "type": "boolean"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "style": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "enum": [
+                            "gable",
+                            "hip",
+                            "flat"
+                          ]
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "axis": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "enum": [
+                            "x",
+                            "z"
+                          ]
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "facing": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "enum": [
+                            "north",
+                            "south",
+                            "east",
+                            "west"
+                          ]
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "count": {
+                      "anyOf": [
+                        {
+                          "type": "integer"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "step": {
+                      "anyOf": [
+                        {
+                          "type": "array",
+                          "items": {
+                            "type": "number"
+                          }
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "block": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "op",
+                    "from",
+                    "to",
+                    "at",
+                    "center",
+                    "radius",
+                    "height",
+                    "hollow",
+                    "style",
+                    "axis",
+                    "facing",
+                    "count",
+                    "step",
+                    "block"
+                  ]
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "op",
+          "from",
+          "to",
+          "at",
+          "center",
+          "radius",
+          "height",
+          "hollow",
+          "style",
+          "axis",
+          "facing",
+          "count",
+          "step",
+          "block",
+          "ops"
+        ]
+      }
+    }
+  },
+  "required": [
+    "name",
+    "summary",
+    "palette",
+    "ops"
+  ],
+  "$id": "https://liveforge.dev/schema/v1/VoxelPlan.llm.json",
+  "title": "VoxelPlan.llm"
+}

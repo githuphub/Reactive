@@ -206,6 +206,22 @@ export function validateManifestObject(
   // ---- clamps
   const d = m.clamps.difficulty;
   if (d.aggressionMin > d.aggressionMax) err(["clamps", "difficulty"], "aggressionMin > aggressionMax");
+  // ---- agents / builder (K6)
+  {
+    const seen = new Set<string>();
+    m.agents.tools.forEach((t, i) => {
+      if (seen.has(t.name)) err(["agents", "tools", i, "name"], `duplicate tool "${t.name}"`);
+      seen.add(t.name);
+      if (t.schema.type !== undefined && t.schema.type !== "object") err(["agents", "tools", i, "schema", "type"], `tool input schemas must be {type: object, properties: {...}}`);
+      if (!t.description) warn(["agents", "tools", i, "description"], `tool "${t.name}" has no description: the model only knows what you tell it`);
+    });
+    if (m.builder.blockIds?.length) {
+      const known = new Set(m.builder.blockIds);
+      m.builder.palette.forEach((b, i) => {
+        if (!known.has(b)) warn(["builder", "palette", i], `"${b}" is not in builder.blockIds (plans map it to the nearest known block)`);
+      });
+    }
+  }
   // ---- modules
   for (const k of Object.keys(m.modules)) {
     if (!(MODULE_IDS as readonly string[]).includes(k)) warn(["modules", k], `"${k}" is not a built-in module (fine if a plugin registers it)`);
