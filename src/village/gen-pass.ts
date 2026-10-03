@@ -1,22 +1,18 @@
 /**
- * Village generation pass — OWNED BY LANE V2.
- *
- * Any `src/<folder>/gen-pass.ts` with a default-exported GenPass is picked up automatically by
- * `world/gen.ts` (runs in the gen worker after terrain, caves, ores, trees and plants). The site
- * is already flattened by the terrain (`ctx.site`, see world/terrain.ts `VillageSite`).
- *
- * V2: replace this no-op with the village stamp (e.g. call `stampVillage(ctx)` from
- * `village/stamp.ts`). Write with `ctx.set(x, y, z, id, meta)` in world coordinates; writes
- * outside the current chunk are ignored, so draw whole structures every time.
+ * Village generation pass (lane V2). Auto-discovered by `world/gen.ts` and run in the gen worker
+ * after terrain, caves, ores, trees and plants. Stamps Oakhollow at the seed's reserved village
+ * site (see `village/stamp.ts` and the pure layout in `village/layout.ts`). Only built-in blocks
+ * are used, so block ids match the main thread without any registration.
  */
 import type { GenPass } from '../world/gen';
+import { stampVillage } from './stamp';
 
 const villagePass: GenPass = {
   name: 'village',
   order: 100,
   run(ctx) {
     if (!ctx.site) return;
-    // V0 placeholder: nothing is stamped yet.
+    stampVillage(ctx);
   },
 };
 
