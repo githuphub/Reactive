@@ -5,6 +5,7 @@ import type {
   BakePack, Directive, EventPage, ProjectionName, ProjectionState, ReviewItem, SimulateRequest, StatsResponse, StoredEvent,
 } from "@liveforge/protocol";
 import type { Manifest } from "@liveforge/manifest";
+import type { AgentRun, BrainEntry, BuildEntry, CassetteInfo, CassetteMode } from "./brain";
 
 export type ConnStatus = "connecting" | "live" | "polling" | "offline" | "demo";
 
@@ -87,6 +88,8 @@ export interface LiveHandlers {
   onEvent(e: StoredEvent): void;
   onDirective(d: Directive): void;
   onStatus(s: ConnStatus, detail?: string): void;
+  /** WS {t:"brain", entry} (K6) or a demo Brain entry. */
+  onBrain?(entry: BrainEntry): void;
 }
 
 /** GET /admin/m/world/reactions-lib (R1 Reaction Library). */
@@ -123,6 +126,17 @@ export interface DataSource {
   bake(req: BakeRequest): Promise<BakeResult>;
   /** Reaction Library state (recipes, fired reactions, fingerprints + novelty ledger per NPC). Optional. */
   reactionLibrary?(world: string, player?: string | null): Promise<ReactionLibraryState | null>;
+  // ---- K7 (Livecraft) panels; all optional so older sources keep working
+  /** Agent runs (projection agents.runs, K6). */
+  agentRuns?(world: string): Promise<AgentRun[]>;
+  /** Recent builder plans (lf.builder.planned events, K6), newest first. */
+  builds?(world: string, limit?: number): Promise<BuildEntry[]>;
+  /** Brain history (GET /v1/brain ring when the server has it, plus entries derived from module events). */
+  brainHistory?(world: string): Promise<BrainEntry[]>;
+  /** LLM provider mode + cassettes (GET /admin/cassettes). */
+  cassettes?(): Promise<CassetteInfo | null>;
+  /** Switch live / record / replay (POST /admin/cassettes/mode). */
+  setCassetteMode?(mode: CassetteMode): Promise<CassetteInfo>;
   /** Live event + directive stream for a world. Returns an unsubscribe function. */
   connect(world: string, handlers: LiveHandlers): () => void;
   close(): void;

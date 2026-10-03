@@ -6,6 +6,7 @@ import { ForceGraph, type GraphEdge, type GraphNode } from "../viz/graph";
 import { diverging, h, label, render } from "../ui/dom";
 import { card, empty, errorBox, useLive, type PanelDef } from "./panel";
 import { FACTION_COLORS } from "./rumours";
+import { mountVillageMind } from "./village-mind";
 
 const REL_COLORS: Record<string, string> = {
   ally: "#3987e5", friend: "#199e70", family: "#c98500", mentor: "#9085e9", employer: "#8a93a6", lover: "#d55181", rival: "#d95926", enemy: "#e66767",
@@ -16,13 +17,15 @@ export const factionsPanel: PanelDef = {
   id: "factions",
   title: "Factions",
   icon: "factions",
-  subtitle: "Reputation drives attitudes, prices and guards; relationships colour gossip.",
+  subtitle: "Village minds (posture, prices, guards, raid plans), reputation and relationships.",
   mount(root) {
     const heat = h("div", { class: "heat-wrap" });
     const graph = new ForceGraph(440);
     const relLegend = h("div", { class: "legend" });
     const factionCards = h("div", { class: "faction-cards" });
+    const mindHost = h("div", { class: "stack" });
     render(root,
+      mindHost,
       card("Reputation", { hint: "player x faction, -1 hostile .. +1 revered" }, heat),
       h("div", { class: "grid g-3-2" },
         card("Relationships", { hint: "line width = strength · dashed = hostile", actions: [relLegend] }, graph.el),
@@ -74,8 +77,10 @@ export const factionsPanel: PanelDef = {
           h("div", { class: "rel-chips" }, ...Object.entries(f.relations).map(([o, v]) => h("span", { class: "rel-chip", style: { borderColor: diverging(v) } }, `${o} ${v >= 0 ? "+" : ""}${v.toFixed(1)}`))),
           h("div", { class: "muted small" }, `members: ${s.game.personas.filter((p) => p.faction === f.id).map((p) => p.name).join(", ") || "none"}`))) : factions.map((f) => h("div", { class: "faction" }, h("b", null, f.name))));
     }, { interval: 5000, throttleMs: 1500 });
+    const stopMind = mountVillageMind(mindHost);
     return () => {
       stop();
+      stopMind();
       graph.dispose();
     };
   },

@@ -11,6 +11,7 @@ import {
   AdminError, type BakeRequest, type BakeResult, type ConnStatus, type DataSource, type EventQuery, type GameInfo, type LiveHandlers, type ManifestDoc,
   type ReactionLibraryState, type SimulateResult, type WorldSummary,
 } from "./types";
+import { brainFromEvent, buildFromEvent, normaliseRuns, type AgentRun, type BrainEntry, type BuildEntry, type CassetteInfo, type CassetteMode } from "./brain";
 
 /** The admin HTTP surface the dashboard relies on (all require the admin key). */
 export const ADMIN_ROUTES = {
@@ -29,6 +30,10 @@ export const ADMIN_ROUTES = {
   bakePack: "GET /admin/m/forge/pack (fallback GET /admin/bake)",
   bake: "POST /admin/m/forge/bake",
   reactionLibrary: "GET /admin/m/world/reactions-lib?world=&player=",
+  agentRuns: "GET /admin/projections/agents.runs?world= (K6)",
+  builds: "GET /admin/events?type=lf.builder.planned (K6)",
+  brain: "GET /v1/brain?world= (K6 ring; falls back to module events)",
+  cassettes: "GET /admin/cassettes, POST /admin/cassettes/mode {mode}",
 } as const;
 
 export interface AdminClientOptions {
@@ -322,6 +327,56 @@ export class LiveSource implements DataSource {
     return this.client.get<ReactionLibraryState>("/admin/m/world/reactions-lib", { world, player: player ?? undefined });
   }
 
+  /** Agent runs: the agents.runs projection (K6). */
+  async agentRuns(world: string): Promise<AgentRun[]> {
+    try {
+      const r = await this.client.get<unknown>("/admin/projections/agents.runs", { world });
+      return normaliseRuns(isObj(r) && "state" in r ? r.state : r);
+    } catch (e) {
+      if (e instanceof AdminError && (e.status === 404 || e.status === 400)) return [];
+      throw e;
+    }
+  }
+
+  /** Builder plans: lf.builder.planned events, newest first. */
+  async builds(world: string, limit = 30): Promise<BuildEntry[]> {
+    const page = await this.events({ world, type: "lf.builder.planned", limit, desc: true });
+    return page.events.map(buildFromEvent).filter((b): b is BuildEntry => !!b).sort((a, b) => b.ts - a.ts);
+  }
+
+  /** Brain history: the server ring (K6 GET /v1/brain) when present, plus entries derived from module events. */
+  async brainHistory(world: string): Promise<BrainEntry[]> {
+    const out: BrainEntry[] = [];
+    try {
+      const r = await this.client.get<unknown>("/v1/brain", { world, limit: 300 });
+      const list = Array.isArray(r) ? r : isObj(r) && Array.isArray(r.entries) ? r.entries : [];
+      for (const x of list) if (isObj(x) && typeof x.text === "string") out.push(x as unknown as BrainEntry);
+    } catch {
+      /* no ring on this server (pre-K6) */
+    }
+    const types = ["lf.factions.*", "lf.agents.*", "lf.builder.planned", "lf.director.decision", "lf.brain"];
+    const pages = await Promise.all(types.map((type) => this.events({ world, type, limit: 80, desc: true }).catch(() => null)));
+    for (const p of pages) for (const e of p?.events ?? []) {
+      const b = brainFromEvent(e);
+      if (b) out.push(b);
+    }
+    return out.sort((a, b) => a.ts - b.ts);
+  }
+
+  /** LLM provider mode + cassettes (null on servers without K7). */
+  async cassettes(): Promise<CassetteInfo | null> {
+    try {
+      return await this.client.get<CassetteInfo>("/admin/cassettes", { limit: 100 });
+    } catch (e) {
+      if (e instanceof AdminError && e.status === 404) return null;
+      throw e;
+    }
+  }
+
+  setCassetteMode(mode: CassetteMode): Promise<CassetteInfo> {
+    return this.client.post<CassetteInfo>("/admin/cassettes/mode", { mode });
+  }
+
   /** Bake mode: POST /admin/m/forge/bake - pre-generate a catalogue into the review queue. */
   async bake(req: BakeRequest): Promise<BakeResult> {
     const r = await this.client.post<{ queued?: number; skipped?: number[]; ai?: string; world?: string }>("/admin/m/forge/bake", req);
@@ -397,6 +452,12 @@ export class LiveSource implements DataSource {
         try {
           msg = JSON.parse(String(m.data)) as WsServerMessage;
         } catch {
+          return;
+        }
+        // K6 Brain feed: {t:"brain", entry} (not in this branch's protocol union yet)
+        const raw = msg as unknown as { t: string; entry?: BrainEntry };
+        if (raw.t === "brain") {
+          if (raw.entry) h.onBrain?.(raw.entry);
           return;
         }
         switch (msg.t) {
