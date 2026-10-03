@@ -41,6 +41,8 @@ export class WeatherSystem {
     sg.setAttribute('position', new THREE.BufferAttribute(this.snowPos, 3).setUsage(THREE.DynamicDrawUsage));
     this.snow = new THREE.Points(sg, new THREE.PointsMaterial({ color: 0xffffff, size: 0.13, transparent: true, opacity: 0.9, fog: false, depthWrite: false }));
     this.snow.frustumCulled = false;
+    // Draw after water/ice (renderOrder 2) so drops in front of lakes aren't covered.
+    this.rain.renderOrder = this.snow.renderOrder = 6;
     this.group.add(this.rain, this.snow);
     this.rain.visible = this.snow.visible = false;
     for (let i = 0; i < RAIN_COUNT; i++) this.rainDrop[i * 4 + 1] = Number.NaN;
