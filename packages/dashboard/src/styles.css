@@ -445,3 +445,7 @@ select.input { cursor: pointer; }
 .toast-ok { border-left-color: var(--ok); }
 .toast-err { border-left-color: var(--bad); }
 .toast.out { opacity: 0; transform: translateY(6px); }
+
+/* superseded (a boss move replaced by its AI upgrade) */
+.superseded { opacity: 0.5; }
+.superseded .decision-sum, .superseded .dir-text { text-decoration: line-through; text-decoration-color: #8a93a688; }

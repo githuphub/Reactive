@@ -3,12 +3,12 @@
 // state, {items} vs bare array) are tolerated so the dashboard keeps working while the server evolves.
 import {
   HEADERS, PROTOCOL_ID, WS_PATH,
-  type BakePack, type Directive, type EventPage, type ProjectionName, type ProjectionState, type PublicConfig,
+  type BakePack, type Directive, type EventPage, type GalleryEntry, type ProjectionName, type ProjectionState, type PublicConfig,
   type ReviewItem, type SimulateRequest, type StatsResponse, type StoredEvent, type WsClientMessage, type WsServerMessage,
 } from "@liveforge/protocol";
 import type { Manifest } from "@liveforge/manifest";
 import {
-  AdminError, type ConnStatus, type DataSource, type EventQuery, type GameInfo, type LiveHandlers, type ManifestDoc,
+  AdminError, type BakeRequest, type BakeResult, type ConnStatus, type DataSource, type EventQuery, type GameInfo, type LiveHandlers, type ManifestDoc,
   type SimulateResult, type WorldSummary,
 } from "./types";
 
@@ -24,9 +24,10 @@ export const ADMIN_ROUTES = {
   projectionAll: "GET /admin/projections/:name?world= (player scope without player -> {players: {id: state}})",
   stats: "GET /admin/stats",
   simulate: "POST /admin/simulate",
-  review: "GET /admin/review",
-  reviewSet: "POST /admin/review/:id",
-  bake: "GET /admin/bake",
+  review: "GET /admin/m/forge/review (fallback GET /admin/review)",
+  reviewSet: "POST /admin/m/forge/review/:id (fallback POST /admin/review/:id)",
+  bakePack: "GET /admin/m/forge/pack (fallback GET /admin/bake)",
+  bake: "POST /admin/m/forge/bake",
 } as const;
 
 export interface AdminClientOptions {
@@ -131,6 +132,12 @@ export function directiveFromEvent(e: StoredEvent): Directive | null {
     player: typeof d.player === "string" ? d.player : e.player,
     source: typeof d.source === "string" ? d.source : undefined,
   };
+}
+
+/** Map a forge.gallery entry (forge review queue) onto the protocol ReviewItem the panel renders. */
+export function reviewFromGallery(e: GalleryEntry & { key?: string; note?: string }): ReviewItem {
+  const status = e.review === "approved" || e.review === "rejected" ? e.review : "pending";
+  return { id: e.id, kind: e.askKind, status, payload: e.result, note: e.note ?? (e.key ? `prompt: ${e.key}` : undefined), createdAt: e.ts, updatedAt: e.ts };
 }
 
 function gameInfoFromManifest(m: Manifest, extra: Partial<GameInfo> = {}): GameInfo {
@@ -268,22 +275,52 @@ export class LiveSource implements DataSource {
     return this.client.post<SimulateResult>("/admin/simulate", req);
   }
 
+  /** World the forge review queue lives in (forge option bakeWorld, reported by the server). */
+  private reviewWorld: string | undefined;
+
+  /**
+   * Review queue. Prefers the Forge module's event-sourced queue (GET /admin/m/forge/review: forge.gallery entries
+   * with review != "none"); falls back to the core queue (GET /admin/review) when the forge module is off.
+   */
   async reviewList(): Promise<ReviewItem[]> {
+    try {
+      const r = await this.client.get<{ world?: string; items?: GalleryEntry[] }>("/admin/m/forge/review");
+      this.reviewWorld = r.world ?? this.reviewWorld;
+      return (r.items ?? []).filter((e) => e.review && e.review !== "none").map(reviewFromGallery);
+    } catch (e) {
+      if (!(e instanceof AdminError && (e.status === 404 || e.status === 409))) throw e;
+    }
     const r = await this.client.get<unknown>("/admin/review");
     return (Array.isArray(r) ? r : isObj(r) && Array.isArray(r.items) ? r.items : []) as ReviewItem[];
   }
 
   async reviewSet(id: string, status: ReviewItem["status"], note?: string): Promise<ReviewItem> {
-    const r = await this.client.post<unknown>(`/admin/review/${encodeURIComponent(id)}`, { status, note });
-    if (isObj(r) && isObj(r.item)) return r.item as unknown as ReviewItem;
-    if (isObj(r) && typeof r.id === "string") return r as unknown as ReviewItem;
+    try {
+      await this.client.post<unknown>(`/admin/m/forge/review/${encodeURIComponent(id)}`, { status, note, world: this.reviewWorld });
+    } catch (e) {
+      if (!(e instanceof AdminError && (e.status === 404 || e.status === 409))) throw e;
+      await this.client.post<unknown>(`/admin/review/${encodeURIComponent(id)}`, { status, note });
+    }
     const fresh = (await this.reviewList()).find((x) => x.id === id);
     if (!fresh) throw new AdminError(`review item ${id} not found after update`, 404, "not_found");
     return fresh;
   }
 
-  bakeExport(): Promise<BakePack> {
-    return this.client.get<BakePack>("/admin/bake");
+  /** Bake pack of approved items: the forge pack (with mesh asset urls), else the core bake. */
+  async bakeExport(): Promise<BakePack> {
+    try {
+      return await this.client.get<BakePack>("/admin/m/forge/pack", { world: this.reviewWorld });
+    } catch (e) {
+      if (!(e instanceof AdminError && (e.status === 404 || e.status === 409))) throw e;
+      return this.client.get<BakePack>("/admin/bake");
+    }
+  }
+
+  /** Bake mode: POST /admin/m/forge/bake - pre-generate a catalogue into the review queue. */
+  async bake(req: BakeRequest): Promise<BakeResult> {
+    const r = await this.client.post<{ queued?: number; skipped?: number[]; ai?: string; world?: string }>("/admin/m/forge/bake", req);
+    if (r.world) this.reviewWorld = r.world;
+    return { queued: r.queued ?? 0, skipped: r.skipped?.length ?? 0, ai: r.ai ?? "off" };
   }
 
   /**

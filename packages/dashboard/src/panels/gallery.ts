@@ -83,6 +83,7 @@ export const galleryPanel: PanelDef = {
       render(info,
         h("div", { class: "vi-head" }, h("h3", null, x.name), h("div", { class: "vi-pills" }, pill(e.askKind), pill(e.source, SOURCE_COLORS[e.source], { solid: true }), e.review !== "none" ? pill(`review: ${e.review}`, e.review === "approved" ? "#3fa34d" : e.review === "rejected" ? "#e66767" : "#c98500") : null)),
         typeof x.meta.flavor === "string" ? h("div", { class: "flavor" }, x.meta.flavor) : null,
+        typeof (e as GalleryEntry & { key?: string }).key === "string" ? h("div", { class: "small" }, h("span", { class: "muted" }, "prompt  "), `"${(e as GalleryEntry & { key?: string }).key}"`) : null,
         h("div", { class: "vi-tags" },
           ...[x.meta.rarity, x.meta.element, x.meta.family, x.meta.slot, x.meta.role].filter((v): v is string => typeof v === "string").map((v) => pill(v)),
           ...(Array.isArray(x.meta.tags) ? (x.meta.tags as string[]) : []).map((t) => pill(t, "#9085e9"))),

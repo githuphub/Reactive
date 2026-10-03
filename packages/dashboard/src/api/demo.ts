@@ -12,7 +12,7 @@ import {
 import { parseManifest, type Manifest } from "@liveforge/manifest";
 import manifestYaml from "../../../../examples/counterforge.liveforge.yaml?raw";
 import { sampleBlueprint, vfxFor, SAMPLE_KINDS, type SampleKind } from "../viz/samples";
-import type { DataSource, EventQuery, GameInfo, LiveHandlers, ManifestDoc, SimulateResult, WorldSummary } from "./types";
+import type { BakeRequest, BakeResult, DataSource, EventQuery, GameInfo, LiveHandlers, ManifestDoc, SimulateResult, WorldSummary } from "./types";
 
 const WORLD = "academy";
 const BACKGROUND_NPCS = ["student_ada", "warden_hobb", "cook_brin", "fence_mags", "student_oli", "bellringer_tam"];
@@ -208,6 +208,17 @@ export class DemoSource implements DataSource {
     const g = this.gallery.entries.find((e) => e.id === id);
     if (g) g.review = status;
     return structuredClone(it);
+  }
+
+  async bake(req: BakeRequest): Promise<BakeResult> {
+    const n = Math.max(1, Math.min(24, Math.round(req.count ?? 6)));
+    const family = req.kind.replace(/^forge\./, "");
+    const fam = family === "creature" ? "hound" : family === "prop" ? "lantern" : family === "armour_set" ? "helm" : undefined;
+    for (let i = 0; i < n; i++) {
+      const prompt = req.prompts?.length ? req.prompts[i % req.prompts.length] : undefined;
+      this.forge("_bake", false, { ...(prompt ? { prompt } : {}), ...(fam ? { family: fam } : {}) }, undefined, true);
+    }
+    return { queued: n, skipped: 0, ai: req.ai ? "running" : "off" };
   }
 
   async bakeExport(): Promise<BakePack> {
@@ -680,12 +691,23 @@ export class DemoSource implements DataSource {
         pattern: "fan", count: 3, telegraph: 0.9, speed: 1.3, size: 1.2, damage_budget: 16, status: "burning", bias: "left",
         engine: { moveId: "sweep", params: { arc: 200 } },
       };
-      titan.invented = [move, ...titan.invented].slice(0, 3);
+      // Two stages, like the real Director: a rules move now, the AI move replaces it a moment later.
+      const rulesMove: MoveSpec = { ...move, name: "Sweeping Correction", taunt: "Stand still, student.", pattern: "line", count: 2, bias: "left", status: "none", damage_budget: 14 };
+      const pct = Math.round((left / Math.max(1, dodges)) * 100);
+      const rulesWhy = `${s.model.player} dodges ${pct}% left (${dodges} dodges): rules counter, line sweep`;
+      titan.invented = [rulesMove, ...titan.invented].slice(0, 3);
       titan.attune = "fire";
-      const why = `${s.model.player} dodges left ${Math.round((left / Math.max(1, dodges)) * 100)}% of the time (${dodges} dodges): fan sweep biased left`;
       this.ask("director", { tokens: [2600, 380] });
-      this.decision("boss_move", "Forge Titan invents Leftward Reckoning (left-biased fire sweep)", why, "ai", { boss: "forge_titan", move: move.name });
-      this.emit("boss.move_added", "boss:forge_titan", { boss: "forge_titan", move, engineMove: move.engine }, why, s.model.player, "director", silent);
+      this.decision("boss_move", "Forge Titan learns Sweeping Correction", rulesWhy, "rules", { boss: "forge_titan", move: rulesMove.name });
+      this.emit("boss.move_added", "boss:forge_titan", { boss: "forge_titan", move: rulesMove, engineMove: rulesMove.engine }, rulesWhy, s.model.player, "director", silent);
+      const why = `${s.model.player} dodges left ${pct}% of the time (${dodges} dodges): fan sweep biased left`;
+      const upgrade = () => {
+        titan.invented = [move, ...titan.invented.filter((m) => m.name !== rulesMove.name)].slice(0, 3);
+        this.decision("boss_move", "Forge Titan learns Leftward Reckoning (left-biased fire sweep)", why, "ai", { boss: "forge_titan", move: move.name });
+        this.emit("boss.move_added", "boss:forge_titan", { boss: "forge_titan", move, engineMove: move.engine }, why, s.model.player, "director", silent);
+      };
+      if (silent) upgrade();
+      else setTimeout(upgrade, 2600);
       this.emit("boss.adapt", "boss:forge_titan", { boss: "forge_titan", aggression: this.director.aggression, attune: "fire", taunt: move.taunt }, "attune to fire to punish the left roll", s.model.player, "director", silent);
       this.setAggression(this.director.aggression + 0.12, `${s.model.player} is evading comfortably (dodger ${dodger.toFixed(2)}): raise pressure`, silent, s.model.player);
     }
@@ -721,7 +743,7 @@ export class DemoSource implements DataSource {
     this.emit("difficulty.set", "world", { aggression: next, mode: this.director.difficultyMode, reason: why.slice(0, 200) }, why, player, "director", silent);
   }
 
-  private forge(player: string, silent: boolean, data: Record<string, unknown> = {}, ts?: number) {
+  private forge(player: string, silent: boolean, data: Record<string, unknown> = {}, ts?: number, bake = false) {
     const kind = (typeof data.family === "string" && (SAMPLE_KINDS as string[]).includes(data.family) ? data.family : SAMPLE_KINDS[Math.floor(this.rng() * SAMPLE_KINDS.length)]) as SampleKind;
     const elements = ["fire", "ice", "lightning", "veil", "physical"];
     const element = elements[Math.floor(this.rng() * elements.length)];
@@ -739,7 +761,7 @@ export class DemoSource implements DataSource {
     const item = {
       id: `f${this.gallery.entries.length + 1}_${kind}`,
       name,
-      flavor: typeof data.prompt === "string" ? `Forged from the words: "${data.prompt}".` : `Context loot themed on the last fight in the ${this.sim(player).zone}.`,
+      flavor: typeof data.prompt === "string" ? `Forged from the words: "${data.prompt}".` : `Context loot themed on the last fight in the ${this.sims.get(player)?.zone ?? "forge hall"}.`,
       family: kind,
       rarity,
       element,
@@ -750,14 +772,15 @@ export class DemoSource implements DataSource {
       creativity: Math.round(this.rng() * 80) / 100,
       ...(creature ? { role: "minion", behaviour: "charge" } : {}),
     };
-    const source: GalleryEntry["source"] = this.rng() < 0.65 ? "ai" : this.rng() < 0.5 ? "cache" : "rules";
-    const pending = this.rng() < 0.35;
-    const entry: GalleryEntry = { id: item.id, askKind, ts: ts ?? Date.now(), player, source, result: item, review: pending ? "pending" : "none" };
+    const source: GalleryEntry["source"] = bake ? "bake" : this.rng() < 0.65 ? "ai" : this.rng() < 0.5 ? "cache" : "rules";
+    const pending = bake || this.rng() < 0.35;
+    const key = typeof data.prompt === "string" ? data.prompt : undefined;
+    const entry = { id: item.id, askKind, ts: ts ?? Date.now(), player: bake ? null : player, source, result: item, review: pending ? "pending" : "none", ...(key ? { key } : {}) } as GalleryEntry;
     this.gallery.entries.unshift(entry);
     this.gallery.entries = this.gallery.entries.slice(0, 60);
     if (pending) this.review.unshift({ id: item.id, kind: askKind, status: "pending", payload: item, createdAt: entry.ts, updatedAt: entry.ts });
     this.ask("forge", { cached: source === "cache", upgrade: source !== "rules", tokens: [3200, 900] });
-    if (!silent) this.emit("forge.ready", "player", { jobId: `job_${item.id}`, state: "done", item: creature || prop ? undefined : item, blueprint: bp }, `${askKind} upgrade ready (${source})`, player, "forge");
+    if (!silent && !bake) this.emit("forge.ready", "player", { jobId: `job_${item.id}`, state: "done", item: creature || prop ? undefined : item, blueprint: bp }, `${askKind} upgrade ready (${source})`, player, "forge");
   }
 
   // ------------------------------------------------------------------------------------------ clocks

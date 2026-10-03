@@ -1,7 +1,7 @@
 // Overview: KPI tiles, tension + aggression, the "why" feed of recent directives, a compact live stream and the
 // players' strongest traits. The page to keep on screen next to the game in a demo.
 import type { Directive, DirectorState, PlayerModel, StatsResponse, StoredEvent } from "@liveforge/protocol";
-import { app, bus, eventRate, live } from "../app";
+import { app, bus, eventRate, live, replacements } from "../app";
 import { TimeChart, gauge, meter, sparkline } from "../viz/charts";
 import { NS_COLORS, SOURCE_COLORS, clock, fmtMs, fmtNum, fmtUsd, h, label, nsOf, render, timeAgo } from "../ui/dom";
 import { card, empty, pill, useLive, type PanelDef } from "./panel";
@@ -11,10 +11,14 @@ export function directiveRow(d: Directive): HTMLElement {
   const color = ({ npc: NS_COLORS.social, rumour: NS_COLORS.world, spawn: NS_COLORS.combat, boss: NS_COLORS.combat, pacing: NS_COLORS.movement, difficulty: NS_COLORS.movement, quest: NS_COLORS.quest, achievement: NS_COLORS.economy, forge: NS_COLORS.gear, loot: NS_COLORS.gear, moment: NS_COLORS.economy, world: NS_COLORS.world } as Record<string, string>)[ns] ?? NS_COLORS.lf;
   const args = d.args as Record<string, unknown>;
   const text = typeof args.text === "string" ? `"${args.text}"` : typeof args.content === "string" ? `"${args.content}"` : (args.move as { name?: string } | undefined)?.name ?? (args.quest as { title?: string } | undefined)?.title ?? (args.achievement as { title?: string } | undefined)?.title ?? "";
+  const replaced = replacements.replacedBy.has(d.id);
+  const replaces = replacements.replaces.get(d.id);
   return h(
     "div",
-    { class: "dir-row" },
-    h("div", { class: "dir-top" }, pill(d.kind, color), h("span", { class: "dir-target" }, d.target), d.player ? h("span", { class: "muted" }, `· ${label(d.player)}`) : null, h("span", { class: "dir-time" }, clock(d.ts))),
+    { class: `dir-row${replaced ? " superseded" : ""}` },
+    h("div", { class: "dir-top" }, pill(d.kind, color), h("span", { class: "dir-target" }, d.target), d.player ? h("span", { class: "muted" }, `· ${label(d.player)}`) : null,
+      replaced ? pill("replaced by AI upgrade", "#6b7385") : null, replaces ? pill(`upgrade · replaces ${replaces}`, "#ff7a2f") : null,
+      h("span", { class: "dir-time" }, clock(d.ts))),
     text ? h("div", { class: "dir-text" }, text) : null,
     h("div", { class: "dir-why" }, h("span", { class: "why-tag" }, "why"), d.why || "—"),
   );

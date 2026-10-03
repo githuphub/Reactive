@@ -87,7 +87,30 @@ export const reviewPanel: PanelDef = {
       }) : empty(filter === "pending" ? "Queue is clear" : `No ${filter} items`, "Bake mode pre-generates catalogues (items, looks, barks) into this queue."));
     };
 
-    render(root, card(null, null, summary), card("Queue", { actions: [filters] }, list));
+    // Bake mode: pre-generate a catalogue into the queue (POST /admin/m/forge/bake)
+    const kindSel = h("select", { class: "input input-sm" }, ...["item", "armour_set", "creature", "prop", "vfx", "loot"].map((k) => h("option", { value: k }, k.replace("_", " ")))) as HTMLSelectElement;
+    const countIn = h("input", { class: "input input-sm", type: "number", min: "1", max: "24", value: "6", style: { width: "70px" } }) as HTMLInputElement;
+    const promptsIn = h("input", { class: "input input-sm", placeholder: "optional prompts, separated by ;", style: { flex: "1", minWidth: "200px" } }) as HTMLInputElement;
+    const aiIn = h("input", { type: "checkbox" }) as HTMLInputElement;
+    const bakeBtn = h("button", { class: "btn btn-sm", onclick: async () => {
+      bakeBtn.disabled = true;
+      try {
+        const prompts = promptsIn.value.split(";").map((x) => x.trim()).filter(Boolean);
+        const r = await app().source.bake({ kind: kindSel.value, count: Number(countIn.value) || 6, ai: aiIn.checked, ...(prompts.length ? { prompts } : {}) });
+        toast(`Queued ${r.queued} ${kindSel.value.replace("_", " ")} entr${r.queued === 1 ? "y" : "ies"} for review${r.ai !== "off" ? ` · AI pass: ${r.ai}` : ""}`, "ok");
+        filter = "pending";
+        stop.refresh();
+      } catch (e) {
+        toast(`Bake failed: ${(e as Error).message}`, "err");
+      } finally {
+        bakeBtn.disabled = false;
+      }
+    } }, icon("spark", 14), " Generate");
+    const bakeCard = card("Bake mode", { hint: "pre-generate a catalogue, review it, export a pack" },
+      h("div", { class: "toolbar" }, h("span", { class: "muted small" }, "kind"), kindSel, h("span", { class: "muted small" }, "count"), countIn, promptsIn,
+        h("label", { class: "tb-field" }, aiIn, h("span", null, "AI pass")), bakeBtn));
+
+    render(root, card(null, null, summary), bakeCard, card("Queue", { actions: [filters] }, list));
     const stop = useLive(async () => {
       try {
         items = await app().source.reviewList();

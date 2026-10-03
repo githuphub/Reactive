@@ -1,7 +1,7 @@
 // Live signal stream: every stored event of the world as it arrives, filterable by player, namespace and text,
 // with directives interleaved. Click a row for its JSON.
 import type { Directive, StoredEvent } from "@liveforge/protocol";
-import { app, bus, live } from "../app";
+import { app, bus, live, replacements } from "../app";
 import { NS_COLORS, clock, h, icon, jsonView, label, nsOf, render } from "../ui/dom";
 import { card, empty, pill, type PanelDef } from "./panel";
 
@@ -79,10 +79,12 @@ export const streamPanel: PanelDef = {
       };
       if (r.kind === "directive") {
         const d = r.d;
-        return h("div", { class: "srow srow-dir flash", onclick: toggle },
+        const replaced = replacements.replacedBy.has(d.id);
+        const replaces = replacements.replaces.get(d.id);
+        return h("div", { class: `srow srow-dir flash${replaced ? " superseded" : ""}`, onclick: toggle, dataset: { id: d.id } },
           h("div", { class: "srow-main" },
             h("span", { class: "ev-time" }, clock(d.ts)),
-            pill(d.kind, "#ff7a2f"),
+            h("span", null, pill(d.kind, "#ff7a2f"), replaced ? pill("replaced", "#6b7385") : null, replaces ? pill(`replaces ${replaces}`, "#ff7a2f") : null),
             h("span", { class: "ev-player" }, d.player ? label(d.player) : "world"),
             h("span", { class: "ev-sum" }, h("span", { class: "dir-target" }, d.target), " ", h("span", { class: "why-inline" }, d.why))),
           detail);
@@ -110,6 +112,11 @@ export const streamPanel: PanelDef = {
       list.querySelectorAll(".flash").forEach((el) => el.classList.remove("flash"));
     };
     const add = (r: Row) => {
+      if (r.kind === "directive") {
+        const earlier = [...replacements.replacedBy.entries()].find(([, later]) => later === r.d.id)?.[0];
+        const row = earlier ? list.querySelector<HTMLElement>(`[data-id="${CSS.escape(earlier)}"]`) : null;
+        if (row) row.classList.add("superseded");
+      }
       if (!matches(r)) return;
       if (paused) {
         buffered++;

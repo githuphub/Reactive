@@ -68,6 +68,21 @@ export interface SimulateResult {
   lastSeq?: number | null;
 }
 
+export interface BakeRequest {
+  /** Forge kind: item | armour_set | creature | prop | vfx | loot ... ("forge." prefix optional). */
+  kind: string;
+  count?: number;
+  prompts?: string[];
+  /** Also run an AI pass in the background (needs an LLM key; within budgets). */
+  ai?: boolean;
+}
+
+export interface BakeResult {
+  queued: number;
+  skipped: number;
+  ai: string;
+}
+
 export interface LiveHandlers {
   onEvent(e: StoredEvent): void;
   onDirective(d: Directive): void;
@@ -91,6 +106,8 @@ export interface DataSource {
   reviewList(): Promise<ReviewItem[]>;
   reviewSet(id: string, status: ReviewItem["status"], note?: string): Promise<ReviewItem>;
   bakeExport(): Promise<BakePack>;
+  /** Bake mode: pre-generate a forge catalogue into the review queue. */
+  bake(req: BakeRequest): Promise<BakeResult>;
   /** Live event + directive stream for a world. Returns an unsubscribe function. */
   connect(world: string, handlers: LiveHandlers): () => void;
   close(): void;

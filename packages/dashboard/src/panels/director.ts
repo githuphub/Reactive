@@ -1,6 +1,6 @@
 // Director: tension curve with decision markers, aggression gauge inside the manifest clamp band, bosses with
 // their invented moves, and the decision timeline - every entry with its `why` and where it came from.
-import type { DirectorState, MoveSpec } from "@liveforge/protocol";
+import type { DirectorDecision, DirectorState, MoveSpec } from "@liveforge/protocol";
 import { app } from "../app";
 import { TimeChart, gauge } from "../viz/charts";
 import { SOURCE_COLORS, clock, h, render } from "../ui/dom";
@@ -16,6 +16,30 @@ export function moveCard(m: MoveSpec): HTMLElement {
     h("div", { class: "mv-stats" },
       stat("count", m.count), stat("telegraph", `${m.telegraph}s`), stat("speed", `x${m.speed}`), stat("size", `x${m.size}`), stat("damage", m.damage_budget), stat("status", m.status), stat("bias", m.bias)),
     m.engine ? h("div", { class: "small muted" }, `engine move ${m.engine.moveId} ${Object.entries(m.engine.params).map(([k, v]) => `${k}=${v}`).join(" ")}`) : null);
+}
+
+/**
+ * A boss_move AI upgrade re-sends the move: the later decision (source "ai") for the same boss replaces the
+ * earlier rules one. Returns which decisions were replaced and which replace something (with the old move name).
+ */
+export function moveReplacements(timeline: DirectorDecision[]): { replaced: Set<DirectorDecision>; replaces: Map<DirectorDecision, string> } {
+  const replaced = new Set<DirectorDecision>();
+  const replaces = new Map<DirectorDecision, string>();
+  const bossOf = (d: DirectorDecision) => (d.data as { boss?: unknown } | undefined)?.boss;
+  timeline.forEach((d, i) => {
+    if (d.kind !== "boss_move" || d.source === "ai") return;
+    for (let j = i + 1; j < timeline.length; j++) {
+      const n = timeline[j];
+      if (n.ts - d.ts > 120_000) break;
+      if (n.kind !== "boss_move" || bossOf(n) !== bossOf(d)) continue;
+      if (n.source === "ai" && !replaces.has(n)) {
+        replaced.add(d);
+        replaces.set(n, String((d.data as { move?: unknown } | undefined)?.move ?? "the rules move"));
+      }
+      break;
+    }
+  });
+  return { replaced, replaces };
 }
 
 export const directorPanel: PanelDef = {
@@ -61,12 +85,16 @@ export const directorPanel: PanelDef = {
       const kinds = [...new Set(state.timeline.map((d) => d.kind))];
       render(filterEl, h("button", { class: `chip ${kindFilter === null ? "on" : ""}`, onclick: () => { kindFilter = null; draw(); } }, "all"),
         ...kinds.map((k) => h("button", { class: `chip ${kindFilter === k ? "on" : ""}`, onclick: () => { kindFilter = k; draw(); } }, k.replace(/_/g, " "))));
+      const { replaced, replaces } = moveReplacements(state.timeline);
       const items = state.timeline.filter((d) => !kindFilter || d.kind === kindFilter).slice().reverse().slice(0, 80);
       render(timeline, items.length ? items.map((d) =>
-        h("div", { class: "decision" },
+        h("div", { class: `decision${replaced.has(d) ? " superseded" : ""}` },
           h("div", { class: "decision-rail", style: { background: SOURCE_COLORS[d.source] ?? "#8a93a6" } }),
           h("div", { class: "decision-body" },
-            h("div", { class: "decision-top" }, pill(d.kind.replace(/_/g, " ")), pill(d.source, SOURCE_COLORS[d.source], { solid: true }), h("span", { class: "muted small" }, clock(d.ts))),
+            h("div", { class: "decision-top" }, pill(d.kind.replace(/_/g, " ")), pill(d.source, SOURCE_COLORS[d.source], { solid: true }),
+              replaced.has(d) ? pill("replaced by AI upgrade", "#6b7385") : null,
+              replaces.has(d) ? pill(`upgrade · replaces ${replaces.get(d)}`, "#ff7a2f") : null,
+              h("span", { class: "muted small" }, clock(d.ts))),
             h("div", { class: "decision-sum" }, d.summary),
             h("div", { class: "dir-why" }, h("span", { class: "why-tag" }, "why"), d.why)))) : empty("No decisions yet", "The Director decides when tension, habits or moments call for it."));
     };

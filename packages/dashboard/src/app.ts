@@ -84,7 +84,31 @@ export function pushEvent(e: StoredEvent): void {
   bus.emit("event", e);
 }
 
+/** boss.move_added pairs: the AI upgrade re-sends the move; the later directive replaces the earlier one. */
+export const replacements = {
+  /** earlier directive id -> later directive id */
+  replacedBy: new Map<string, string>(),
+  /** later directive id -> name of the move it replaced */
+  replaces: new Map<string, string>(),
+};
+const REPLACE_WINDOW_MS = 120_000;
+
+function trackReplacement(d: Directive): void {
+  if (d.kind !== "boss.move_added") return;
+  const boss = (d.args as { boss?: string }).boss;
+  for (let i = live.directives.length - 1; i >= 0; i--) {
+    const p = live.directives[i];
+    if (d.ts - p.ts > REPLACE_WINDOW_MS) break;
+    if (p.kind !== "boss.move_added" || p.id === d.id || replacements.replacedBy.has(p.id)) continue;
+    if ((p.args as { boss?: string }).boss !== boss || p.player !== d.player) continue;
+    replacements.replacedBy.set(p.id, d.id);
+    replacements.replaces.set(d.id, String((p.args as { move?: { name?: string } }).move?.name ?? "earlier move"));
+    return;
+  }
+}
+
 export function pushDirective(d: Directive): void {
+  trackReplacement(d);
   live.directives.push(d);
   if (live.directives.length > MAX_DIRECTIVES) live.directives.splice(0, live.directives.length - MAX_DIRECTIVES);
   bus.emit("directive", d);
