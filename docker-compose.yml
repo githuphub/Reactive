@@ -1,0 +1,29 @@
+# Liveforge with Docker Compose.
+#   docker compose up --build        -> http://localhost:8787  (dashboard: /dashboard)
+# Out of the box this runs in DEV MODE (keys pk_dev_<gameId> / dev-admin) for local trials. For anything reachable
+# by other people set LIVEFORGE_DEV=0, LIVEFORGE_ADMIN_KEY and LIVEFORGE_SDK_KEYS (in a .env file next to this one).
+services:
+  liveforge:
+    build: .
+    image: liveforge:latest
+    ports:
+      - "${PORT:-8787}:8787"
+    environment:
+      LIVEFORGE_MANIFESTS: ${LIVEFORGE_MANIFESTS:-examples/counterforge.liveforge.yaml,examples/godot-village.liveforge.yaml}
+      LIVEFORGE_DEV: ${LIVEFORGE_DEV:-1}
+      LIVEFORGE_ADMIN_KEY: ${LIVEFORGE_ADMIN_KEY:-}
+      LIVEFORGE_SDK_KEYS: ${LIVEFORGE_SDK_KEYS:-}
+      LIVEFORGE_CORS_ORIGINS: ${LIVEFORGE_CORS_ORIGINS:-*}
+      LIVEFORGE_LOG_LEVEL: ${LIVEFORGE_LOG_LEVEL:-info}
+      # Providers (all optional; without them every ask is answered by rules)
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      HYPER3D_API_KEY: ${HYPER3D_API_KEY:-}
+    volumes:
+      - liveforge-data:/data
+      # Your own manifest: mount it and point LIVEFORGE_MANIFESTS at it
+      # - ./liveforge.yaml:/app/liveforge.yaml:ro
+    restart: unless-stopped
+
+volumes:
+  liveforge-data:

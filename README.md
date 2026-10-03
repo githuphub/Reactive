@@ -1,55 +1,182 @@
 # Liveforge
 
-**Liveforge is a self-hostable, engine-agnostic kit that makes games adapt to the player.** It gives you:
+> **Your game, but it notices.**
 
-- NPCs that talk (by voice) and remember.
-- A world that gossips and reacts.
-- Bosses and encounters that adapt to how you play.
-- Gear, looks, effects and quests generated from prompts or from what's happening, always inside the designer's rules.
+Liveforge is an MIT-licensed, self-hostable, engine-agnostic kit that makes games adapt to the player.
+NPCs talk (out loud) and remember what you did. The world gossips about it. Bosses learn how you fight and
+invent counters. Gear, looks, effects and quests are forged from a prompt or from what just happened. Everything
+stays inside the rules the designer wrote.
 
-MIT licensed. Status: hackathon build (October 2026).
+<!-- GIF placeholders: drop recordings into docs/media/ with these names -->
+| | |
+|---|---|
+| ![NPC conversation by voice](docs/media/voice-conversation.gif) | ![Boss adapts to dodging](docs/media/boss-adapts.gif) |
+| *Talk to an NPC by voice. They remember last time.* | *Always dodge left? The boss invents a move for that.* |
+| ![Forge from a prompt](docs/media/forge-prompt.gif) | ![Live dashboard](docs/media/dashboard.gif) |
+| *"A rusty cleaver that drips green fire"* | *The dashboard shows why every decision was made.* |
 
-## How it works
+## Features
 
-- **Game:** the game sends **signals** (`combat.dodged`, `economy.bought` …) and makes **asks** (`npc.reply`, `director.boss_move`, `forge.item` …).
-- **Asks:** every ask returns an instant answer from rules or cache. An AI **upgrade** follows over WebSocket.
-- **Directives:** the server pushes directives (`npc.action`, `spawn.wave`, `boss.move_added`, `quest.offer` …).
-- **Manifest:** everything is bounded by your `liveforge.yaml`. It holds lore, personas, factions, the action schema, item, quest and move schemas, clamps, safety, budgets and model tiering.
+- **Observer.** A player model built from what players do: 19 built-in traits (dodger, hoarder, pacifist,
+  murderer, chatterbox …) with evidence, designer traits written in a one-line rule DSL, notable *moments*, and a
+  short written profile of each player.
+- **Persona & Voice.** NPCs with personality, knowledge, secrets and a voice style.
+  - Memory per NPC and player.
+  - Context barks ("nice armour" when you equip it).
+  - Spoken conversations: mic → STT → streamed reply → TTS.
+  - Structured actions (trade, give, flee, call guards, steal …), checked against your action schema.
+- **World reactions.** Rumours that spread between NPCs and mutate as they travel. Faction reputation that moves
+  prices and guards. NPC relationships. Reaction rules such as `rich & in_town → thieves target you`.
+- **Director.** Pacing from a tension curve, adaptive aggression within your bounds, squad tactics, and bosses
+  that counter your habits and gear. Every decision carries a short `why`.
+- **Forge.**
+  - Engine-neutral **Blueprint v1** models, **Variants** of your own assets, and **VFX recipes**.
+  - Stats clamped to your item schema and budget.
+  - Optional Hyper3D meshes.
+  - Bake mode and a review queue to export **packs for offline or console** play.
+- **Quests.** Reactive quests born from moments and rumours, personal achievements, and dynamic objectives.
+- **Instant first, AI second.** Every ask gets an instant answer from rules or cache. An AI *upgrade* follows
+  over WebSocket. With no API key at all, the game still works.
+- **Guardrails.** A manifest schema with clear errors, clamps on every output, the lore bible and personas
+  injected into prompts, moderation presets (E/T/M), and budgets per game and per player.
+- **Live dashboard.** Signal stream, player models, NPC memories, rumour graph, factions, Director timeline,
+  3D gallery, review/bake queue, cost meters, manifest validator and "simulate player" presets.
+
+## Architecture
+
+```
+  Your game (Web / Three.js, Godot 4, Unity*, Unreal*)          Liveforge server (Node 22 or Docker, self-hosted)
+ ┌─────────────────────────────────────┐   HTTPS    ┌────────────────────────────────────────────────────────────┐
+ │ SDK  @liveforge/sdk · Godot addon   │──signals──▶│ Ingest ─▶ Event log (SQLite; per game / world / player)    │
+ │  signal("combat.dodged", {...})     │──asks─────▶│              │                                             │
+ │  ask("npc.reply", {...})            │            │              ▼                                             │
+ │  on("boss.move_added", fn)          │◀──WS──────│ Projections: player model · NPC memories · rumours ·       │
+ │                                     │ directives │   factions · Director · quests · forge gallery              │
+ │ Drop-ins: LiveNPC · LiveBoss ·      │  upgrades  │              │                                             │
+ │  LiveEquipSlot · LiveSpawner · VFX  │            │ Modules: Observer · Persona&Voice · World · Director ·     │
+ │ TTS / mic · offline bake packs      │            │   Forge · Quests   (rules fast path ─▶ AI upgrade)         │
+ └─────────────────────────────────────┘            │ Providers: Claude · Whisper API / whisper.cpp · Hyper3D    │
+                                                    │ Guardrails: manifest clamps · moderation · budgets · cache │
+   Dashboard (/dashboard) ◀── admin API + WS ───────│ Review / bake queue · snapshots                            │
+                                                    └────────────────────────────────────────────────────────────┘
+                                                      * Unity / Unreal: REST + WebSocket protocol, see docs/protocol.md
+```
+
+- **One implementation, every engine.** All the logic lives on the server, and the SDKs are thin.
+- **Event log first.** Every signal is an event, and all state is a projection of the log. That means state
+  can be replayed, rebuilt and snapshotted.
+- **Your keys, your infra.** Model and provider keys live only in server env, never in clients.
+
+## Quickstart
+
+### 1. Run the server
+
+```bash
+git clone <this-repo-url> liveforge && cd liveforge
+npm install
+npm run build
+npm run dev          # http://localhost:8787 · dashboard at http://localhost:8787/dashboard
+```
+
+- **Dev mode keys:** the SDK key is `pk_dev_<gameId>` and the admin key is `dev-admin`.
+- **AI upgrades:** add `ANTHROPIC_API_KEY` to `.env`. Copy `.env.example` to get started.
+- **Docker:** `docker compose up` works too. See [self-hosting](docs/self-hosting.md).
+
+### 2a. Web / Three.js
+
+```ts
+import { createClient } from "@liveforge/sdk";
+
+const lf = createClient({ url: "http://localhost:8787", gameKey: "pk_dev_counterforge", player: "p1", world: "w1" });
+
+lf.signal("combat.dodged", { source: "forge_titan", direction: "left" });   // fire-and-forget, batched
+
+const bark = lf.ask("npc.bark", { npc: "pell", trigger: "approach" });
+showBubble((await bark.instant).result.text);                               // rules / cache: ~ms
+bark.onUpgrade((r) => showBubble(r.result.text));                           // AI version, a moment later
+
+lf.on("boss.move_added", (d) => titan.learn(d.args.move));                  // directives carry d.why
+```
+
+See the full [Web quickstart](docs/quickstart-web.md), which covers `LiveNPC`, `LiveBoss`, `LiveEquipSlot`,
+voice and VFX.
+
+### 2b. Godot 4
+
+1. Copy `godot/addons/liveforge` into your project.
+2. Enable the plugin.
+3. Set `liveforge/server/game_key` in Project Settings.
+
+```gdscript
+Liveforge.send_signal("combat.dodged", {"source": "training_dummy", "direction": "left"})
+var a := Liveforge.ask("npc.bark", {"npc": "bess", "trigger": "approach"})
+var r: Dictionary = await a.answered
+$Bubble.text = r.text                       # instant result (rules / cache); a.upgraded brings the AI line
+Liveforge.directive.connect(func(kind, d): print(kind, " because ", d.why))
+```
+
+See the full [Godot quickstart](docs/quickstart-godot.md).
+
+### 3. Describe your game: `liveforge.yaml`
+
+```yaml
+liveforge: 1
+game: { id: my_game, name: My Game }
+lore:
+  bible: A harbour town where the fog remembers every lie told in it.
+  tone: wry, salt-stained
+personas:
+  - id: bess
+    name: Bess
+    role: Innkeeper
+    faction: town
+    personality: Warm, nosy, never forgets a debt.
+    voice: { pitch: 1.1, rate: 1.0, accent: en-GB }
+    allowedActions: [emote, trade, call_guards]
+factions:
+  - { id: town, name: Townsfolk, attitude: 0.2 }
+actions:
+  emote: { args: { name: { type: string, required: true } } }
+  trade: { args: { priceMultiplier: { type: number, min: 0.5, max: 2, required: true } } }
+  call_guards: { by: [npc, world] }
+traits:
+  necromancer: count(magic.raise_dead, 10m) > 10
+signals:
+  magic.raise_dead: { description: The player raised a corpse., data: { corpse: string } }
+budgets:
+  game: { tokensPerMin: 200000, usdPerDay: 20 }
+```
+
+Validate it with `npx liveforge-validate liveforge.yaml`, or paste it into the dashboard. Every field is
+described in the [manifest reference](docs/manifest.md).
+
+## Docs
+
+| | |
+|---|---|
+| [Web quickstart](docs/quickstart-web.md) | JS SDK + Three.js helpers |
+| [Godot quickstart](docs/quickstart-godot.md) | Godot 4 addon, nodes and editor dock |
+| [Manifest reference](docs/manifest.md) | Every field of `liveforge.yaml` |
+| [Protocol](docs/protocol.md) | REST + WebSocket, for Unity, Unreal or your own engine |
+| [Self-hosting](docs/self-hosting.md) | Node, Docker, env vars, providers, costs and budgets |
+| [Dashboard](docs/dashboard.md) | What every panel shows |
+| [Recipes](docs/recipes/README.md) | NPC that comments on your armour · boss that punishes dodging · thieves target rich players · voice conversation · forge gear from a prompt · personal achievements · bake packs for consoles / offline |
+| [Contracts](docs/CONTRACTS.md) | Internals: modules, projections, how everything plugs in |
+| [Contributing](CONTRIBUTING.md) | Repo layout, conventions, how to add a module |
 
 ## Repo
 
 | Path | |
 |---|---|
-| `packages/protocol` | `liveforge-protocol v1`: types, zod validators, JSON Schemas (`schema/v1`), Blueprint v1, VFX, move grammar, DSL |
-| `packages/manifest` | `liveforge.yaml` schema, validator, `liveforge-validate` CLI |
-| `packages/server` | Node 22 + Hono + SQLite + ws: event log, projections, two-stage asks, modules, providers |
-| `packages/sdk-js`, `packages/sdk-three` | `@liveforge/sdk`, `@liveforge/three` |
-| `packages/dashboard` | Dashboard |
+| `packages/protocol` | `liveforge-protocol/1`: types, zod validators and JSON Schemas (`schema/v1`) for every SDK. Also Blueprint v1, VFX, Variant, the move grammar and the DSL. |
+| `packages/manifest` | `liveforge.yaml` schema, validator (with line numbers) and the `liveforge-validate` CLI |
+| `packages/server` | Node 22, Hono, SQLite and ws: event log, projections, two-stage asks, modules, providers, admin API |
+| `packages/sdk-js` | `@liveforge/sdk`: signals, asks, directives, fallback cache and bake packs |
+| `packages/sdk-three` | `@liveforge/three`: Blueprint/VFX/Variant builders, TTS + mic, LiveNPC/LiveBoss/LiveEquipSlot/LiveSpawner |
+| `packages/dashboard` | The live dashboard (Vite + TS + Three.js), served at `/dashboard` |
 | `godot/addons/liveforge` | Godot 4 addon |
 | `examples/` | Example manifests (Counterforge, Godot village) |
-| `docs/CONTRACTS.md` | How modules, SDKs and the dashboard plug in |
-
-## Quickstart
-
-```bash
-npm install
-npm run build
-cp .env.example .env          # optional: add ANTHROPIC_API_KEY for AI upgrades
-npm run dev                   # http://localhost:8787  (dev keys: pk_dev_<gameId>, admin: dev-admin)
-```
-
-```ts
-import { createClient } from "@liveforge/sdk";
-const lf = createClient({ url: "http://localhost:8787", key: "pk_dev_counterforge", world: "w1", player: "p1" });
-await lf.connect();
-lf.signal("combat.dodged", { direction: "left" });
-const a = lf.ask("npc.bark", { npc: "pell", trigger: "approach" });
-console.log((await a.instant).result.text, (await a.upgrade)?.result.text);
-lf.on("npc.action", (d) => console.log(d.args.action, d.why));
-```
-
-Validate a manifest: `npx liveforge-validate examples/counterforge.liveforge.yaml`.
 
 ## License
 
-MIT © 2026 the Liveforge authors
+MIT © 2026 the Liveforge authors. Built for the Cambridge × Arcade AI Hackathon (Game Tech track), October 2026.
