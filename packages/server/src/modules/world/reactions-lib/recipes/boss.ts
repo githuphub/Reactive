@@ -129,7 +129,7 @@ function bait(run: RecipeRun, ev: StoredEvent): void {
   const reason = `dodges ${dd.dir} ${pct}% of ${dd.total}`;
   run.say(boss, `bait_${dd.dir}`, {
     vars: { pct, move: move.name }, reason,
-    effect: { effect: "dodge_bait", target: `boss:${boss}`, payload: { boss, dir: dd.dir, share: Math.round(dd.share * 100) / 100, bias: move.bias, move: move.name } },
+    effect: { effect: "dodge_bait", target: `boss:${boss}`, payload: { boss, direction: dd.dir, share: Math.round(dd.share * 100) / 100, bias: move.bias, move } },
     also: [
       { kind: "boss.move_added", target: `boss:${boss}`, args: { boss, move, ...(engine ? { engineMove: engine } : {}) }, why: "" },
       ...(dd.dir === "left" || dd.dir === "right" ? [{ kind: "boss.adapt", target: `boss:${boss}`, args: { boss, weights: { [`bias_${dd.dir}`]: Math.round(dd.share * 100) / 100 } }, why: "" }] : []),
@@ -194,7 +194,7 @@ export const flawlessSecretPhase: RecipeDef = {
       const aggression = run.m.clamps.difficulty.aggressionMax;
       run.say(boss, "secret", {
         vars: { move: secret.name, secret_phase: Math.min(9, cfg.phases + 1) }, reason: `flawless phase ${phase}`,
-        effect: { effect: "secret_phase", target: `boss:${boss}`, payload: { boss, afterPhase: phase, secretPhase: Math.min(9, cfg.phases + 1), move: secret, ...(engine ? { engineMove: engine } : {}) } },
+        effect: { effect: "secret_phase", target: `boss:${boss}`, payload: { boss, name: secret.name, afterPhase: phase, secretPhase: Math.min(9, cfg.phases + 1), move: secret, ...(engine ? { engineMove: engine } : {}) } },
         also: [
           { kind: "boss.move_added", target: `boss:${boss}`, args: { boss, move: secret, ...(engine ? { engineMove: engine } : {}) }, why: "" },
           { kind: "boss.adapt", target: `boss:${boss}`, args: { boss, aggression }, why: "" },

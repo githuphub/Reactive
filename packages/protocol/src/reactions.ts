@@ -95,7 +95,7 @@ export const REACTION_RECIPES = [
     description: "NPCs remember promises: reminders before they're due, thanks when kept, cold shoulders (and rumours) when broken.",
     signals: ["social.promise", "social.promise_kept", "social.promise_broken"], directives: ["npc.bark", "custom.reaction"], effects: ["promise_made", "promise_reminder", "promise_kept", "promise_broken"],
     params: {
-      defaultDueSec: { type: "number", default: 900, description: "Due time for promises without one." },
+      defaultDueSec: { type: "number", default: 900, description: "Promises without a due time get a reminder after this long (they never run out on their own)." },
       remindBeforeSec: { type: "number", default: 120, description: "Seconds before the due time when the NPC reminds you." },
       attitudeKept: { type: "number", default: 0.2, description: "Attitude gained when a promise is kept." },
       attitudeBroken: { type: "number", default: 0.3, description: "Attitude lost when a promise is broken (or runs out)." },
@@ -116,7 +116,7 @@ export const REACTION_RECIPES = [
     id: "rich_attention", title: "Rich attention", area: "economy",
     description: "Flash wealth and the town notices: pickpockets, beggars, price gouging and the tax collector, never the same twice in a row.",
     signals: ["economy.gold", "economy.bought", "movement.entered_zone", "movement.visited"], directives: ["npc.action", "npc.bark", "custom.reaction"],
-    effects: ["pickpocket", "beggar", "price_gouge", "tax"],
+    effects: ["pickpocket", "beggar", "price_gouging", "tax"],
     params: {
       gold: { type: "number", default: 500, description: "Gold that counts as rich (or the Observer trait rich above `trait`)." },
       trait: { type: "number", default: 0.6, description: "Observer trait(rich) threshold." },
@@ -132,7 +132,7 @@ export const REACTION_RECIPES = [
     id: "broke_support", title: "Broke support", area: "economy",
     description: "Run out of money and someone helps: charity, or a loan shark's offer with a debt that comes back to bite.",
     signals: ["economy.gold", "social.promise", "social.promise_kept", "social.promise_broken"], directives: ["npc.bark", "custom.reaction"],
-    effects: ["charity", "loan_offer", "debt_due", "debt_collector"],
+    effects: ["charity", "loan_offer", "debt_due", "debt_paid", "collect_debt"],
     params: {
       gold: { type: "number", default: 20, description: "Gold at or below which the player counts as broke." },
       charityGold: { type: "number", default: 10, description: "Gold a kind soul gives." },
@@ -145,7 +145,7 @@ export const REACTION_RECIPES = [
   {
     id: "collector_interest", title: "Collector interest", area: "economy",
     description: "A legendary or rare forged item draws a collector's offer, and if you refuse, a theft attempt.",
-    signals: ["appearance.outfit", "gear.equipped"], directives: ["npc.bark", "custom.reaction"], effects: ["collector_offer", "theft_attempt"],
+    signals: ["appearance.outfit", "gear.equipped"], directives: ["npc.bark", "custom.reaction"], effects: ["collector_offer", "theft"],
     params: {
       tags: { type: "string[]", default: ["legendary", "rare", "epic", "unique", "artifact"], description: "Item tags that count as collectable." },
       collector: { type: "npc", description: "Persona who makes offers (else a nameless collector)." },
@@ -222,7 +222,7 @@ export const REACTION_RECIPES = [
   {
     id: "absence_recap", title: "Absence recap", area: "world",
     description: "Come back after a long absence: your companion recaps, NPCs say you've been gone, and the world has moved on.",
-    signals: ["session.started"], directives: ["npc.bark", "custom.reaction"], effects: ["absence"],
+    signals: ["session.started"], directives: ["npc.bark", "custom.reaction"], effects: ["recap"],
     params: {
       minHours: { type: "number", default: 6, description: "Hours away that count as a long absence." },
       companion: { type: "npc", description: "Persona who recaps (default: the first persona)." },
@@ -243,7 +243,7 @@ export const REACTION_RECIPES = [
     id: "avoided_area", title: "Avoided area", area: "world",
     description: "Areas you never visit (or fled from) grow rumours, and someone asks you to go and look.",
     signals: ["movement.visited", "movement.entered_zone", "combat.fled", "session.started"], directives: ["npc.bark", "rumour.heard", "quest.offer", "custom.reaction"],
-    effects: ["avoided_area"],
+    effects: ["quest_pull"],
     params: {
       afterMin: { type: "number", default: 20, description: "Minutes of play before an unvisited area counts as avoided." },
       zones: { type: "string[]", description: "Areas to watch (default: every manifest zone)." },
@@ -306,6 +306,8 @@ const Promise_ = z.object({
   status: z.enum(["open", "kept", "broken"]),
   resolvedAt: Timestamp.optional(),
   reminded: z.boolean().default(false),
+  /** A readable in-game due time from the game ("day 2 · 19:00"): the game owns the timing. */
+  dueLabel: z.string().optional(),
   /** A loan taken from broke_support (amount owed). */
   debt: z.number().optional(),
 });

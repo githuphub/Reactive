@@ -260,7 +260,8 @@ export function applyLedger(s: LedgerState, ev: StoredEvent, m: Manifest): void 
       if (s.promises.some((p) => p.ref === ref && p.status === "open")) break;
       // a loan accepted from broke_support: social.promise {ref: "loan_...", owed}
       const debt = typeof d.debt === "number" ? d.debt : ref.startsWith("loan_") ? num(d.owed ?? d.amount, 0) : 0;
-      push(s.promises, { ref, to, text: str(d.text).slice(0, 200), made: ts, due: dueOf(d.due, ts), status: "open", reminded: false, ...(debt > 0 ? { debt } : {}) }, 30);
+      const dueLabel = typeof d.due === "string" && !Number.isFinite(Number(d.due)) ? d.due.slice(0, 48) : "";
+      push(s.promises, { ref, to, text: str(d.text).slice(0, 200), made: ts, due: dueOf(typeof d.due === "string" ? Number(d.due) : d.due, ts), status: "open", reminded: false, ...(dueLabel ? { dueLabel } : {}), ...(debt > 0 ? { debt } : {}) }, 30);
       break;
     }
     case "social.promise_kept":

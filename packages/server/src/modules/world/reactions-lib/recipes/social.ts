@@ -119,7 +119,7 @@ export const promisesRemembered: RecipeDef = {
       const p = run.l.promises.find((x) => x.made === ev.ts && x.to === str(ev.data.to));
       if (!p || p.debt) return;
       run.attitude(p.to, 0, { text: `They promised me: "${p.text.slice(0, 120)}".`, kind: "other", salience: 0.75 });
-      const payload = { ref: p.ref, npc: p.to, text: p.text, due: dueOf(run, p) };
+      const payload = { ref: p.ref, npc: p.to, text: p.text, due: p.dueLabel ?? dueOf(run, p) };
       if (ev.data.via === "reply" || !personaById(run.m, p.to)) run.effect(`npc:${p.to}`, "promise_made", payload, { reason: `promise to ${run.name(p.to)}`, speaker: p.to });
       else run.say(p.to, "made", { vars: { promise: p.text.slice(0, 60) }, emote: "nod", reason: `promise: ${p.text.slice(0, 40)}`, effect: { effect: "promise_made", payload } });
     },
@@ -137,8 +137,9 @@ export const promisesRemembered: RecipeDef = {
   tick(run) {
     for (const p of run.l.promises) {
       if (p.status !== "open" || p.debt) continue;
+      if (p.dueLabel) continue; // the game owns in-game due times (it sends promise_kept / promise_broken)
       const due = dueOf(run, p);
-      if (run.now > due + 60_000) {
+      if (p.due !== null && run.now > due + 60_000) {
         run.ctx.record(LIB_EVENTS.promiseStatus, { ref: p.ref, status: "broken" }, { player: run.player });
         breakPromise(run, p, true);
       } else if (!p.reminded && run.now >= due - run.num("remindBeforeSec", 120) * 1000 && run.now - p.made > 30_000) {
@@ -154,7 +155,7 @@ export const promisesRemembered: RecipeDef = {
   note(run, npc) {
     const open = run.l.promises.filter((x) => x.to === npc).slice(-3);
     if (!open.length) return null;
-    return open.map((p) => `They promised you "${p.text.slice(0, 80)}" - ${p.status === "open" ? `due in ${inMin(dueOf(run, p) - run.now)} min` : p.status}.`).join(" ");
+    return open.map((p) => `They promised you "${p.text.slice(0, 80)}" - ${p.status === "open" ? (p.dueLabel ? `due ${p.dueLabel}` : `due in ${inMin(dueOf(run, p) - run.now)} min`) : p.status}.`).join(" ");
   },
 };
 
@@ -180,7 +181,7 @@ function moodCheck(run: RecipeRun): void {
   for (const f of run.m.factions) run.reputation(f.id, shift, turn === "warm" ? "kind streak" : "rude streak");
   const price = Math.round((1 + (turn === "warm" ? -1 : 1) * run.num("priceShift", 0.1)) * 100) / 100;
   const speakers = run.speakers({ max: 2, salt: turn, anywhere: true });
-  const payload = { mood: turn, priceMultiplier: price, streak: Math.abs(s.streak) };
+  const payload = { mood: turn === "warm" ? 0.5 : -0.5, moodLabel: turn, price_mult: price, streak: Math.abs(s.streak) };
   if (speakers[0]) run.say(speakers[0], turn, { emote: turn === "warm" ? "smile" : "scowl", reason: `${Math.abs(s.streak)} ${turn === "warm" ? "kind" : "rude"} acts in a row`, effect: { effect: "town_mood", payload, target: "world" } });
   else run.effect("world", "town_mood", payload, { reason: `${turn} streak` });
   if (speakers[1]) run.say(speakers[1], `${turn}_bark`, { reason: `town turned ${turn}` });
@@ -229,11 +230,11 @@ function onFlee(run: RecipeRun, ev: StoredEvent): void {
   const from = recent[recent.length - 1]?.from || "a fight";
   run.rumour("coward", "rumour", { vars: { from: run.name(from), count: recent.length }, sentiment: -0.4, heat: 0.7 });
   const jeerer = run.speakers({ max: 1, salt: "coward" })[0];
-  if (jeerer) run.say(jeerer, "jeer", { vars: { count: recent.length }, emote: "smirk", reason: `${recent.length} flights in ${Math.round(windowMs / 60_000)} min`, effect: { effect: "coward", payload: { flees: recent.length } } });
+  if (jeerer) run.say(jeerer, "jeer", { vars: { count: recent.length }, emote: "smirk", reason: `${recent.length} flights in ${Math.round(windowMs / 60_000)} min`, effect: { effect: "coward", payload: { flees: recent.length, challenger: false } } });
   const challenger = run.str("challenger", "a bounty hunter");
   run.say("world", "challenger", {
     vars: { challenger }, reason: "coward rumour draws a challenger",
-    effect: { effect: "challenger", target: "world", payload: { name: challenger, unit: run.str("challengerUnit", "bounty_hunter"), count: 1, zone: run.l.zone || undefined, flees: recent.length } },
+    effect: { effect: "challenger", target: "world", payload: { name: challenger, unit: run.str("challengerUnit", "bounty_hunter"), count: 1, zone: run.l.zone || undefined, flees: recent.length, ...(recent[recent.length - 1]?.from && run.m.bosses.some((b) => b.id === recent[recent.length - 1].from) ? { boss: recent[recent.length - 1].from } : {}) } },
   });
 }
 
@@ -303,7 +304,13 @@ export const companionGrief: RecipeDef = {
       const friends = m.relationships.filter((r) => CLOSE.has(r.kind) && (r.a === companion || r.b === companion)).map((r) => (r.a === companion ? r.b : r.a));
       const vars = { companion: run.name(companion), killer: killer ? run.name(killer) : "whoever did it", by: killer ? ` at the hands of ${run.name(killer)}` : "" };
       const mourners = run.speakers({ prefer: friends, max: 3, salt: companion, anywhere: friends.length > 0 }).filter((id) => id !== companion);
-      for (const npc of mourners.slice(0, 2)) if (run.ready(npc)) run.say(npc, "grief", { vars, emote: "bow_head", reason: `${vars.companion} died` });
+      // grief lines are collected into the one grief effect (payload.lines), spoken in turn by the game
+      const lines: { npc: string; text: string }[] = [];
+      for (const npc of mourners.slice(0, 2)) {
+        if (!run.ready(npc)) continue;
+        const said = run.say(npc, "grief", { vars, emote: "bow_head", reason: `${vars.companion} died`, silent: true });
+        if (said) lines.push({ npc, text: said.text });
+      }
       run.rumour(`grief:${companion}`, "rumour", { vars, sentiment: -0.2, heat: 0.7 });
       const giver = run.persona("giver") ?? friends.find((f) => personaById(m, f)) ?? mourners[0];
       let quest = null;
@@ -316,9 +323,10 @@ export const companionGrief: RecipeDef = {
           offer, weight: 1.6, origin: { kind: "moment", ref: run.id },
           objectives: [{ type: isBoss ? "defeat_boss" : "kill", target: killer, count: 1, description: `Defeat ${vars.killer}` }],
         });
-        if (giver) run.say(giver, "revenge", { vars, emote: "clench_fist", reason: `revenge on ${vars.killer}` });
+        const rev = giver ? run.say(giver, "revenge", { vars, emote: "clench_fist", reason: `revenge on ${vars.killer}`, silent: true }) : null;
+        if (rev && giver) lines.push({ npc: giver, text: rev.text });
       }
-      run.effect("world", "grief", { companion, killer: killer || null, mourners: mourners.slice(0, 3), revengeQuest: quest?.id ?? null }, { reason: `${vars.companion} died${vars.by}` });
+      run.effect("world", "grief", { companion, killer: killer || null, lines, mourners: mourners.slice(0, 3), ...(quest ? { quest } : {}) }, { reason: `${vars.companion} died${vars.by}` });
     },
   },
   offer(run) {

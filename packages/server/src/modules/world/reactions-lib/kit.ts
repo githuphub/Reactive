@@ -191,7 +191,7 @@ export class RecipeRun {
     const directives: Directive[] = [];
     if (!o.silent) {
       const why = whyOf(this.id, o.reason, sit.facets);
-      if (persona) {
+      if (persona && !o.effect) {
         const card = personaCard(this.m, speaker);
         const d = this.ctx.emit({ kind: "npc.bark", target: `npc:${speaker}`, args: { npc: speaker, text, ...(o.emote ? { emote: o.emote } : {}), voice: voiceFor(card), reaction: info }, why }, { player: this.player });
         if (d) directives.push(d);
@@ -202,7 +202,9 @@ export class RecipeRun {
       if (o.effect || !persona) {
         const eff = o.effect ?? { effect: "line" };
         const target = eff.target ?? (persona ? `npc:${speaker}` : speaker === "world" || !speaker ? "world" : `boss:${speaker}`);
-        const d = this.ctx.emit({ kind: "custom.reaction", target, args: { recipe: this.id, target, payload: { effect: eff.effect, ...(eff.payload ?? {}) }, line: text, reaction: info }, why }, { player: this.player });
+        // the line travels in the payload (payload.line, spoken by payload.npc): no separate npc.bark for it
+        const voiceOf = persona ? { npc: speaker, voice: voiceFor(personaCard(this.m, speaker)), ...(o.emote ? { emote: o.emote } : {}) } : {};
+        const d = this.ctx.emit({ kind: "custom.reaction", target, args: { recipe: this.id, target, payload: { effect: eff.effect, line: text, ...voiceOf, ...(eff.payload ?? {}) }, line: text, reaction: info }, why }, { player: this.player });
         if (d) directives.push(d);
       }
       for (const extra of o.also ?? []) {

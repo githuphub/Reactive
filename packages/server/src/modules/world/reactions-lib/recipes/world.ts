@@ -99,7 +99,7 @@ export const innRegular: RecipeDef = {
       const flag = `reg:${run.world}:${run.player}:${place}`;
       const regular = !!run.ctx.kv.get<boolean>(flag);
       const vars = { place: run.name(place), discount: Math.round(discount * 100) };
-      const payload = { place, owner, visits: v.sessions, discount, perks: ["the_usual", "discount", "reserved_seat"] };
+      const payload = { place, owner, visits: v.sessions, discount, perk: "discount", perks: ["the_usual", "discount", "reserved_seat"], price_mult: Math.round((1 - discount) * 100) / 100 };
       if (!regular && v.sessions >= need) {
         run.ctx.kv.set(flag, true);
         run.say(speaker, "welcome", { vars, emote: "raise_mug", reason: `${v.sessions} visits to ${vars.place}`, effect: { effect: "regular", payload: { ...payload, first: true } } });
@@ -162,8 +162,15 @@ export const absenceRecap: RecipeDef = {
       if (!recap.length) recap.push("the place carried on without you, more or less");
       const text = `${recap.slice(0, 3).join("; ")}.`;
       const vars = { away: away(ms), recap: text };
-      run.say(companion, "recap", { vars, emote: "wave", reason: `away ${away(ms)}`, effect: { effect: "absence", target: "player", payload: { hours: Math.round(ms / 3_600_000), recap: recap.slice(0, 3), companion } } });
-      for (const npc of run.speakers({ max: 2, salt: "welcome_back" }).filter((x) => x !== companion).slice(0, 1)) run.say(npc, "welcome_back", { vars, reason: `away ${away(ms)}` });
+      // one recap effect: the companion's recap + a "you've been gone" line from someone else (payload.lines)
+      const lines: { npc: string; text: string }[] = [];
+      const own = run.say(companion, "recap", { vars, emote: "wave", reason: `away ${away(ms)}`, silent: true });
+      if (own) lines.push({ npc: companion, text: own.text });
+      for (const npc of run.speakers({ max: 2, salt: "welcome_back" }).filter((x) => x !== companion).slice(0, 1)) {
+        const w = run.say(npc, "welcome_back", { vars, reason: `away ${away(ms)}`, silent: true });
+        if (w) lines.push({ npc, text: w.text });
+      }
+      run.effect("player", "recap", { lines, recap: recap.slice(0, 3), hours: Math.round(ms / 3_600_000), days: Math.round((ms / 86_400_000) * 10) / 10, companion }, { reason: `away ${away(ms)}`, speaker: companion });
       run.rumour("absence", "rumour", { vars: { away: away(ms) }, sentiment: 0, heat: 0.45 });
     },
   },
@@ -197,7 +204,7 @@ function onDamage(run: RecipeRun, ev: StoredEvent): void {
     const decl = run.m.actions.call_guards;
     const also = decl && persona && (decl.by.includes("world") || personaById(run.m, persona)?.allowedActions?.includes("call_guards") !== false)
       ? [{ kind: "npc.action", target: `npc:${persona}`, args: { npc: persona, action: { action: "call_guards", args: {} } }, why: "" }] : [];
-    run.say(speaker, "guards", { vars, emote: "shout", reason: `${recent.length} things broken in 30 min`, effect: { effect: "guards", payload: { owner, object, count: recent.length } }, also });
+    run.say(speaker, "guards", { vars, emote: "shout", reason: `${recent.length} things broken in 30 min`, effect: { effect: "guards", payload: { owner, object, count: recent.length, amount: Math.round(value), reason: `${recent.length} things broken in 30 minutes` } }, also });
     return;
   }
   if (run.params.repairQuest !== false && value >= run.num("repairOver", 50)) {
@@ -210,7 +217,7 @@ function onDamage(run: RecipeRun, ev: StoredEvent): void {
         ...(persona ? [{ type: "talk", target: persona, count: 1, description: `Bring them to ${vars.owner}` }] : []),
       ],
     });
-    run.say(speaker, "repair", { vars, emote: "point", reason: `${object} worth ${Math.round(value)}`, effect: { effect: "repair_quest", payload: { owner, object, value, quest: quest?.id ?? null } } });
+    run.say(speaker, "repair", { vars, emote: "point", reason: `${object} worth ${Math.round(value)}`, effect: { effect: "repair_quest", payload: { owner, object, amount: Math.round(value), ...(quest ? { quest } : {}) } } });
     return;
   }
   const amount = Math.round(value * run.num("compensationMultiplier", 1));
@@ -293,7 +300,7 @@ export const avoidedArea: RecipeDef = {
       offer: `Go and look around ${vars.area}. Tell me what you find.`, weight: 1, origin: { kind: "world", ref: run.id },
       objectives: [{ type: "explore", target: area, count: 1, description: `Explore ${vars.area}` }, ...(giver ? [{ type: "talk", target: giver, count: 1, description: `Report back to ${run.name(giver)}` }] : [])],
     });
-    run.say(giver ?? "world", reason === "fled from it" ? "fled_pull" : "pull", { vars, emote: "point", reason: `${vars.area}: ${reason}`, effect: { effect: "avoided_area", target: "world", payload: { area, reason, quest: quest?.id ?? null } } });
+    run.say(giver ?? "world", reason === "fled from it" ? "fled_pull" : "pull", { vars, emote: "point", reason: `${vars.area}: ${reason}`, effect: { effect: "quest_pull", target: "world", payload: { area, reason, ...(quest ? { quest } : {}) } } });
   },
   on: {
     "movement.entered_zone": (run, ev) => finallyWent(run, str(ev.data.zone)),

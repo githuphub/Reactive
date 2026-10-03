@@ -8,7 +8,9 @@ type FieldTs<F> = F extends "string"
     ? number
     : F extends "boolean"
       ? boolean
-      : F extends "boolean|null"
+      : F extends "number|string"
+        ? number | string
+        : F extends "boolean|null"
         ? boolean | null
         : F extends "string[]"
         ? string[]

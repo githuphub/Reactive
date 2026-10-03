@@ -46,17 +46,17 @@ function richCheck(run: RecipeRun): void {
     const thief = run.persona("pickpocket") ?? run.m.personas.find((p) => actionsFor(run.m, p.id).includes("steal"))?.id ?? null;
     const amount = Math.max(1, Math.min(Math.round(gold * 0.25), run.num("stealGold", 50)));
     const also = canAct(run, thief, "steal") ? [{ kind: "npc.action", target: `npc:${thief}`, args: { npc: thief, action: { action: "steal", args: { gold: amount } } }, why: "" }] : [];
-    if (thief) run.say(thief, "pickpocket", { vars: { gold: amount }, emote: "sly", reason, effect: { effect: "pickpocket", payload: { thief, gold: amount } }, also });
-    else run.say("world", "pickpocket_world", { vars: { gold: amount }, reason, effect: { effect: "pickpocket", payload: { thief: null, gold: amount } } });
+    if (thief) run.say(thief, "pickpocket", { vars: { gold: amount }, emote: "sly", reason, effect: { effect: "pickpocket", payload: { thief, amount, gold: amount } }, also });
+    else run.say("world", "pickpocket_world", { vars: { gold: amount }, reason, effect: { effect: "pickpocket", payload: { thief: null, amount, gold: amount } } });
   } else if (kind === "beggar") {
     const beggar = run.persona("beggar");
     const ask = Math.max(1, Math.min(20, Math.round(gold * 0.02)));
-    run.say(beggar ?? "world", "beggar", { vars: { ask }, emote: "plead", reason, effect: { effect: "beggar", payload: { beggar, ask } } });
+    run.say(beggar ?? "world", "beggar", { vars: { ask }, emote: "plead", reason, effect: { effect: "beggar", payload: { beggar, amount: ask } } });
   } else if (kind === "price_gouge") {
     const merchant = run.persona("merchant") ?? run.speakers({ max: 4, salt: "gouge" }).find((id) => actionsFor(run.m, id).includes("trade")) ?? null;
     const mult = r2(Math.min(run.m.clamps.npc.priceMultiplier[1], 1.25 + (gold / 5000) * 0.25));
     const also = canAct(run, merchant, "trade") ? [{ kind: "npc.action", target: `npc:${merchant}`, args: { npc: merchant, action: { action: "trade", args: { priceMultiplier: mult } } }, why: "" }] : [];
-    run.say(merchant ?? "world", "gouge", { vars: { mult: Math.round((mult - 1) * 100) }, emote: "grin", reason, effect: { effect: "price_gouge", payload: { merchant, multiplier: mult } }, also });
+    run.say(merchant ?? "world", "gouge", { vars: { mult: Math.round((mult - 1) * 100) }, emote: "grin", reason, effect: { effect: "price_gouging", payload: { merchant, price_mult: mult, seconds: 300 } }, also });
   } else {
     const collector = run.persona("taxCollector");
     const amount = Math.max(1, Math.round((gold * run.num("taxPct", 10)) / 100));
@@ -121,7 +121,7 @@ function brokeCheck(run: RecipeRun): void {
   if (kind === "charity") {
     const giver = run.speakers({ max: 1, salt: "charity" })[0] ?? "world";
     const gold = run.num("charityGold", 10);
-    run.say(giver, "charity", { vars: { gold }, emote: "offer", reason: "player is broke", effect: { effect: "charity", payload: { giver, gold } } });
+    run.say(giver, "charity", { vars: { gold }, emote: "offer", reason: "player is broke", effect: { effect: "charity", payload: { giver, amount: gold } } });
   } else {
     const lender = run.persona("loanShark");
     const amount = run.num("loanAmount", 100);
@@ -130,7 +130,7 @@ function brokeCheck(run: RecipeRun): void {
     const ref = `loan_${run.now.toString(36)}`;
     run.say(lender ?? "world", "loan", {
       vars: { amount, owed, mins: Math.round(dueSec / 60) }, emote: "lean_in", reason: "player is broke",
-      effect: { effect: "loan_offer", payload: { ref, lender, amount, owed, interestPct: run.num("interestPct", 25), dueSec, accept: { signal: "social.promise", data: { to: lender ?? "lender", text: `repay ${owed} gold`, ref, due: dueSec, owed } } } },
+      effect: { effect: "loan_offer", payload: { ref, lender, amount, owed, interest: run.num("interestPct", 25) / 100, interestPct: run.num("interestPct", 25), dueSec, accept: { signal: "social.promise", data: { to: lender ?? "lender", text: `repay ${owed} gold`, ref, due: dueSec, owed } } } },
     });
   }
 }
@@ -172,7 +172,7 @@ export const brokeSupport: RecipeDef = {
       const p = run.l.promises.find((x) => x.status === "kept" && x.resolvedAt === ev.ts && !!x.debt);
       if (!p) return;
       run.attitude(p.to, 0.15, { text: `They repaid their debt of ${p.debt} gold.`, kind: "trade", salience: 0.6 });
-      run.say(personaById(run.m, p.to) ? p.to : "world", "debt_paid", { vars: { owed: p.debt }, emote: "count_coins", reason: "debt repaid", effect: { effect: "debt_due", payload: { ref: p.ref, paid: true } } });
+      run.say(personaById(run.m, p.to) ? p.to : "world", "debt_paid", { vars: { owed: p.debt }, emote: "count_coins", reason: "debt repaid", effect: { effect: "debt_paid", payload: { ref: p.ref, amount: p.debt } } });
     },
   },
   tick(run) {
@@ -184,10 +184,10 @@ export const brokeSupport: RecipeDef = {
     if (run.now > due + 30_000) {
       run.ctx.record(LIB_EVENTS.promiseStatus, { ref: p.ref, status: "broken" }, { player: run.player });
       run.attitude(p.to, -0.4, { text: `They never paid back ${p.debt} gold.`, kind: "harm", salience: 0.9 });
-      run.say(lender, "debt_collector", { vars: { owed: p.debt }, emote: "crack_knuckles", reason: "debt overdue", effect: { effect: "debt_collector", payload: { ref: p.ref, lender: p.to, owed: p.debt } } });
+      run.say(lender, "debt_collector", { vars: { owed: p.debt }, emote: "crack_knuckles", reason: "debt overdue", effect: { effect: "collect_debt", payload: { ref: p.ref, lender: p.to, amount: p.debt } } });
     } else if (!p.reminded && run.now >= due - 120_000) {
       run.ctx.record(LIB_EVENTS.promiseStatus, { ref: p.ref, reminded: true }, { player: run.player });
-      run.say(lender, "debt_due", { vars: { owed: p.debt }, emote: "tap_foot", reason: "debt due soon", effect: { effect: "debt_due", payload: { ref: p.ref, owed: p.debt, dueInSec: Math.round((due - run.now) / 1000) } } });
+      run.say(lender, "debt_due", { vars: { owed: p.debt }, emote: "tap_foot", reason: "debt due soon", effect: { effect: "debt_due", payload: { ref: p.ref, amount: p.debt, dueInSec: Math.round((due - run.now) / 1000) } } });
     }
   },
   offer(run, npc) {
@@ -219,7 +219,7 @@ function collectorCheck(run: RecipeRun): void {
   const collector = run.persona("collector");
   const gold = Math.round(run.num("offerGold", 400) * (item.tag === "legendary" ? 2 : item.tag === "epic" ? 1.5 : 1));
   run.ctx.record(LIB_EVENTS.collector, { item: item.id, name: item.name, offeredAt: run.now }, { player: run.player });
-  run.say(collector ?? "world", "offer", { vars: { item: item.name, gold }, emote: "appraise", reason: `${item.tag} ${item.name}`, effect: { effect: "collector_offer", payload: { collector, item: item.id, itemName: item.name, gold, tag: item.tag } } });
+  run.say(collector ?? "world", "offer", { vars: { item: item.name, gold }, emote: "appraise", reason: `${item.tag} ${item.name}`, effect: { effect: "collector_offer", payload: { collector, item: item.name, itemId: item.id, amount: gold, tag: item.tag } } });
 }
 
 export const collectorInterest: RecipeDef = {
@@ -248,7 +248,7 @@ export const collectorInterest: RecipeDef = {
       if (c.theftAt !== null || run.now - c.offeredAt < after || !worn.has(id)) continue;
       const thief = run.persona("thief");
       run.ctx.record(LIB_EVENTS.collector, { item: id, theftAt: run.now }, { player: run.player });
-      run.say(thief ?? "world", "theft", { vars: { item: c.name }, emote: "lunge", reason: `${c.name} still carried after the offer`, effect: { effect: "theft_attempt", payload: { thief, item: id, itemName: c.name } } });
+      run.say(thief ?? "world", "theft", { vars: { item: c.name }, emote: "lunge", reason: `${c.name} still carried after the offer`, effect: { effect: "theft", payload: { thief, item: c.name, itemId: id } } });
       return;
     }
   },
@@ -307,11 +307,11 @@ export const haggleMemory: RecipeDef = {
       const mult = haggleMult(run, npc);
       if (!personaById(run.m, npc)) {
         // a merchant the manifest doesn't declare: no voice, but the game still gets the price memory
-        run.effect(`npc:${npc}`, "price_adjust", { npc, multiplier: mult, haggles: h.count, won: h.won, lost: h.lost }, { reason: `haggle #${h.count}` });
+        run.effect(`npc:${npc}`, "price_adjust", { npc, price_mult: mult, seconds: 3600, haggles: h.count, won: h.won, lost: h.lost }, { reason: `haggle #${h.count}` });
         return;
       }
       run.attitude(npc, won ? -0.03 : 0.02, { text: `They haggled ${won ? "me down" : "and lost"} (${Math.round(Number(ev.data.delta_pct) || 0)}%).`, kind: "trade", salience: 0.45 });
-      run.say(npc, pool, { vars: { count: h.count }, emote: won ? "grumble" : "laugh", reason: `haggle #${h.count} (${h.won} won, ${h.lost} lost)`, effect: { effect: "price_adjust", payload: { npc, multiplier: mult, haggles: h.count, won: h.won, lost: h.lost } } });
+      run.say(npc, pool, { vars: { count: h.count }, emote: won ? "grumble" : "laugh", reason: `haggle #${h.count} (${h.won} won, ${h.lost} lost)`, effect: { effect: "price_adjust", payload: { npc, price_mult: mult, seconds: 3600, haggles: h.count, won: h.won, lost: h.lost } } });
     },
   },
   offer(run, npc) {

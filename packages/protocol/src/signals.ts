@@ -25,7 +25,7 @@ export type SignalInput = z.input<typeof Signal>;
 
 /** Field types used to document built-in signals and to declare custom signals in the manifest. */
 /** "boolean|null" = true, false or null (unknown); used by social.claim truth. */
-export type FieldType = "string" | "number" | "boolean" | "boolean|null" | "string[]" | "object";
+export type FieldType = "string" | "number" | "number|string" | "boolean" | "boolean|null" | "string[]" | "object";
 
 export interface SignalDoc {
   description: string;
@@ -80,7 +80,7 @@ export const BUILTIN_SIGNALS = {
   "appearance.state": { description: "How the player looks right now, each 0-1 (send on change; omitted = unchanged).", data: { "wet?": "number", "bloodied?": "number", "burnt?": "number", "muddy?": "number" } },
   "appearance.outfit": { description: "What the player wears. slots = {head|body|back|weapon|...: {id, name, tags[], colors[]}}; style_tags = overall look (\"regal\", \"ragged\").", data: { slots: "object", "style_tags?": "string[]" } },
   // ---- social promises + claims (Reaction Library: promises_remembered, lies_caught)
-  "social.promise": { description: "The player promised an NPC something. ref = your id for it (else the server matches the latest open promise to that NPC); due = ms epoch or seconds-from-now.", data: { to: "string", text: "string", "due?": "number", "ref?": "string" } },
+  "social.promise": { description: "The player promised an NPC something. ref = your id for it (else the server matches the latest open promise to that NPC); due = ms epoch, seconds-from-now, or a readable in-game time (\"day 2 · 19:00\": the game then owns the timing and sends promise_kept / promise_broken).", data: { to: "string", text: "string", "due?": "number|string", "ref?": "string" } },
   "social.promise_kept": { description: "The player kept a promise (ref = social.promise ref, else the latest open promise to that NPC).", data: { to: "string", "ref?": "string" } },
   "social.promise_broken": { description: "The player broke a promise (ref = social.promise ref, else the latest open promise to that NPC).", data: { to: "string", "ref?": "string" } },
   "social.claim": { description: "The player stated something the game can judge: truth true / false / null (unknown; the server checks it against rumours). npc.reply also creates claims internally.", data: { to: "string", text: "string", truth: "boolean|null", "about?": "string" } },

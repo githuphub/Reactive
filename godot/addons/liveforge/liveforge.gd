@@ -12,6 +12,17 @@ extends Node
 ## Liveforge.directive.connect(func(kind, d): print(kind, " ", d.args))
 ## [/codeblock]
 
+## Reaction Library (R1) auto-emitters: session.started on start, set_world_time / set_weather (or a LiveWorldClock
+## node), set_appearance / add_appearance (with appearance_decay), set_outfit, visited (or a LivePlace area).
+##
+## [codeblock]
+## Liveforge.set_weather("rain")
+## Liveforge.add_appearance("bloodied", 0.4)
+## Liveforge.set_outfit({"body": {"id": "robe", "name": "Crimson Robe", "tags": ["regal"], "colors": ["crimson"]}})
+## Liveforge.visited("copper_kettle", "inn")
+## Liveforge.directive.connect(func(kind, d): if kind == "custom.reaction": print(d.args.recipe, d.args.payload))
+## [/codeblock]
+
 ## A directive arrived. kind = directive kind ("npc.bark", "spawn.wave" ...); data = the whole directive
 ## {id, kind, target, args, why, ts, world, player, source}.
 signal directive(kind: String, data: Dictionary)
@@ -71,6 +82,19 @@ var _asks := {}
 var _seen: Array = []
 var _seen_set := {}
 var _fallbacks := {}
+## Reaction Library: per-second decay of appearance values toward 0, e.g. {"muddy": 0.02, "wet": 0.05}.
+var appearance_decay: Dictionary = {}
+## Smallest appearance change worth a signal.
+var appearance_threshold := 0.1
+var _appearance := {"wet": 0.0, "bloodied": 0.0, "burnt": 0.0, "muddy": 0.0}
+var _appearance_sent := {"wet": 0.0, "bloodied": 0.0, "burnt": 0.0, "muddy": 0.0}
+var _appearance_acc := 0.0
+var _weather := "clear"
+var _time_key := ""
+var _outfit_key := ""
+var _place := ""
+var _place_at_ms := 0
+const SESSION_FILE := "user://liveforge_session.json"
 
 
 func _ready() -> void:
@@ -110,10 +134,13 @@ func _ready() -> void:
 		fetch_config()
 		if _realtime:
 			_ws_connect()
+	if bool(LiveforgeUtil.setting("liveforge/auto/session_started")):
+		session_started()
 
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_WM_CLOSE_REQUEST:
+		_touch_last_seen()
 		_save_cache()
 		if not _queue.is_empty() and not offline:
 			flush()
@@ -520,9 +547,10 @@ func _call(job: Dictionary, code: int, data: Variant, ecode: String, emsg: Strin
 # ================================================================================================ WebSocket
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	_ws_tick()
 	_tick_asks()
+	_tick_appearance(delta)
 
 
 func _ws_open() -> bool:
@@ -693,3 +721,138 @@ func _valid_signal_type(t: String) -> bool:
 func _save_cache() -> void:
 	if _persist and cache != null:
 		cache.save_to_disk()
+	_touch_last_seen()
+
+
+# ================================================================================================ auto-emitters (R1)
+
+
+func _session_key() -> String:
+	return "%s:%s" % [world, player]
+
+
+func _read_sessions() -> Dictionary:
+	if not FileAccess.file_exists(SESSION_FILE):
+		return {}
+	var f := FileAccess.open(SESSION_FILE, FileAccess.READ)
+	if f == null:
+		return {}
+	var parsed: Variant = JSON.parse_string(f.get_as_text())
+	return parsed if parsed is Dictionary else {}
+
+
+func _touch_last_seen() -> void:
+	var all := _read_sessions()
+	all[_session_key()] = LiveforgeUtil.now_ms()
+	var f := FileAccess.open(SESSION_FILE, FileAccess.WRITE)
+	if f != null:
+		f.store_string(JSON.stringify(all))
+
+
+## Sends session.started with the last time this player played (kept in user://), so absence_recap works.
+## Called on start unless Project Settings > liveforge/auto/session_started is off. last_seen_ts > 0 overrides.
+func session_started(last_seen_ts: int = 0) -> void:
+	var last := last_seen_ts
+	if last <= 0:
+		last = int(_read_sessions().get(_session_key(), 0))
+	send_signal("session.started", {"last_seen_ts": last} if last > 0 else {})
+	_touch_last_seen()
+
+
+## Reports the world clock (+ weather). Sent only when the whole hour, phase, day or weather changed (or force).
+func set_world_time(hour: float, day: int = -1, weather: String = "", force: bool = false) -> void:
+	if not weather.is_empty():
+		_weather = weather
+	var phase := LiveforgeUtil.day_phase(hour)
+	var key := "%d|%s|%s|%d" % [int(floor(hour)), phase, _weather, day]
+	if key == _time_key and not force:
+		return
+	_time_key = key
+	var data := {"hour": snappedf(fposmod(hour, 24.0), 0.01), "weather": _weather, "phase": phase}
+	if day >= 0:
+		data["day"] = day
+	send_signal("world.time", data)
+
+
+## Changes the weather: clear | rain | storm | snow | fog | heat (sent with the last known hour).
+func set_weather(weather: String, hour: float = -1.0) -> void:
+	_weather = weather
+	var h := hour
+	if h < 0.0:
+		var parts := _time_key.split("|")
+		h = float(parts[0]) if parts.size() > 0 and parts[0].is_valid_int() else 12.0
+	set_world_time(h, -1, weather, true)
+
+
+## Sets appearance values 0-1, e.g. {"bloodied": 0.8}. Only changes >= appearance_threshold are sent.
+func set_appearance(state: Dictionary) -> void:
+	for k in ["wet", "bloodied", "burnt", "muddy"]:
+		if state.has(k):
+			_appearance[k] = clampf(float(state[k]), 0.0, 1.0)
+	_flush_appearance()
+
+
+## Adds to one appearance value (e.g. add_appearance("muddy", 0.2) per puddle).
+func add_appearance(key: String, amount: float) -> void:
+	if _appearance.has(key):
+		set_appearance({key: float(_appearance[key]) + amount})
+
+
+func _flush_appearance() -> void:
+	var changed := {}
+	for k in _appearance:
+		var v := snappedf(float(_appearance[k]), 0.01)
+		var was := float(_appearance_sent[k])
+		if absf(v - was) >= appearance_threshold or (v == 0.0 and was > 0.0):
+			changed[k] = v
+			_appearance_sent[k] = v
+	if not changed.is_empty():
+		send_signal("appearance.state", changed)
+
+
+func _tick_appearance(delta: float) -> void:
+	if appearance_decay.is_empty():
+		return
+	_appearance_acc += delta
+	if _appearance_acc < 1.0:
+		return
+	for k in appearance_decay:
+		if _appearance.has(k):
+			_appearance[k] = maxf(0.0, float(_appearance[k]) - float(appearance_decay[k]) * _appearance_acc)
+	_appearance_acc = 0.0
+	_flush_appearance()
+
+
+## Reports what the player wears: {"body": {"id", "name", "tags": [], "colors": []}, ...}. Sent only on change.
+func set_outfit(slots: Dictionary, style_tags: Array = []) -> void:
+	var clean := {}
+	for slot in slots:
+		var p: Variant = slots[slot]
+		if p is Dictionary and str(p.get("name", "")) != "":
+			clean[str(slot)] = {"id": str(p.get("id", p.get("name"))), "name": str(p.get("name")), "tags": p.get("tags", []), "colors": p.get("colors", [])}
+	var key := JSON.stringify([clean, style_tags])
+	if key == _outfit_key:
+		return
+	_outfit_key = key
+	send_signal("appearance.outfit", {"slots": clean, "style_tags": style_tags})
+
+
+## The player entered a place (inn, shop, area ...). Sent once per entry (re-entering within revisit_sec is the
+## same visit). Returns true when a signal was sent.
+func visited(place: String, kind: String = "area", zone: String = "", revisit_sec: float = 60.0) -> bool:
+	var now := LiveforgeUtil.now_ms()
+	if place == _place and now - _place_at_ms < int(revisit_sec * 1000.0):
+		_place_at_ms = now
+		return false
+	_place = place
+	_place_at_ms = now
+	var data := {"place": place, "kind": kind}
+	if not zone.is_empty():
+		data["zone"] = zone
+	send_signal("movement.visited", data)
+	return true
+
+
+## The player left the current place (the next visited() of it is a new visit).
+func left_place() -> void:
+	_place = ""
