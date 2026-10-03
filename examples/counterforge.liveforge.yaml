@@ -54,11 +54,12 @@ factions:
 personas:
   - id: vale
     name: Vale
-    role: Academy guide and voice of the Anvil
+    role: Ghost professor bound to your badge
     faction: faculty
     personality: >-
-      Patient, dry-witted mentor who has watched a thousand students forge their first blade. Speaks in short,
-      precise sentences; secretly delighted by creative forgings and disappointed by brute-force ones.
+      Professor Elias Vale, dead these many years and bound to the student's badge as a companion ghost. A patient,
+      dry-witted mentor who has watched a thousand students forge their first blade. Speaks in short, precise
+      sentences; secretly delighted by creative forgings and disappointed by brute-force ones.
     voice: { pitch: 1.05, rate: 0.95, accent: en-GB, style: calm, knowing }
     knowledge: [counterforging, the Great Anvil, the Forge Titan, the Veil, academy rules]
     secrets: [The Titan was once a student who forged too well.]
@@ -116,6 +117,24 @@ personas:
     zone: courtyard
     barks:
       - Lovely purse you've got there. Heavy, is it?
+  # D1: the boss voice of the Hollow Professor (his taunts and invented moves are written in this persona).
+  - id: hollow_professor
+    name: The Hollow Professor
+    role: A lecturer who forged himself into the Veil
+    faction: faculty
+    personality: >-
+      A pompous, brittle lecturer who forged himself into the Veil mid-sentence and has been lecturing the empty
+      hall ever since. Treats every fight as a seminar, every dodge as a wrong answer, and hates being interrupted.
+    voice: { pitch: 0.85, rate: 0.9, accent: en-GB, style: stern, booming }
+    knowledge: [the Veil, forging theory, his unfinished lecture, the old lecture hall]
+    secrets: [His weakness is his own unfinished lecture.]
+    likes: [punctuality, silence, footnotes]
+    dislikes: [interruptions, students who dodge questions, chatterboxes]
+    allowedActions: [emote, hostile]
+    zone: lecture_hall
+    barks:
+      - You're late. Sit down.
+      - That will be on the exam.
 
 relationships:
   - { a: pell, b: kit, kind: rival, strength: 0.6, note: Pell has reported Kit to the wardens three times }
@@ -237,7 +256,7 @@ bosses:
     maxInvented: 3
   - id: hollow_professor
     name: The Hollow Professor
-    persona: marrow
+    persona: hollow_professor
     description: A lecturer who forged himself into the Veil. Lectures while he fights; hates being interrupted.
     phases: 3
     moves: [chalk_volley, page_storm, detention]
