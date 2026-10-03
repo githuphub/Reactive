@@ -60,8 +60,8 @@ export function fireMoment(ctx: Ctx, kind: string, o: FireOptions): Moment | nul
     salience: Math.min(1, Math.max(0, o.salience)),
     ...(o.data ? { data: o.data } : {}),
   };
-  ctx.record(OBS_EVENTS.moment, { moment });
-  ctx.emit({ kind: "moment", target: "player", args: { moment }, why: o.why.slice(0, 200) });
+  ctx.record(OBS_EVENTS.moment, { moment }, { world: ctx.world, player });
+  ctx.emit({ kind: "moment", target: "player", args: { moment }, why: o.why.slice(0, 200) }, { world: ctx.world, player });
   ctx.log.debug("moment", { kind, player, why: o.why });
   return moment;
 }
@@ -271,7 +271,7 @@ export function evaluateDesignerRules(ctx: Ctx, ev: StoredEvent | null, existing
     const was = st.t[name] ?? false;
     if (on !== was) { st.t[name] = on; dirty = true; }
     if (on && (!was || traitAt(env.model, name, now, m) < 0.8)) {
-      ctx.record(OBS_EVENTS.trait, { trait: name, score: 1, evidence: [`${src}${ev ? ` (after ${ev.type})` : ""}`] });
+      ctx.record(OBS_EVENTS.trait, { trait: name, score: 1, evidence: [`${src}${ev ? ` (after ${ev.type})` : ""}`] }, { world: ctx.world, player });
     }
   }
   for (const [name, src] of moments) {
