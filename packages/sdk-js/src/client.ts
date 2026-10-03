@@ -29,6 +29,9 @@ import { Http, type FetchLike } from "./http.js";
 import { Realtime, type RealtimeStatus, type WebSocketCtor } from "./realtime.js";
 import type { CustomSignalType, SignalData } from "./types.js";
 import { ID_RE, SIGNAL_TYPE_RE, backoffMs, isPlainObject, randomId, sleep } from "./util.js";
+import { AgentsApi } from "./agents.js";
+import { BrainFeed } from "./brain.js";
+import { BuilderApi } from "./builder.js";
 
 /** Client configuration. Only `url`, `gameKey` and `player` are required. */
 export interface LiveforgeConfig {
@@ -138,6 +141,12 @@ interface DirectiveListener {
 export class LiveforgeClient {
   /** Last-good-answer cache + bake packs. */
   readonly cache: FallbackCache;
+  /** NPC agents: register tools, give goals, interrupt, world context (K6). */
+  readonly agents: AgentsApi;
+  /** Voxel build plans (two-stage) + expansion helpers (K6). */
+  readonly builder: BuilderApi;
+  /** The Brain feed: agent steps, build plans, AI decisions with model badges (K6). */
+  readonly brain: BrainFeed;
   private readonly cfg: Required<Pick<LiveforgeConfig, "gameKey" | "flushIntervalMs" | "flushSize" | "maxQueue" | "requestTimeoutMs" | "upgradeTimeoutMs">> & LiveforgeConfig;
   private readonly http: Http;
   private readonly fetchImpl: FetchLike | null;
@@ -210,6 +219,22 @@ export class LiveforgeClient {
       this.realtime = null;
     }
     if (config.flushOnUnload !== false) this.installUnloadFlush();
+
+    const request = <T>(r: Parameters<Http["request"]>[0]) => this.http.request<T>(r);
+    const offline = !!config.offline;
+    this.brain = new BrainFeed({ request, world: () => this._world, offline });
+    this.builder = new BuilderApi({
+      ask: (params, opts) => this.ask("builder.plan", params, opts),
+      setFallback: (fn) => this.setFallback("builder.plan", fn),
+    });
+    this.agents = new AgentsApi({
+      request,
+      identity: () => ({ world: this._world, player: this._player, session: this._session }),
+      on: (kind, fn) => this.on(kind, fn),
+      signal: (type, data) => this.signal(type as CustomSignalType<string>, data),
+      brain: this.brain,
+      offline,
+    });
   }
 
   // ============================================================================================ identity
@@ -627,6 +652,9 @@ export class LiveforgeClient {
         break;
       case "welcome":
         this.events.emit("welcome", m);
+        break;
+      case "brain":
+        this.brain.push(m.entry);
         break;
       case "error":
         this.report(new LiveforgeError(m.error.code, `server: ${m.error.message}`, { details: m.error.details }));
