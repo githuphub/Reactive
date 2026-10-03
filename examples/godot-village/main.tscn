@@ -1,0 +1,330 @@
+[gd_scene load_steps=30 format=3]
+
+[ext_resource type="Script" path="res://main.gd" id="1_main"]
+[ext_resource type="Script" path="res://player.gd" id="2_player"]
+[ext_resource type="Script" path="res://addons/liveforge/nodes/live_npc.gd" id="3_npc"]
+[ext_resource type="Script" path="res://addons/liveforge/nodes/live_boss.gd" id="4_boss"]
+[ext_resource type="Script" path="res://addons/liveforge/nodes/live_equip_slot.gd" id="5_equip"]
+[ext_resource type="Script" path="res://addons/liveforge/nodes/live_director.gd" id="6_director"]
+[ext_resource type="Script" path="res://addons/liveforge/nodes/live_quest_board.gd" id="7_quests"]
+
+[sub_resource type="ProceduralSkyMaterial" id="SkyMat"]
+sky_top_color = Color(0.36, 0.55, 0.82, 1)
+sky_horizon_color = Color(0.78, 0.82, 0.86, 1)
+ground_bottom_color = Color(0.25, 0.3, 0.22, 1)
+ground_horizon_color = Color(0.78, 0.82, 0.86, 1)
+
+[sub_resource type="Sky" id="Sky"]
+sky_material = SubResource("SkyMat")
+
+[sub_resource type="Environment" id="Env"]
+background_mode = 2
+sky = SubResource("Sky")
+ambient_light_source = 3
+tonemap_mode = 2
+glow_enabled = true
+
+[sub_resource type="StandardMaterial3D" id="MatGrass"]
+albedo_color = Color(0.36, 0.56, 0.28, 1)
+
+[sub_resource type="PlaneMesh" id="MeshGround"]
+material = SubResource("MatGrass")
+size = Vector2(80, 80)
+
+[sub_resource type="BoxShape3D" id="ShapeGround"]
+size = Vector3(80, 1, 80)
+
+[sub_resource type="StandardMaterial3D" id="MatPath"]
+albedo_color = Color(0.62, 0.52, 0.38, 1)
+
+[sub_resource type="BoxMesh" id="MeshPath"]
+material = SubResource("MatPath")
+size = Vector3(3, 0.04, 22)
+
+[sub_resource type="CapsuleShape3D" id="ShapePlayer"]
+radius = 0.35
+height = 1.8
+
+[sub_resource type="StandardMaterial3D" id="MatPlayer"]
+albedo_color = Color(0.25, 0.45, 0.85, 1)
+
+[sub_resource type="CapsuleMesh" id="MeshPlayer"]
+material = SubResource("MatPlayer")
+radius = 0.35
+height = 1.8
+
+[sub_resource type="StandardMaterial3D" id="MatBess"]
+albedo_color = Color(0.86, 0.5, 0.25, 1)
+
+[sub_resource type="CapsuleMesh" id="MeshBess"]
+material = SubResource("MatBess")
+radius = 0.4
+height = 1.65
+
+[sub_resource type="StandardMaterial3D" id="MatAldric"]
+albedo_color = Color(0.55, 0.58, 0.64, 1)
+metallic = 0.6
+roughness = 0.4
+
+[sub_resource type="CapsuleMesh" id="MeshAldric"]
+material = SubResource("MatAldric")
+radius = 0.38
+height = 1.9
+
+[sub_resource type="StandardMaterial3D" id="MatWick"]
+albedo_color = Color(0.3, 0.2, 0.38, 1)
+
+[sub_resource type="CapsuleMesh" id="MeshWick"]
+material = SubResource("MatWick")
+radius = 0.3
+height = 1.55
+
+[sub_resource type="StandardMaterial3D" id="MatStraw"]
+albedo_color = Color(0.86, 0.74, 0.38, 1)
+roughness = 0.9
+
+[sub_resource type="CylinderMesh" id="MeshDummyBody"]
+material = SubResource("MatStraw")
+top_radius = 0.28
+bottom_radius = 0.34
+height = 1.3
+
+[sub_resource type="SphereMesh" id="MeshDummyHead"]
+material = SubResource("MatStraw")
+radius = 0.26
+height = 0.52
+
+[sub_resource type="StandardMaterial3D" id="MatWood"]
+albedo_color = Color(0.42, 0.28, 0.16, 1)
+
+[sub_resource type="BoxMesh" id="MeshPost"]
+material = SubResource("MatWood")
+size = Vector3(0.12, 0.6, 0.12)
+
+[sub_resource type="BoxMesh" id="MeshArms"]
+material = SubResource("MatWood")
+size = Vector3(1.3, 0.1, 0.1)
+
+[sub_resource type="StyleBoxFlat" id="Panel"]
+bg_color = Color(0, 0, 0, 0.5)
+content_margin_left = 10.0
+content_margin_top = 8.0
+content_margin_right = 10.0
+content_margin_bottom = 8.0
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[node name="Main" type="Node3D"]
+script = ExtResource("1_main")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Env")
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+rotation_degrees = Vector3(-50, -30, 0)
+shadow_enabled = true
+
+[node name="Ground" type="StaticBody3D" parent="."]
+
+[node name="Shape" type="CollisionShape3D" parent="Ground"]
+position = Vector3(0, -0.5, 0)
+shape = SubResource("ShapeGround")
+
+[node name="Mesh" type="MeshInstance3D" parent="Ground"]
+mesh = SubResource("MeshGround")
+
+[node name="Path" type="MeshInstance3D" parent="Ground"]
+position = Vector3(0, 0.02, -2)
+mesh = SubResource("MeshPath")
+
+[node name="Player" type="CharacterBody3D" parent="." groups=["player"]]
+position = Vector3(0, 0.95, 4)
+script = ExtResource("2_player")
+
+[node name="Shape" type="CollisionShape3D" parent="Player"]
+shape = SubResource("ShapePlayer")
+
+[node name="Body" type="MeshInstance3D" parent="Player"]
+mesh = SubResource("MeshPlayer")
+
+[node name="Head" type="Node3D" parent="Player"]
+position = Vector3(0, 0.6, 0)
+
+[node name="Camera3D" type="Camera3D" parent="Player/Head"]
+position = Vector3(0, 0.5, 3.6)
+current = true
+
+[node name="RightHand" type="BoneAttachment3D" parent="Player"]
+position = Vector3(0.48, 0.05, -0.25)
+script = ExtResource("5_equip")
+item_length = 1.0
+
+[node name="Bess" type="Node3D" parent="."]
+position = Vector3(-6, 0, -4)
+script = ExtResource("3_npc")
+persona_id = "bess"
+
+[node name="Body" type="MeshInstance3D" parent="Bess"]
+position = Vector3(0, 0.83, 0)
+mesh = SubResource("MeshBess")
+
+[node name="Name" type="Label3D" parent="Bess"]
+position = Vector3(0, 2.0, 0)
+billboard = 1
+font_size = 48
+outline_size = 8
+text = "Bess · innkeeper"
+
+[node name="Aldric" type="Node3D" parent="."]
+position = Vector3(6, 0, -6)
+script = ExtResource("3_npc")
+persona_id = "aldric"
+
+[node name="Body" type="MeshInstance3D" parent="Aldric"]
+position = Vector3(0, 0.95, 0)
+mesh = SubResource("MeshAldric")
+
+[node name="Name" type="Label3D" parent="Aldric"]
+position = Vector3(0, 2.25, 0)
+billboard = 1
+font_size = 48
+outline_size = 8
+text = "Aldric · bridge guard"
+
+[node name="Wick" type="Node3D" parent="."]
+position = Vector3(0, 0, -11)
+script = ExtResource("3_npc")
+persona_id = "wick"
+bark_radius = 5.0
+
+[node name="Body" type="MeshInstance3D" parent="Wick"]
+position = Vector3(0, 0.78, 0)
+mesh = SubResource("MeshWick")
+
+[node name="Name" type="Label3D" parent="Wick"]
+position = Vector3(0, 1.9, 0)
+billboard = 1
+font_size = 48
+outline_size = 8
+text = "Wick · ...nobody"
+
+[node name="Dummy" type="Node3D" parent="."]
+position = Vector3(11, 0, 3)
+
+[node name="Post" type="MeshInstance3D" parent="Dummy"]
+position = Vector3(0, 0.3, 0)
+mesh = SubResource("MeshPost")
+
+[node name="Body" type="Node3D" parent="Dummy"]
+
+[node name="Torso" type="MeshInstance3D" parent="Dummy/Body"]
+position = Vector3(0, 1.25, 0)
+mesh = SubResource("MeshDummyBody")
+
+[node name="Arms" type="MeshInstance3D" parent="Dummy/Body"]
+position = Vector3(0, 1.6, 0)
+mesh = SubResource("MeshArms")
+
+[node name="Head" type="MeshInstance3D" parent="Dummy/Body"]
+position = Vector3(0, 2.15, 0)
+mesh = SubResource("MeshDummyHead")
+
+[node name="Name" type="Label3D" parent="Dummy"]
+position = Vector3(0, 2.75, 0)
+billboard = 1
+font_size = 48
+outline_size = 8
+text = "The Training Dummy"
+
+[node name="Boss" type="Node" parent="Dummy"]
+script = ExtResource("4_boss")
+boss_id = "training_dummy"
+move_map = {
+"dummy_lunge": "lunge",
+"dummy_slam": "slam",
+"dummy_spin": "spin"
+}
+
+[node name="Director" type="Node" parent="."]
+script = ExtResource("6_director")
+zone = "yard"
+
+[node name="QuestBoard" type="Node" parent="."]
+script = ExtResource("7_quests")
+
+[node name="UI" type="CanvasLayer" parent="."]
+
+[node name="Chat" type="RichTextLabel" parent="UI"]
+layout_mode = 1
+offset_left = 12.0
+offset_top = 12.0
+offset_right = 580.0
+offset_bottom = 330.0
+mouse_filter = 2
+theme_override_styles/normal = SubResource("Panel")
+bbcode_enabled = true
+scroll_following = true
+
+[node name="Log" type="RichTextLabel" parent="UI"]
+layout_mode = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -500.0
+offset_top = 12.0
+offset_right = -12.0
+offset_bottom = 330.0
+mouse_filter = 2
+theme_override_font_sizes/normal_font_size = 13
+theme_override_font_sizes/bold_font_size = 13
+theme_override_styles/normal = SubResource("Panel")
+bbcode_enabled = true
+scroll_following = true
+
+[node name="Status" type="Label" parent="UI"]
+layout_mode = 1
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 12.0
+offset_top = -90.0
+offset_right = 900.0
+offset_bottom = -64.0
+
+[node name="Bottom" type="HBoxContainer" parent="UI"]
+layout_mode = 1
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 12.0
+offset_top = -56.0
+offset_right = 780.0
+offset_bottom = -16.0
+
+[node name="Prompt" type="LineEdit" parent="UI/Bottom"]
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Say something to the nearest villager, or describe gear and press Forge"
+
+[node name="Say" type="Button" parent="UI/Bottom"]
+layout_mode = 2
+text = "Say"
+
+[node name="Forge" type="Button" parent="UI/Bottom"]
+layout_mode = 2
+text = "Forge"
+
+[node name="Help" type="Label" parent="UI"]
+layout_mode = 1
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -560.0
+offset_top = -110.0
+offset_right = -12.0
+offset_bottom = -12.0
+horizontal_alignment = 2
+vertical_alignment = 2
+text = "Click: capture mouse / hit the dummy   Esc: free mouse
+WASD move · Space jump · Enter type · hold V to talk (mic)
+Q / E dodge the dummy · G find gold · T greet · Y accept quest"
