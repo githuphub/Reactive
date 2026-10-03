@@ -62,17 +62,18 @@ pushToTalk.onUp(async () => {
 ## Godot
 
 ```gdscript
-# Push-to-talk: record with AudioEffectRecord on a "Mic" bus, then:
-var wav: AudioStreamWAV = $Recorder.get_recording()
-var stt := Liveforge.stt(wav.get_data_as_wav_bytes() if wav.has_method("get_data_as_wav_bytes") else wav.data)
-var heard: Dictionary = await stt.completed
-var a := Liveforge.ask("npc.reply", {"npc": "bess", "text": heard.body.text, "stream": true})
-a.partial.connect(func(t): DisplayServer.tts_speak(t, voice_id, 50, 1.0, 1.0))
+# Push-to-talk: record with AudioEffectRecord on a "Mic" bus, then send WAV bytes to the server STT.
+var wav: AudioStreamWAV = record_effect.get_recording()
+var reply := Liveforge.stt(wav_bytes(wav), "en")       # LiveforgeReply (wraps POST /v1/stt)
+# ...when it completes, ask the NPC with the transcript and stream the answer:
+var a := Liveforge.ask("npc.reply", {"npc": "bess", "text": transcript, "stream": true})
+a.partial.connect(func(t): DisplayServer.tts_speak(t, voice_id, 50, 1.0, 1.0))   # speak each sentence
 var r: Dictionary = await a.done
 ```
 
 The `LiveNPC` node wraps all of this: push-to-talk, STT, streaming and `tts_speak` with the persona's pitch and
-rate.
+rate. NPC-biased recognition (the NPC's name, knowledge and the glossary) is also available as
+`POST /v1/m/persona/stt?npc=<id>`.
 
 ## Tips
 

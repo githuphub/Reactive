@@ -228,8 +228,19 @@ All of these need the admin key.
 | `POST /admin/rebuild {world?}` | Rebuild projections from the log. |
 | `GET /admin/stats` | Per-module asks, cache hits, p50/p95, tokens, $, budgets, sockets. |
 | `GET /admin/jobs` | Forge jobs. |
-| `GET /admin/review?status=` · `POST /admin/review` · `POST /admin/review/:id {status, note?}` · `GET /admin/bake` | Review queue and bake pack export. |
+| `POST /admin/m/forge/bake {kind, count?, prompts?, ai?}` · `GET /admin/m/forge/review?status=&kind=` · `POST /admin/m/forge/review/:id {status, note?}` · `GET /admin/m/forge/pack?kinds=` | Forge bake mode, the review queue (event-sourced, in the `forge.gallery` projection) and the `BakePack` export (plus `assets[]`). |
+| `GET /admin/review` · `POST /admin/review/:id` · `GET /admin/bake` | The core review queue, for non-forge content. |
 | `GET /admin/simulate/presets` · `POST /admin/simulate {world, player, preset?, signals?}` | Simulate a player. |
+| `GET /admin/m/observer/traits` · `GET /admin/m/persona/pools` · `GET /admin/m/world/state?world` · `POST /admin/m/director/difficulty` | Module admin routes: trait library and designer rules, bark pools, world state, designer difficulty override. |
+
+Module public routes include:
+
+- `POST /v1/m/persona/stt?npc=`: NPC-biased STT.
+- `GET /v1/m/world/rumours|standing|reactions`: world queries.
+- `GET /v1/m/quests/log|progression`: quest log and progression suggestions.
+- `POST /v1/m/quests/objective`: a dynamic objective.
+- `POST /v1/m/director/assist`: the player's assist toggle.
+- `GET /v1/m/forge/mesh/:jobId`: the mesh proxy.
 
 Projection names: `observer.player_model`, `persona.memories`, `quests.log` (player scope); `world.rumours`,
 `world.factions`, `director.state`, `forge.gallery`, `core.directives` (world scope).
