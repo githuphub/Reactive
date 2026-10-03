@@ -77,7 +77,7 @@ export const overviewPanel: PanelDef = {
       const tile = (k: string, v: string, sub: string, extra?: Node) => h("div", { class: "kpi" }, h("div", { class: "kpi-k" }, k), h("div", { class: "kpi-v" }, v), h("div", { class: "kpi-sub" }, sub), extra ?? null);
       render(
         kpis,
-        tile("Signals / min", fmtNum(rate), `${fmtNum(w?.events ?? live.events.length)} events in ${s.world}`, sparkline(rateHist.slice(-40), "#ff7a2f", 140, 30, 0)),
+        tile("Signals / min", fmtNum(rate), `${fmtNum(w?.events || live.events.length)} events in ${s.world}`, sparkline(rateHist.slice(-40), "#ff7a2f", 140, 30, 0)),
         tile("Players", String(w?.players.length ?? 0), w?.lastEventAt ? `last activity ${timeAgo(w.lastEventAt)}` : "no activity yet"),
         tile("Directives", fmtNum(recentDir), "pushed in the last 5 min"),
         tile("AI upgrades", fmtNum(ups), asks ? `${Math.round((hits / Math.max(1, asks)) * 100)}% served from cache` : "no asks yet"),

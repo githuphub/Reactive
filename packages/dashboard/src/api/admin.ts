@@ -14,17 +14,19 @@ import {
 
 /** The admin HTTP surface the dashboard relies on (all require the admin key). */
 export const ADMIN_ROUTES = {
-  game: "GET /admin/game",
+  games: "GET /admin/games",
   manifest: "GET /admin/manifest",
+  manifestSource: "GET /admin/manifest/source",
   worlds: "GET /admin/worlds",
-  events: "GET /admin/events?world=&player=&after=&limit=&type=",
+  players: "GET /admin/players?world=",
+  events: "GET /admin/events?world=&player=&after=&limit=&type=&desc=",
   projection: "GET /admin/projections/:name?world=&player=",
-  projectionAll: "GET /admin/projections/:name?world=&all=1",
+  projectionAll: "GET /admin/projections/:name?world= (player scope without player -> {players: {id: state}})",
   stats: "GET /admin/stats",
   simulate: "POST /admin/simulate",
   review: "GET /admin/review",
   reviewSet: "POST /admin/review/:id",
-  bake: "GET /admin/bake/export",
+  bake: "GET /admin/bake",
 } as const;
 
 export interface AdminClientOptions {
@@ -167,30 +169,14 @@ export class LiveSource implements DataSource {
   }
 
   async game(): Promise<GameInfo> {
-    try {
-      const g = await this.client.get<Partial<GameInfo> & { game?: Partial<GameInfo> }>("/admin/game");
-      const info = isObj(g.game) ? g.game : g;
-      if (typeof info.id === "string") {
-        const doc = await this.manifest().catch(() => null);
-        const base = doc?.manifest ? gameInfoFromManifest(doc.manifest) : null;
-        return {
-          id: info.id,
-          name: info.name ?? base?.name ?? info.id,
-          protocol: info.protocol ?? PROTOCOL_ID,
-          serverVersion: info.serverVersion ?? "?",
-          modules: info.modules ?? base?.modules ?? {},
-          personas: info.personas ?? base?.personas ?? [],
-          factions: info.factions ?? base?.factions ?? [],
-          bosses: info.bosses ?? base?.bosses ?? [],
-          games: info.games ?? [{ id: info.id, name: info.name ?? info.id }],
-        };
-      }
-    } catch (e) {
-      if (e instanceof AdminError && (e.status === 401 || e.status === 403 || e.status === 0)) throw e;
-    }
-    // Fallbacks: the manifest, then the public config.
+    const r = await this.client.get<{ games?: { id: string; name: string; modules?: Record<string, boolean> }[] }>("/admin/games");
+    const games = (r.games ?? []).map((g) => ({ id: g.id, name: g.name }));
+    const current = r.games?.find((g) => g.id === this.client.game) ?? r.games?.[0];
     const doc = await this.manifest().catch(() => null);
-    if (doc?.manifest) return gameInfoFromManifest(doc.manifest);
+    if (doc?.manifest) {
+      return gameInfoFromManifest(doc.manifest, { ...(games.length ? { games } : {}), ...(current?.modules ? { modules: current.modules } : {}) });
+    }
+    // Fallback: the public config slice.
     const cfg = await this.client.get<PublicConfig>("/v1/config");
     return {
       id: cfg.game.id,
@@ -201,38 +187,48 @@ export class LiveSource implements DataSource {
       personas: cfg.personas,
       factions: [],
       bosses: cfg.bosses,
-      games: [cfg.game],
+      games: games.length ? games : [cfg.game],
     };
   }
 
   async manifest(): Promise<ManifestDoc> {
     if (this.manifestCache) return this.manifestCache;
-    const r = await this.client.get<unknown>("/admin/manifest");
+    const [r, src] = await Promise.all([
+      this.client.get<unknown>("/admin/manifest"),
+      this.client.get<{ filename?: string; yaml?: string }>("/admin/manifest/source").catch(() => null),
+    ]);
     let doc: ManifestDoc;
-    if (isObj(r) && ("manifest" in r || "yaml" in r)) {
+    if (isObj(r) && "manifest" in r) {
       doc = { manifest: (r.manifest as Manifest) ?? null, yaml: typeof r.yaml === "string" ? r.yaml : null, filename: typeof r.filename === "string" ? r.filename : undefined };
     } else {
       doc = { manifest: isObj(r) && "liveforge" in r ? (r as unknown as Manifest) : null, yaml: null };
+    }
+    if (src?.yaml) {
+      doc.yaml = src.yaml;
+      doc.filename = src.filename ?? doc.filename;
     }
     this.manifestCache = doc;
     return doc;
   }
 
   async worlds(): Promise<WorldSummary[]> {
-    const r = await this.client.get<unknown>("/admin/worlds");
-    const list = Array.isArray(r) ? r : isObj(r) && Array.isArray(r.worlds) ? r.worlds : [];
-    return list.map((w: unknown) => {
-      if (typeof w === "string") return { id: w, events: 0, lastEventAt: null, players: [] };
-      const o = isObj(w) ? w : {};
-      const players = Array.isArray(o.players) ? o.players : [];
-      return {
-        id: String(o.id ?? o.world ?? "default"),
-        events: Number(o.events ?? 0),
-        lastEventAt: typeof o.lastEventAt === "number" ? o.lastEventAt : null,
-        players: players.map((p: unknown) =>
-          typeof p === "string" ? { id: p, events: 0, lastSeen: null } : { id: String((p as Record<string, unknown>).id), events: Number((p as Record<string, unknown>).events ?? 0), lastSeen: ((p as Record<string, unknown>).lastSeen as number) ?? null },
-        ),
-      };
+    const [w, p] = await Promise.all([
+      this.client.get<unknown>("/admin/worlds"),
+      this.client.get<unknown>("/admin/players").catch(() => null),
+    ]);
+    const list = (Array.isArray(w) ? w : isObj(w) && Array.isArray(w.worlds) ? w.worlds : []) as unknown[];
+    const players = (Array.isArray(p) ? p : isObj(p) && Array.isArray(p.players) ? p.players : []) as Record<string, unknown>[];
+    const playerOf = (q: unknown) => {
+      if (typeof q === "string") return { id: q, events: 0, lastSeen: null };
+      const o = isObj(q) ? q : {};
+      return { id: String(o.player ?? o.id), events: Number(o.events ?? 0), lastSeen: typeof o.lastSeen === "number" ? o.lastSeen : null };
+    };
+    return list.map((x) => {
+      const o: Record<string, unknown> = typeof x === "string" ? { world: x } : isObj(x) ? x : {};
+      const id = String(o.id ?? o.world ?? "default");
+      const pl = Array.isArray(o.players) ? o.players.map(playerOf) : players.filter((q) => q.world === id).map(playerOf);
+      const last = typeof o.lastEventAt === "number" ? o.lastEventAt : typeof o.lastSeen === "number" ? o.lastSeen : null;
+      return { id, events: Number(o.events ?? 0), lastEventAt: last, players: pl };
     });
   }
 
@@ -253,9 +249,11 @@ export class LiveSource implements DataSource {
 
   async projectionAll<N extends ProjectionName>(name: N, world: string): Promise<{ player: string; state: ProjectionState<N> }[]> {
     try {
-      const r = await this.client.get<unknown>(`/admin/projections/${encodeURIComponent(name)}`, { world, all: 1 });
-      const list = Array.isArray(r) ? r : isObj(r) && Array.isArray(r.players) ? r.players : [];
-      return list as { player: string; state: ProjectionState<N> }[];
+      const r = await this.client.get<unknown>(`/admin/projections/${encodeURIComponent(name)}`, { world });
+      if (Array.isArray(r)) return r as { player: string; state: ProjectionState<N> }[];
+      if (isObj(r) && Array.isArray(r.players)) return r.players as { player: string; state: ProjectionState<N> }[];
+      if (isObj(r) && isObj(r.players)) return Object.entries(r.players).map(([player, state]) => ({ player, state: state as ProjectionState<N> }));
+      return [];
     } catch (e) {
       if (e instanceof AdminError && e.status === 404) return [];
       throw e;
@@ -277,11 +275,15 @@ export class LiveSource implements DataSource {
 
   async reviewSet(id: string, status: ReviewItem["status"], note?: string): Promise<ReviewItem> {
     const r = await this.client.post<unknown>(`/admin/review/${encodeURIComponent(id)}`, { status, note });
-    return (isObj(r) && isObj(r.item) ? r.item : r) as ReviewItem;
+    if (isObj(r) && isObj(r.item)) return r.item as unknown as ReviewItem;
+    if (isObj(r) && typeof r.id === "string") return r as unknown as ReviewItem;
+    const fresh = (await this.reviewList()).find((x) => x.id === id);
+    if (!fresh) throw new AdminError(`review item ${id} not found after update`, 404, "not_found");
+    return fresh;
   }
 
   bakeExport(): Promise<BakePack> {
-    return this.client.get<BakePack>("/admin/bake/export");
+    return this.client.get<BakePack>("/admin/bake");
   }
 
   /**
@@ -393,7 +395,7 @@ export class LiveSource implements DataSource {
     };
 
     // Seed the cursor with the latest events so the stream starts populated.
-    void this.events({ world, limit: 100 })
+    void this.events({ world, limit: 100, desc: true })
       .then((page) => {
         for (const e of [...page.events].sort((a, b) => a.seq - b.seq)) emitEvent(e);
       })

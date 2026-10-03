@@ -51,6 +51,8 @@ export interface EventQuery {
   limit?: number;
   /** Exact type or "ns.*". */
   type?: string;
+  /** Newest first (used to seed the stream with the latest events). */
+  desc?: boolean;
 }
 
 export interface ManifestDoc {
