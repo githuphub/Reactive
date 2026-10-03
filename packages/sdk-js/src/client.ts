@@ -35,7 +35,9 @@ export interface LiveforgeConfig {
   /** Server base URL, e.g. "http://localhost:8787". */
   url: string;
   /** Publishable SDK key of the game (`pk_...`; in dev mode `pk_dev_<gameId>`). Never put the admin key in a client. */
-  gameKey: string;
+  gameKey?: string;
+  /** Alias of `gameKey` (the K0 client stub's name). */
+  key?: string;
   /** Player id (`[A-Za-z0-9_-.:]`, <= 64 chars). Change later with `setPlayer`. */
   player: string;
   /** World / save slot / server id. Default "default". */
@@ -44,10 +46,16 @@ export interface LiveforgeConfig {
   session?: string;
   /** Connect the WebSocket for directives and live upgrades. Default true. */
   realtime?: boolean;
+  /** Alias of `realtime`. */
+  websocket?: boolean;
   /** Signal batching: flush at least this often (ms). Default 250. */
   flushIntervalMs?: number;
   /** Signal batching: flush as soon as this many signals are queued. Default 50. */
   flushSize?: number;
+  /** Alias of `flushIntervalMs`. */
+  flushMs?: number;
+  /** Alias of `flushSize`. */
+  flushMax?: number;
   /** Max signals kept while the server is unreachable (oldest dropped). Default 2000. */
   maxQueue?: number;
   /** Timeout for instant answers and other requests (ms). Default 8000. */
@@ -130,7 +138,7 @@ interface DirectiveListener {
 export class LiveforgeClient {
   /** Last-good-answer cache + bake packs. */
   readonly cache: FallbackCache;
-  private readonly cfg: Required<Pick<LiveforgeConfig, "flushIntervalMs" | "flushSize" | "maxQueue" | "requestTimeoutMs" | "upgradeTimeoutMs">> & LiveforgeConfig;
+  private readonly cfg: Required<Pick<LiveforgeConfig, "gameKey" | "flushIntervalMs" | "flushSize" | "maxQueue" | "requestTimeoutMs" | "upgradeTimeoutMs">> & LiveforgeConfig;
   private readonly http: Http;
   private readonly fetchImpl: FetchLike | null;
   private readonly realtime: Realtime | null;
@@ -142,7 +150,7 @@ export class LiveforgeClient {
   private readonly fallbacks = new Map<string, (params: never) => unknown>();
   private queue: Signal[] = [];
   private flushTimer: ReturnType<typeof setTimeout> | null = null;
-  private flushing: Promise<void> | null = null;
+  private flushing: Promise<SignalBatchResult | null> | null = null;
   private flushFailures = 0;
   private retryTimer: ReturnType<typeof setTimeout> | null = null;
   private configPromise: Promise<PublicConfig> | null = null;
@@ -157,37 +165,39 @@ export class LiveforgeClient {
     if (!config || typeof config.url !== "string" || !/^https?:\/\//.test(config.url)) {
       throw new LiveforgeError("invalid_input", 'config.url must be the server URL, e.g. "http://localhost:8787"');
     }
-    if (typeof config.gameKey !== "string" || !config.gameKey) {
+    const gameKey = config.gameKey ?? config.key;
+    if (typeof gameKey !== "string" || !gameKey) {
       throw new LiveforgeError("invalid_input", 'config.gameKey is required (the publishable key, e.g. "pk_dev_<gameId>" in dev mode)');
     }
     checkId("config.player", config.player);
     if (config.world !== undefined) checkId("config.world", config.world);
     if (config.session !== undefined) checkId("config.session", config.session);
     this.cfg = {
-      flushIntervalMs: 250,
-      flushSize: 50,
       maxQueue: 2000,
       requestTimeoutMs: 8000,
       upgradeTimeoutMs: 45_000,
       ...config,
+      gameKey,
+      flushIntervalMs: config.flushIntervalMs ?? config.flushMs ?? 250,
+      flushSize: config.flushSize ?? config.flushMax ?? 50,
     };
     this._world = config.world ?? "default";
     this._player = config.player;
     this._session = config.session ?? randomId("s");
     const f = config.fetch ?? (typeof globalThis.fetch === "function" ? globalThis.fetch.bind(globalThis) : null);
     this.fetchImpl = f;
-    this.http = new Http(config.url, config.gameKey, f ?? missingFetch, this.cfg.requestTimeoutMs);
+    this.http = new Http(config.url, gameKey, f ?? missingFetch, this.cfg.requestTimeoutMs);
     this.cache = new FallbackCache(
       config.cache === false
         ? { storage: null, maxEntries: 1 }
-        : { namespace: `${config.gameKey}@${config.url}`, ...(config.cache ?? {}) },
+        : { namespace: `${gameKey}@${config.url}`, ...(config.cache ?? {}) },
     );
     this.cacheDisabled = config.cache === false;
 
-    if (config.realtime !== false && !config.offline) {
+    if ((config.realtime ?? config.websocket) !== false && !config.offline) {
       this.realtime = new Realtime({
         url: config.url,
-        key: config.gameKey,
+        key: gameKey,
         world: this._world,
         player: this._player,
         ...(config.WebSocket ? { WebSocket: config.WebSocket } : {}),
@@ -266,14 +276,17 @@ export class LiveforgeClient {
     else this.scheduleFlush();
   }
 
-  /** Sends queued signals now. Resolves when the batch was sent (or re-queued after a failure). */
-  flush(): Promise<void> {
+  /**
+   * Sends queued signals now. Resolves with the last batch result (null when nothing was sent or the batch was
+   * re-queued after a failure).
+   */
+  flush(): Promise<SignalBatchResult | null> {
     if (this.flushTimer) {
       clearTimeout(this.flushTimer);
       this.flushTimer = null;
     }
-    if (this.flushing) return this.flushing.then(() => (this.queue.length ? this.flush() : undefined));
-    if (!this.queue.length || this.cfg.offline) return Promise.resolve();
+    if (this.flushing) return this.flushing.then((r) => (this.queue.length ? this.flush() : r));
+    if (!this.queue.length || this.cfg.offline) return Promise.resolve(null);
     this.flushing = this.sendQueue().finally(() => {
       this.flushing = null;
     });
@@ -293,12 +306,14 @@ export class LiveforgeClient {
     }, this.cfg.flushIntervalMs);
   }
 
-  private async sendQueue(): Promise<void> {
+  private async sendQueue(): Promise<SignalBatchResult | null> {
+    let last: SignalBatchResult | null = null;
     while (this.queue.length) {
       const batch = this.queue.splice(0, 500);
       try {
         const r = await this.http.request<SignalBatchResult>({ method: "POST", path: "/v1/signals", json: { signals: batch } });
         this.flushFailures = 0;
+        last = r.data ?? null;
         for (const rej of r.data?.rejected ?? []) {
           const s = batch[rej.index];
           this.report(new LiveforgeError("bad_request", `signal "${s?.type ?? "?"}" rejected: ${rej.code}: ${rej.message}`));
@@ -319,9 +334,10 @@ export class LiveforgeClient {
         } else {
           this.report(e);
         }
-        return;
+        return null;
       }
     }
+    return last;
   }
 
   // ============================================================================================ asks
@@ -629,6 +645,16 @@ export class LiveforgeClient {
   }
 
   // ============================================================================================ other endpoints
+
+  /**
+   * Fetches `GET /v1/config` and makes sure the WebSocket is running (it starts on construction already, so calling
+   * this is optional). Resolves with the public config; rejects when the server is unreachable or the key is wrong,
+   * which makes it a good startup check.
+   */
+  async connect(): Promise<PublicConfig> {
+    this.realtime?.start();
+    return this.config(true);
+  }
 
   /** `GET /v1/config`: personas, bosses, actions, elements, enabled modules ... (cached; `refresh` to reload). */
   config(refresh = false): Promise<PublicConfig> {

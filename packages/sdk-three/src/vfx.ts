@@ -21,6 +21,8 @@ export interface BuildVfxOptions {
   disposeOnFinish?: boolean;
   /** Seed for the particle RNG (deterministic effects). */
   seed?: number;
+  /** Accepted for compatibility with the K0 skeleton signature; the package imports three itself (peer dependency). */
+  three?: unknown;
 }
 
 const SPRITE_INDEX: Record<string, number> = {
@@ -536,6 +538,16 @@ export class VfxObject extends THREE.Group {
   /** Fires one extra burst on every emitter (`count` per emitter; default each emitter's `burst` or 12). */
   burst(count?: number): void {
     for (const e of this.emitters) e.spawn(count ?? e.e.burst ?? 12);
+  }
+
+  /** This object (the K0 skeleton's `BuiltVfx.object`). */
+  get object(): this {
+    return this;
+  }
+
+  /** Alias of `finished`. */
+  get done(): boolean {
+    return this.finished;
   }
 
   /** Live particles across all emitters. */

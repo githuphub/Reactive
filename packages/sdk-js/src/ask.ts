@@ -31,6 +31,8 @@ export interface AskHandle<K extends AskKind = AskKind> {
   readonly final: Promise<AskResponse<K>>;
   /** Streamed partial text (npc.reply with stream:true). Late subscribers get the chunks so far replayed. */
   onPartial(fn: (partial: AskPartial) => void): Unsubscribe;
+  /** Like onPartial with (text, seq) arguments (the K0 client stub's name). */
+  onChunk(fn: (text: string, seq: number) => void): Unsubscribe;
   /** Runs once with the upgrade (right away if it already arrived). Not called when there is no upgrade. */
   onUpgrade(fn: (response: AskResponse<K>) => void): Unsubscribe;
   /** The newest answer received so far (undefined before the instant answer). */
@@ -90,6 +92,10 @@ export class AskHandleImpl<K extends AskKind> implements AskHandle<K> {
     for (const p of this.partials) safe(() => fn(p));
     this.partialFns.add(fn);
     return () => this.partialFns.delete(fn);
+  }
+
+  onChunk(fn: (text: string, seq: number) => void): Unsubscribe {
+    return this.onPartial((p) => fn(p.text, p.seq));
   }
 
   onUpgrade(fn: (r: AskResponse<K>) => void): Unsubscribe {

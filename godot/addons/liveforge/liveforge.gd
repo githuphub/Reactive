@@ -23,6 +23,10 @@ signal request_failed(code: String, message: String)
 signal config_loaded(config: Dictionary)
 ## A forge job changed state ({id, state, url?}).
 signal job_updated(job: Dictionary)
+## Global variants (K0 skeleton names): every directive / instant answer / upgrade, for logging and tools.
+signal directive_received(directive: Dictionary)
+signal ask_answered(id: String, response: Dictionary)
+signal ask_upgraded(id: String, response: Dictionary)
 
 const WS_PATH := "/v1/ws"
 const PROTOCOL_ID := "liveforge-protocol/1"
@@ -168,6 +172,11 @@ func send_signal(type: String, data: Dictionary = {}) -> void:
 		_flush_timer.start(_flush_interval)
 
 
+## Alias of send_signal (K0 skeleton name).
+func emit_signal_event(type: String, data: Dictionary = {}) -> void:
+	send_signal(type, data)
+
+
 ## Sends queued signals now.
 func flush() -> void:
 	if _flushing or _queue.is_empty() or offline:
@@ -248,6 +257,7 @@ func _on_ask_instant(code: int, data: Variant, ecode: String, emsg: String, a: L
 	var pending := str(resp.get("upgrade", "none")) == "pending" and opts.get("upgrade", true) != false
 	if pending:
 		a._deadline_ms = Time.get_ticks_msec() + int(_upgrade_timeout * 1000.0)
+	ask_answered.emit(a.id, resp)
 	a._resolve_instant(resp)
 	if not pending or a.is_done:
 		_asks.erase(a.id)
@@ -265,6 +275,7 @@ func _answer_locally(a: LiveforgeAsk, opts: Dictionary, ecode: String, emsg: Str
 		return
 	local["id"] = a.id
 	local["kind"] = a.kind
+	ask_answered.emit(a.id, local)
 	a._resolve_instant(local)
 	a._settle_upgrade(null)
 
@@ -297,6 +308,7 @@ func _accept_upgrade(resp: Dictionary) -> void:
 	_asks.erase(a.id)
 	if resp.has("result"):
 		cache.put(a.kind, a.params, resp.get("result"), "ai", str(resp.get("why", "")))
+		ask_upgraded.emit(a.id, resp)
 	a._settle_upgrade(resp)
 
 
@@ -624,6 +636,7 @@ func _dispatch(d: Dictionary) -> void:
 	if _debug:
 		print("[liveforge] directive %s -> %s: %s" % [d.get("kind", "?"), d.get("target", "?"), d.get("why", "")])
 	directive.emit(str(d.get("kind", "")), d)
+	directive_received.emit(d)
 
 
 func _set_status(s: String) -> void:

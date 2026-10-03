@@ -12,6 +12,8 @@ export interface ApplyVariantOptions {
   resolveNode?: (root: THREE.Object3D, name: string) => THREE.Object3D | undefined;
   /** Colour match tolerance for hex `recolour.from` (0-1, sRGB distance). Default 0.08. */
   tolerance?: number;
+  /** Accepted for compatibility with the K0 skeleton signature; the package imports three itself. */
+  three?: unknown;
 }
 
 /** Result of applyVariant: what was added, and `revert()` to undo everything. */

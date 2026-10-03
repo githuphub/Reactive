@@ -37,6 +37,8 @@ export interface BuildBlueprintOptions {
   vfx?: boolean;
   /** Build `bp.trail` as a live ribbon behind the "tip" attachment (swing trails). Default false (see `fx.trail`). */
   trail?: boolean;
+  /** Accepted for compatibility with the K0 skeleton signature; the package imports three itself (peer dependency). */
+  three?: unknown;
 }
 
 /** Quick-FX descriptors (Counterforge-compatible) for games that draw their own trails. */
@@ -291,6 +293,7 @@ export class BlueprintObject extends THREE.Group {
   /** @internal */
   _floatCap = 0;
   private lodState = { far: false, dropped: false };
+  private clock = 0;
 
   /** @internal use buildBlueprint */
   constructor(bp: Blueprint, content: THREE.Group, scaleFactor: number, measure: number, fx: BlueprintFx) {
@@ -303,6 +306,18 @@ export class BlueprintObject extends THREE.Group {
     this.fx = fx;
     this.userData.liveforgeBlueprint = true;
     this.userData.palette = bp.palette;
+  }
+
+  /** This object (the K0 skeleton's `BuiltBlueprint.object`). */
+  get object(): this {
+    return this;
+  }
+
+  /** Advances the internal clock by `dt` seconds and animates (alternative to `animate(t)`). */
+  update(dt: number): void {
+    if (!Number.isFinite(dt)) return;
+    this.clock += dt;
+    this.animate(this.clock);
   }
 
   /** An attachment point by name (or the first of a kind: "grip", "tip", "vfx" ...). */

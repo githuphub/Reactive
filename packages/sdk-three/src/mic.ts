@@ -166,3 +166,8 @@ export class Mic {
     this.stream = null;
   }
 }
+
+/** Creates a push-to-talk Mic (`start()` / `stop()` -> transcript). Same as `new Mic(client, opts)`. */
+export function createMic(client: LiveforgeClient | null, opts: MicOptions = {}): Mic {
+  return new Mic(client, opts);
+}

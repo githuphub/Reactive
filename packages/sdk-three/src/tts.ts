@@ -77,12 +77,16 @@ export function pickVoice(style: VoiceStyle | undefined, lang?: string): SpeechS
 
 /**
  * Speaks `text` with a VoiceStyle. Resolves when the utterance ends (or immediately when TTS is unsupported).
+ * The second argument is either SpeakOptions or a bare VoiceStyle.
  *
  * ```ts
  * await speak("Sit yourself down, love.", { voice: { pitch: 1, rate: 1, style: "warm", accent: "en-GB" } });
  * ```
  */
-export function speak(text: string, opts: SpeakOptions = {}): Promise<void> {
+export function speak(text: string, optsOrVoice: SpeakOptions | VoiceStyle = {}): Promise<void> {
+  const o = optsOrVoice as Record<string, unknown>;
+  const isOpts = "voice" in o || "interrupt" in o || "volume" in o || "lang" in o;
+  const opts: SpeakOptions = isOpts ? (optsOrVoice as SpeakOptions) : { voice: optsOrVoice as VoiceStyle };
   const clean = text.replace(/\s+/g, " ").trim();
   if (!clean || !speechSupported()) return Promise.resolve();
   if (opts.interrupt) speechSynthesis.cancel();
