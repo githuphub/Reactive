@@ -1,0 +1,36 @@
+; Engine configuration file.
+; Liveforge Godot 4 sample: Thornbury village (manifest: examples/godot-village.liveforge.yaml).
+
+config_version=5
+
+[application]
+
+config/name="Liveforge Village (Godot sample)"
+config/description="Three LiveNPCs, a forge slot and an adaptive training dummy driven by a Liveforge server."
+run/main_scene="res://main.tscn"
+config/features=PackedStringArray("4.3", "Forward Plus")
+
+[audio]
+
+driver/enable_input=true
+general/text_to_speech=true
+
+[autoload]
+
+Liveforge="*res://addons/liveforge/liveforge.gd"
+
+[display]
+
+window/size/viewport_width=1280
+window/size/viewport_height=720
+
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/liveforge/plugin.cfg")
+
+[liveforge]
+
+server/url="http://localhost:8787"
+server/game_key="pk_dev_godot-village"
+session/world="village"
+session/player="player1"
