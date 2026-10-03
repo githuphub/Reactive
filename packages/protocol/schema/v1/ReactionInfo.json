@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "recipe": {
+      "type": "string",
+      "maxLength": 48
+    },
+    "fingerprint": {
+      "type": "string",
+      "maxLength": 24
+    },
+    "facets": {
+      "default": [],
+      "maxItems": 16,
+      "type": "array",
+      "items": {
+        "type": "string",
+        "maxLength": 64
+      }
+    },
+    "sentence": {
+      "type": "string",
+      "maxLength": 400
+    },
+    "variant": {
+      "type": "integer",
+      "minimum": -9007199254740991,
+      "maximum": 9007199254740991
+    }
+  },
+  "required": [
+    "recipe",
+    "fingerprint"
+  ],
+  "$id": "https://liveforge.dev/schema/v1/ReactionInfo.json",
+  "title": "ReactionInfo"
+}

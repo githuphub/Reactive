@@ -5,7 +5,7 @@ import type { ModuleContext, ScopedContext } from "../../module.js";
 
 export type Persona = Manifest["personas"][number];
 export type Faction = Manifest["factions"][number];
-export type Reaction = Manifest["reactions"][number];
+export type Reaction = Manifest["reactions"]["rules"][number];
 
 export const clamp = (v: number, lo: number, hi: number): number => (Number.isFinite(v) ? Math.min(hi, Math.max(lo, v)) : lo);
 export const round3 = (v: number): number => Math.round(v * 1000) / 1000;

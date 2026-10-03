@@ -4,6 +4,7 @@
 import { cleanHabits, type MoveHabits, type StoredEvent } from "@liveforge/protocol";
 import type { ScopedContext } from "../../module.js";
 import { gearTags, traitAt } from "../observer/view.js";
+import { libraryHabits } from "../world/reactions-lib/index.js";
 
 export interface PlayerRead {
   habits: MoveHabits;
@@ -115,6 +116,8 @@ export function readPlayer(ctx: ScopedContext, player: string | null, explicit: 
     dodgeRate: Math.max(num(h.dodgeRate), t("dodger") * 10),
     blockRate: Math.max(num(h.blockRate), t("turtle") * 0.8),
     spam: Math.max(num(h.spam), t("berserker") * 1.5),
+    // Reaction Library dodge_bait: dodge directions summed over boss attempts (combat.boss_attempt dodge_dirs)
+    ...libraryHabits(ctx, player),
     ...(explicit ?? {}),
   };
   if (explicit?.range && typeof explicit.range === "object") merged.range = { ...range, ...(explicit.range as object) };

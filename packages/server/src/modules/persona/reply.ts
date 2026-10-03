@@ -7,6 +7,7 @@ import { allowedActions, sanitizeActions, voiceFor, type RawAction } from "./car
 import { gatherContext, personaSystem, playerBlock, type NpcContext } from "./context.js";
 import { cannedReply, classifyIntent, refusal, screenInput, seedFor } from "./intent.js";
 import { PERSONA_EVENTS } from "./memory.js";
+import { libraryContext, libraryReplyInstant, recordLlmClaim, replyLibSeen, wantsClaimField } from "../world/reactions-lib/index.js";
 
 type ReplyResult = AskResult<"npc.reply">;
 
@@ -29,10 +30,23 @@ function maxChars(ctx: AskContext): number {
   return Math.min(1200, ctx.manifest.clamps.npc.maxReplyChars);
 }
 
-const REPLY_SCHEMA = (allowed: string[]) => ({
+/** Reaction Library (R1): the reply also classifies a promise / checkable claim the player just made. */
+const CLAIM_PROP = {
   type: "object",
   additionalProperties: false,
-  required: ["text", "emote", "mood", "end", "actions"],
+  required: ["kind", "text", "truth"],
+  description: "Did the player just make a promise to you, or a factual claim you can judge from what you know? kind none otherwise.",
+  properties: {
+    kind: { type: "string", enum: ["none", "promise", "claim"] },
+    text: { type: "string", description: "The promise or claim, in a few words (empty for none)." },
+    truth: { type: "string", enum: ["true", "false", "unknown"], description: "For a claim: is it true given what you know about the player? unknown if you can't tell." },
+  },
+};
+
+const REPLY_SCHEMA = (allowed: string[], claim = false) => ({
+  type: "object",
+  additionalProperties: false,
+  required: ["text", "emote", "mood", "end", "actions", ...(claim ? ["claim"] : [])],
   properties: {
     text: { type: "string", description: "What you say aloud, in character." },
     emote: { type: "string", description: "One-word body language (nod, laugh, frown, shrug ...) or empty." },
@@ -54,6 +68,7 @@ const REPLY_SCHEMA = (allowed: string[]) => ({
         },
       },
     },
+    ...(claim ? { claim: CLAIM_PROP } : {}),
   },
 });
 
@@ -63,6 +78,7 @@ interface LlmReply {
   mood?: unknown;
   end?: unknown;
   actions?: { action?: unknown; args?: { name?: unknown; value?: unknown }[] }[];
+  claim?: { kind?: unknown; text?: unknown; truth?: unknown };
 }
 
 export const replyHandler: AskHandler<"npc.reply"> = {
@@ -76,10 +92,15 @@ export const replyHandler: AskHandler<"npc.reply"> = {
     const canned = verdict.ok
       ? cannedReply(m, c.card, intent, p.text, { attitude: c.attitude, met: !!c.memory?.lastTalked, grudge: !!c.memory?.entries.some((e) => e.kind === "harm" && c.now - e.ts < 30 * 60_000), seed })
       : refusal(m, c.card, verdict, seed);
-    const text = clampReply(canned.text, maxChars(ctx));
+    // Reaction Library (R1): a promise or a checkable claim in what the player said gets an in-character line
+    // (acknowledged / called out) and is remembered by the promises_remembered / lies_caught recipes.
+    const lib = verdict.ok && !moderated ? libraryReplyInstant(ctx, p.npc, p.text, ctx.askId) : null;
+    const text = clampReply(lib?.text ?? canned.text, maxChars(ctx));
+    const emote = lib?.emote ?? canned.emote;
+    if (lib) canned.why = `${canned.why}; ${lib.why}`;
     const result: ReplyResult = {
       npc: p.npc, text, actions: canned.actions,
-      ...(canned.emote ? { emote: canned.emote } : {}),
+      ...(emote ? { emote } : {}),
       voice: voiceFor(c.card, canned.mood),
       ...(canned.mood ? { mood: canned.mood } : {}),
       ...(canned.end ? { end: true } : {}),
@@ -95,8 +116,11 @@ export const replyHandler: AskHandler<"npc.reply"> = {
     const c = gatherContext(ctx, p.npc);
     const max = maxChars(ctx);
     const history = (p.history ?? []).slice(-10).map((h) => `${h.role === "player" ? "Player" : c.card.name}: ${h.text.slice(0, 300)}`);
+    const lc = libraryContext(ctx, p.npc);
+    const claimField = wantsClaimField(m);
     const user = [
       playerBlock(c),
+      lc?.block ?? "",
       p.context && Object.keys(p.context).length ? `Scene context: ${JSON.stringify(p.context).slice(0, 600)}` : "",
       history.length ? `Conversation so far:\n${history.join("\n")}` : "",
       `The player says to you: "${p.text.slice(0, 1000)}"`,
@@ -118,7 +142,7 @@ export const replyHandler: AskHandler<"npc.reply"> = {
       else send(v.ok ? s : v.cleaned);
     };
 
-    const r = await llm.json<LlmReply>(REPLY_SCHEMA(allowedActions(m, c.card)), personaSystemCached(m, c.card), user, {
+    const r = await llm.json<LlmReply>(REPLY_SCHEMA(allowedActions(m, c.card), claimField), personaSystemCached(m, c.card), user, {
       tier: "fast", task: "npc.reply", player: ctx.player, maxTokens: 450, signal: ctx.signal,
       ...(p.stream ? { stream: { field: "text", onSentence } } : {}),
     });
@@ -146,6 +170,12 @@ export const replyHandler: AskHandler<"npc.reply"> = {
     };
     // Replace the instant turn in memory (same ref) and apply only the mood difference.
     ctx.record(PERSONA_EVENTS.turn, { npc: p.npc, said: p.text.slice(0, 200), reply: text, actions, mood: Math.round((mood - (instant.mood ?? 0)) * 100) / 100, ref: ctx.askId, stage: "upgrade" });
+    // Reaction Library: record a promise / claim the LLM spotted (unless the rules already caught one this turn).
+    const seen = replyLibSeen(ctx, ctx.askId);
+    const cl = v.claim;
+    if (claimField && cl && typeof cl.kind === "string" && cl.kind !== "none" && cl.kind !== seen) {
+      recordLlmClaim(ctx, p.npc, { kind: cl.kind, text: cleanText(cl.text, 200) || p.text.slice(0, 200), truth: typeof cl.truth === "string" ? cl.truth : "unknown" }, ctx.askId);
+    }
     if (actions.some((a) => a.action === "quest_offer")) {
       // K2 quests can subscribe to this to generate the quest (the game may also ask quest.offer {giver}).
       ctx.record(PERSONA_EVENTS.questOffer, { npc: p.npc, askId: ctx.askId, context: p.text.slice(0, 200) });

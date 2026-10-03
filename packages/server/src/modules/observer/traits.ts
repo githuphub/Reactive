@@ -279,6 +279,9 @@ export function updateForEvent(
     case "social.talked_to": bump(acc, "talked", t); inc("conversations"); stats.last_npc = str(d.npc); return `talked to ${str(d.npc)}`;
     case "social.gave": bump(acc, "gave", t); inc("gifts"); return `gave ${str(d.item) || (d.gold ? `${num(d.gold)} gold` : "a gift")} to ${str(d.to)}`;
     case "social.lied": bump(acc, "lied", t); inc("lies"); return `lied to ${str(d.to)}${d.about ? ` about ${str(d.about)}` : ""}`;
+    // R1: a claim the game knows is false counts as a lie; fleeing a fight via combat.fled counts like movement.fled
+    case "social.claim": if (d.truth !== false) return null; bump(acc, "lied", t); inc("lies"); return `lied to ${str(d.to)}: "${str(d.text).slice(0, 40)}"`;
+    case "combat.fled": bump(acc, "fled", t); inc("fled"); return `fled${d.from ? ` from ${str(d.from)}` : ""}`;
     case "social.threatened": bump(acc, "threatened", t); inc("threats"); return `threatened ${str(d.target)}`;
     case "movement.entered_zone": {
       const zone = str(d.zone);

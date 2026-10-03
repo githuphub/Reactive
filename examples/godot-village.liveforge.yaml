@@ -80,14 +80,28 @@ actions:
   steal: { args: { gold: { type: number, min: 1, max: 50 } }, by: [npc, world] }
 
 reactions:
-  - id: thief_targets_rich
-    when: trait(rich) > 0.6
-    then:
-      kind: npc.action
-      target: npc:wick
-      args: { npc: wick, action: { action: steal, args: { gold: 10 } } }
-    cooldown: 300
-    flavour: true
+  rules:
+    - id: thief_targets_rich
+      when: trait(rich) > 0.6
+      then:
+        kind: npc.action
+        target: npc:wick
+        args: { npc: wick, action: { action: steal, args: { gold: 10 } } }
+      cooldown: 300
+      flavour: true
+  # R1 Reaction Library (docs/reactions.md): the recipes that fit a small village. The Godot addon auto-emits
+  # session.started, world.time (LiveWorldClock), appearance and visited places.
+  library: [outfit_comments, appearance_state, deed_nicknames, lies_caught, promises_remembered, town_mood,
+            rich_attention, broke_support, haggle_memory, boss_attempt_memory, dodge_bait, flawless_secret_phase,
+            time_weather_barks, inn_regular, absence_recap, property_damage, avoided_area]
+  params:
+    rich_attention: { pickpocket: wick, merchant: mira, gold: 300, stealGold: 10 }
+    broke_support: { loanShark: wick, loanAmount: 50 }
+    haggle_memory: { step: 0.05 }
+    inn_regular: { owners: { inn: bess, copper_kettle: bess, wagon: mira } }
+    absence_recap: { companion: bess, minHours: 6 }
+    property_damage: { guardsAfter: 2 }
+    avoided_area: { giver: bess, afterMin: 10 }
 
 items:
   families: [sword, axe, hammer, spear, bow, staff, shield_small]

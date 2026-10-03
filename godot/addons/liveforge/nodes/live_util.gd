@@ -16,6 +16,8 @@ const SETTINGS := {
 	"liveforge/asks/upgrade_timeout_sec": 45.0,
 	"liveforge/cache/persist": true,
 	"liveforge/debug/log": false,
+	## Reaction Library (R1): send session.started (with the last-seen time) when the autoload starts.
+	"liveforge/auto/session_started": true,
 }
 
 ## Built-in signal vocabulary (protocol BUILTIN_SIGNALS), for tools and validation hints.
@@ -24,8 +26,31 @@ const BUILTIN_SIGNALS := [
 	"combat.ability_used", "economy.gold", "economy.bought", "economy.sold", "economy.stole", "social.said",
 	"social.talked_to", "social.gave", "social.lied", "social.threatened", "movement.entered_zone", "movement.explored",
 	"movement.fled", "gear.equipped", "gear.unequipped", "quest.accepted", "quest.completed", "quest.failed",
-	"world.destroyed", "world.helped", "world.time",
+	"world.destroyed", "world.helped", "world.time", "movement.near_npc", "social.approach",
+	# Reaction Library (R1)
+	"world.property_damaged", "appearance.state", "appearance.outfit", "social.promise", "social.promise_kept",
+	"social.promise_broken", "social.claim", "economy.haggled", "combat.boss_attempt", "combat.phase_flawless",
+	"combat.fled", "companion.died", "session.started", "movement.visited",
 ]
+
+## Reaction Library recipe ids (manifest reactions.library); docs/reactions.md.
+const REACTION_RECIPES := [
+	"outfit_comments", "appearance_state", "deed_nicknames", "lies_caught", "promises_remembered", "town_mood",
+	"rich_attention", "broke_support", "collector_interest", "haggle_memory", "boss_attempt_memory", "dodge_bait",
+	"flawless_secret_phase", "coward_rumour", "companion_grief", "time_weather_barks", "inn_regular", "absence_recap",
+	"property_damage", "avoided_area",
+]
+
+## hour 0-24 -> "dawn" | "day" | "dusk" | "night" (same buckets as the server).
+static func day_phase(hour: float) -> String:
+	var h := fposmod(hour, 24.0)
+	if h >= 5.0 and h < 8.0:
+		return "dawn"
+	if h >= 8.0 and h < 18.0:
+		return "day"
+	if h >= 18.0 and h < 21.0:
+		return "dusk"
+	return "night"
 
 const ACCENTS := {
 	"british": "en", "english": "en", "scottish": "en", "irish": "en", "american": "en", "australian": "en",

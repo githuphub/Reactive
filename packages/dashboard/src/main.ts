@@ -18,11 +18,12 @@ import { reviewPanel } from "./panels/review";
 import { metersPanel } from "./panels/meters";
 import { manifestPanel } from "./panels/manifest";
 import { simulatePanel } from "./panels/simulate";
+import { reactionsPanel } from "./panels/reactions";
 
 const NAV: { group: string; panels: PanelDef[] }[] = [
   { group: "Live", panels: [overviewPanel, streamPanel, simulatePanel] },
   { group: "Players", panels: [playersPanel, npcsPanel] },
-  { group: "World", panels: [rumoursPanel, factionsPanel, directorPanel] },
+  { group: "World", panels: [rumoursPanel, factionsPanel, directorPanel, reactionsPanel] },
   { group: "Forge", panels: [galleryPanel, reviewPanel] },
   { group: "Ops", panels: [metersPanel, manifestPanel] },
 ];

@@ -10,7 +10,7 @@ export function directiveRow(d: Directive): HTMLElement {
   const ns = d.kind.split(".")[0];
   const color = ({ npc: NS_COLORS.social, rumour: NS_COLORS.world, spawn: NS_COLORS.combat, boss: NS_COLORS.combat, pacing: NS_COLORS.movement, difficulty: NS_COLORS.movement, quest: NS_COLORS.quest, achievement: NS_COLORS.economy, forge: NS_COLORS.gear, loot: NS_COLORS.gear, moment: NS_COLORS.economy, world: NS_COLORS.world } as Record<string, string>)[ns] ?? NS_COLORS.lf;
   const args = d.args as Record<string, unknown>;
-  const text = typeof args.text === "string" ? `"${args.text}"` : typeof args.content === "string" ? `"${args.content}"` : (args.move as { name?: string } | undefined)?.name ?? (args.quest as { title?: string } | undefined)?.title ?? (args.achievement as { title?: string } | undefined)?.title ?? "";
+  const text = typeof args.text === "string" ? `"${args.text}"` : typeof args.line === "string" ? `"${args.line}"` : typeof args.content === "string" ? `"${args.content}"` : (args.move as { name?: string } | undefined)?.name ?? (args.quest as { title?: string } | undefined)?.title ?? (args.achievement as { title?: string } | undefined)?.title ?? "";
   const replaced = replacements.replacedBy.has(d.id);
   const replaces = replacements.replaces.get(d.id);
   return h(
@@ -20,8 +20,19 @@ export function directiveRow(d: Directive): HTMLElement {
       replaced ? pill("replaced by AI upgrade", "#6b7385") : null, replaces ? pill(`upgrade · replaces ${replaces}`, "#ff7a2f") : null,
       h("span", { class: "dir-time" }, clock(d.ts))),
     text ? h("div", { class: "dir-text" }, text) : null,
+    reactionTags(args),
     h("div", { class: "dir-why" }, h("span", { class: "why-tag" }, "why"), d.why || "—"),
   );
+}
+
+/** Reaction Library: recipe (+ effect) and the fingerprint facets of a library directive. */
+function reactionTags(args: Record<string, unknown>): HTMLElement | null {
+  const r = args.reaction as { recipe?: string; facets?: string[]; fingerprint?: string } | undefined;
+  const recipe = r?.recipe ?? (typeof args.recipe === "string" ? args.recipe : undefined);
+  if (!recipe) return null;
+  const effect = (args.payload as { effect?: unknown } | undefined)?.effect;
+  return h("div", { class: "chips" }, pill(`recipe: ${recipe}`, "#ff7a2f", { solid: true }), typeof effect === "string" ? pill(effect) : null,
+    ...(r?.facets ?? []).slice(0, 6).map((f) => pill(f.replace(/_/g, " "))));
 }
 
 export function eventLine(e: StoredEvent): HTMLElement {

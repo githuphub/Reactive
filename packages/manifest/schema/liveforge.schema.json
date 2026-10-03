@@ -485,34 +485,177 @@
     },
     "reactions": {
       "default": [],
-      "type": "array",
-      "items": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 64,
-            "pattern": "^[a-z0-9][a-z0-9_\\-]*$"
-          },
-          "when": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 400
-          },
-          "then": {
+      "anyOf": [
+        {
+          "type": "array",
+          "items": {
             "type": "object",
             "properties": {
-              "kind": {
+              "id": {
                 "type": "string",
-                "minLength": 1
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^[a-z0-9][a-z0-9_\\-]*$"
               },
-              "target": {
+              "when": {
                 "type": "string",
-                "minLength": 1
+                "minLength": 1,
+                "maxLength": 400
               },
-              "args": {
-                "default": {},
+              "then": {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "target": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "args": {
+                    "default": {},
+                    "type": "object",
+                    "propertyNames": {
+                      "type": "string"
+                    },
+                    "additionalProperties": {}
+                  }
+                },
+                "required": [
+                  "kind",
+                  "target"
+                ]
+              },
+              "cooldown": {
+                "default": 300,
+                "type": "number",
+                "minimum": 0
+              },
+              "once": {
+                "default": false,
+                "type": "boolean"
+              },
+              "flavour": {
+                "default": false,
+                "type": "boolean"
+              },
+              "description": {
+                "type": "string",
+                "maxLength": 300
+              }
+            },
+            "required": [
+              "id",
+              "when",
+              "then"
+            ]
+          }
+        },
+        {
+          "type": "object",
+          "properties": {
+            "rules": {
+              "default": [],
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 64,
+                    "pattern": "^[a-z0-9][a-z0-9_\\-]*$"
+                  },
+                  "when": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 400
+                  },
+                  "then": {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "target": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "args": {
+                        "default": {},
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string"
+                        },
+                        "additionalProperties": {}
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "target"
+                    ]
+                  },
+                  "cooldown": {
+                    "default": 300,
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "once": {
+                    "default": false,
+                    "type": "boolean"
+                  },
+                  "flavour": {
+                    "default": false,
+                    "type": "boolean"
+                  },
+                  "description": {
+                    "type": "string",
+                    "maxLength": 300
+                  }
+                },
+                "required": [
+                  "id",
+                  "when",
+                  "then"
+                ]
+              }
+            },
+            "library": {
+              "default": [],
+              "anyOf": [
+                {
+                  "type": "string",
+                  "const": "all"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string"
+                        },
+                        "additionalProperties": {}
+                      }
+                    ]
+                  }
+                }
+              ]
+            },
+            "params": {
+              "default": {},
+              "type": "object",
+              "propertyNames": {
+                "type": "string"
+              },
+              "additionalProperties": {
                 "type": "object",
                 "propertyNames": {
                   "type": "string"
@@ -520,35 +663,37 @@
                 "additionalProperties": {}
               }
             },
-            "required": [
-              "kind",
-              "target"
-            ]
-          },
-          "cooldown": {
-            "default": 300,
-            "type": "number",
-            "minimum": 0
-          },
-          "once": {
-            "default": false,
-            "type": "boolean"
-          },
-          "flavour": {
-            "default": false,
-            "type": "boolean"
-          },
-          "description": {
-            "type": "string",
-            "maxLength": 300
+            "engine": {
+              "default": {},
+              "type": "object",
+              "properties": {
+                "ledgerSize": {
+                  "default": 16,
+                  "type": "integer",
+                  "minimum": 2,
+                  "maximum": 60
+                },
+                "traitThreshold": {
+                  "default": 0.5,
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "momentMinutes": {
+                  "default": 15,
+                  "type": "number",
+                  "minimum": 1,
+                  "maximum": 240
+                },
+                "ai": {
+                  "default": true,
+                  "type": "boolean"
+                }
+              }
+            }
           }
-        },
-        "required": [
-          "id",
-          "when",
-          "then"
-        ]
-      }
+        }
+      ]
     },
     "items": {
       "type": "object",

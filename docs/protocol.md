@@ -86,7 +86,22 @@ signals are kept.
 | `quest.failed` | `quest, reason?` |
 | `world.destroyed` | `object, zone?, owner?` |
 | `world.helped` | `npc, how?` |
-| `world.time` | `hour` (0–24)`, day?, phase?` (dawn / day / dusk / night) |
+| `world.time` | `hour` (0–24)`, day?, weather?` (clear / rain / storm / snow / fog / heat)`, phase?` (dawn / day / dusk / night) |
+| `world.property_damaged` | `object, owner?, value?, zone?` |
+| `appearance.state` | `wet?, bloodied?, burnt?, muddy?` (0–1 each) |
+| `appearance.outfit` | `slots {slot: {id, name, tags[], colors[]}}, style_tags?` |
+| `social.promise` | `to, text, due?` (ms, seconds or an in-game time string)`, ref?` |
+| `social.promise_kept` / `social.promise_broken` | `to, ref?` |
+| `social.claim` | `to, text, truth` (true / false / null) |
+| `economy.haggled` | `npc, delta_pct, outcome` (won / lost)`, item?` |
+| `combat.boss_attempt` | `boss, result` (died / won / fled)`, attempt?, phase?, dodge_dirs? {left, right, back, fwd}` |
+| `combat.phase_flawless` | `boss, phase` |
+| `combat.fled` | `from?, enemy_count?, zone?` |
+| `companion.died` | `companion, killer?` |
+| `session.started` | `last_seen_ts?` |
+| `movement.visited` | `place, kind?, zone?` |
+
+The last block feeds the [Reaction Library](reactions.md).
 
 ## Asks
 
@@ -183,7 +198,7 @@ directive with `player: null` goes to everyone in the world.
 | Kind | Args |
 |---|---|
 | `npc.action` | `npc, action {action, args, target?}, line?` |
-| `npc.bark` | `npc, text, emote?, voice?` |
+| `npc.bark` | `npc, text, emote?, voice?, reaction? {recipe, fingerprint, facets[], sentence?, variant?}` |
 | `rumour.heard` | `npc, rumourId, content, heat?` |
 | `spawn.wave` | `spawner?, zone?, position?, units[{type, count, elite?, modifiers?, tactic?}]` |
 | `pacing.breather` | `seconds, loot?` |
@@ -198,6 +213,7 @@ directive with `player: null` goes to everyone in the world.
 | `difficulty.set` | `aggression, mode, reason?` |
 | `moment` | `moment {id, kind, ts, evidence[], salience}` |
 | `world.reaction` | `rule, effect, data?` |
+| `custom.reaction` | `recipe, target, payload {effect, line?, npc?, ...}, line?, reaction?`. Reaction Library effects; payloads per recipe are in [reactions.md](reactions.md#customreaction-payloads). |
 | `custom.<name>` | Free args (manifest reactions). |
 
 Only actions declared in the manifest action schema are ever emitted. Clients should still re-validate content

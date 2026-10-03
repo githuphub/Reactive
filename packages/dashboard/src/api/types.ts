@@ -89,6 +89,19 @@ export interface LiveHandlers {
   onStatus(s: ConnStatus, detail?: string): void;
 }
 
+/** GET /admin/m/world/reactions-lib (R1 Reaction Library). */
+export interface ReactionLibraryState {
+  library: { recipe: string; params: Record<string, unknown> }[];
+  engine?: Record<string, unknown>;
+  players: Record<string, {
+    nickname: { name: string; deed: string; ts: number } | null;
+    mood?: { turned: string; streak: number };
+    time?: { hour: number; day: number; weather: string; phase: string } | null;
+    fired: { ts: number; recipe: string; speaker: string; line?: string; effect?: string; fingerprint: string; facets: string[]; sentence?: string; why: string; directives: string[] }[];
+    npcs: { npc: string; name: string; fingerprint: string; facets: string[]; sentence: string; ledger: { ts: number; line: string; recipe: string; fingerprint: string; variant: number }[] }[];
+  }>;
+}
+
 export interface DataSource {
   readonly mode: "live" | "demo";
   /** Shown in the top bar ("localhost:8787", "Demo data"). */
@@ -108,6 +121,8 @@ export interface DataSource {
   bakeExport(): Promise<BakePack>;
   /** Bake mode: pre-generate a forge catalogue into the review queue. */
   bake(req: BakeRequest): Promise<BakeResult>;
+  /** Reaction Library state (recipes, fired reactions, fingerprints + novelty ledger per NPC). Optional. */
+  reactionLibrary?(world: string, player?: string | null): Promise<ReactionLibraryState | null>;
   /** Live event + directive stream for a world. Returns an unsubscribe function. */
   connect(world: string, handlers: LiveHandlers): () => void;
   close(): void;

@@ -42,6 +42,14 @@ export function moveReplacements(timeline: DirectorDecision[]): { replaced: Set<
   return { replaced, replaces };
 }
 
+/** Reaction Library decisions (dodge_bait, flawless_secret_phase, boss_attempt_memory) show recipe + facets. */
+function reactionChips(d: DirectorDecision): HTMLElement | null {
+  const data = d.data as { recipe?: unknown; facets?: unknown } | undefined;
+  if (typeof data?.recipe !== "string") return null;
+  const facets = Array.isArray(data.facets) ? data.facets.filter((f): f is string => typeof f === "string") : [];
+  return h("div", { class: "chips" }, pill(`recipe: ${data.recipe}`, "#ff7a2f", { solid: true }), ...facets.slice(0, 6).map((f) => pill(f.replace(/_/g, " "))));
+}
+
 export const directorPanel: PanelDef = {
   id: "director",
   title: "Director",
@@ -96,6 +104,7 @@ export const directorPanel: PanelDef = {
               replaces.has(d) ? pill(`upgrade · replaces ${replaces.get(d)}`, "#ff7a2f") : null,
               h("span", { class: "muted small" }, clock(d.ts))),
             h("div", { class: "decision-sum" }, d.summary),
+            reactionChips(d),
             h("div", { class: "dir-why" }, h("span", { class: "why-tag" }, "why"), d.why)))) : empty("No decisions yet", "The Director decides when tension, habits or moments call for it."));
     };
 

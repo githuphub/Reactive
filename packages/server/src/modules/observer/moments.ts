@@ -99,11 +99,12 @@ export function detectBuiltinMoments(ctx: EventContext, ev: StoredEvent, o: Obse
   } else if (ev.type === "combat.hurt" && num(d.hp, 1) <= 0.15 && !pending) {
     ctx.kv.set(ndKey, { ts: ev.ts, hp: num(d.hp), source: str(d.source_type) || str(d.source) } satisfies NearDeath);
   } else if (pending) {
-    checkNearDeath(ctx, pending, ev.type === "movement.fled" ? "fled" : ev.type === "combat.killed" ? `killed ${str(d.target_type) || str(d.target)}` : null);
+    checkNearDeath(ctx, pending, ev.type === "movement.fled" || ev.type === "combat.fled" ? "fled" : ev.type === "combat.killed" ? `killed ${str(d.target_type) || str(d.target)}` : null);
   }
 
   // comeback: a boss / elite kill (or phase win) shortly after being nearly dead
-  const isPhaseWin = /(^|\.)phase_cleared$/.test(ev.type) || ev.type === "boss.defeated";
+  // R1: combat.phase_flawless is a phase win the game already judged flawless
+  const isPhaseWin = /(^|\.)phase_cleared$/.test(ev.type) || ev.type === "boss.defeated" || ev.type === "combat.phase_flawless";
   if ((ev.type === "combat.killed" && (d.boss === true || d.elite === true)) || isPhaseWin) {
     const hurts = ctx.events({ world, player, type: "combat.hurt", since: ev.ts - 90_000, limit: 200 });
     const minHp = hurts.reduce((m, e) => Math.min(m, num((e.data as { hp?: unknown }).hp, 1)), 1);
@@ -125,7 +126,7 @@ export function detectBuiltinMoments(ctx: EventContext, ev: StoredEvent, o: Obse
     const start = Math.max(prev?.ts ?? 0, ev.ts - 5 * 60_000);
     const hurts = ctx.events({ world, player, type: "combat.hurt", since: start, limit: 50 }).filter((e) => e.ts <= ev.ts);
     const hits = ctx.events({ world, player, type: "combat.*", since: start, limit: 50 }).length;
-    if (d.flawless === true || (hurts.length === 0 && hits >= 3)) {
+    if (d.flawless === true || ev.type === "combat.phase_flawless" || (hurts.length === 0 && hits >= 3)) {
       fireMoment(ctx, "flawless_phase", {
         evidence: [`cleared ${str(d.boss) || "a boss"} phase ${str(d.phase) || "?"} without a scratch`],
         salience: 0.8,
@@ -196,6 +197,19 @@ export function detectBuiltinMoments(ctx: EventContext, ev: StoredEvent, o: Obse
         });
       }
     }
+  }
+
+  // broken_promise (R1): an explicit social.promise_broken
+  if (ev.type === "social.promise_broken") {
+    const to = str(d.to);
+    fireMoment(ctx, "broken_promise", {
+      evidence: [`broke a promise${to ? ` to ${to}` : ""}`],
+      salience: 0.6,
+      why: to ? `let ${to} down` : "broke a promise",
+      data: { npc: to, ref: str(d.ref) },
+      cooldownKey: `broken_promise:${str(d.ref) || to}`,
+      seed: ev.seq,
+    });
   }
 
   // broken_promise: a quest taken from someone, then abandoned / failed

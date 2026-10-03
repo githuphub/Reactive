@@ -1,7 +1,8 @@
 // Module "world" - OWNER: K2. Only edit files inside packages/server/src/modules/world/.
 // World reactions: rumours (spread + mutation), factions + reputation, NPC relationships, reactive rules.
 // Contract: docs/CONTRACTS.md. Asks owned here: world.reactions.
-// Projections owned here: world.rumours (world; RumourState + meta), world.factions (world; FactionState + changes).
+// Projections owned here: world.rumours (world; RumourState + meta), world.factions (world; FactionState + changes),
+// world.reaction_ledger (player; Reaction Library state + novelty ledger, R1 - see reactions-lib/).
 //
 // Module options (manifest modules.world.options), all optional:
 //   rumours (true)               create + spread rumours at all
@@ -24,37 +25,41 @@ import { attitudeOf, bondFromGossip, factionsProjection, onReputationSource } fr
 import { activeReactions, evaluateReactions, standingDrafts } from "./reactions.js";
 import { opt, personaById, personasInZone, scopeFor, throttle } from "./util.js";
 import { worldRoutes } from "./routes.js";
+import { ledgerProjection, libraryTick, onLibraryEvent } from "./reactions-lib/index.js";
 
 export { knownRumours, rumourState, createRumour, seedRumour, type WorldRumourState, type RumourMeta } from "./rumours.js";
 export { attitudeOf, priceFor, reputationOf, standingFor, standingReport, changeReputation, type WorldFactionState } from "./factions.js";
 export { activeReactions, evaluateReactions } from "./reactions.js";
+export * as reactionLibrary from "./reactions-lib/index.js";
 
 /** Saved per game in init() so routes can reach the context. */
 const contexts = new Map<string, ModuleContext>();
 
 /** Event types that cannot change a reaction condition (core / our own bookkeeping). */
 const skipForReactions = (t: string) =>
-  t === "lf.directive" || t.startsWith("lf.world.rumour") || t === "lf.world.reaction" || t === "lf.world.reaction_flavour" || t === "lf.world.relationship";
+  t === "lf.directive" || t.startsWith("lf.reactions.") || t.startsWith("lf.world.rumour") || t === "lf.world.reaction" || t === "lf.world.reaction_flavour" || t === "lf.world.relationship";
 
 function reactOnEvent(ctx: EventContext, ev: StoredEvent): void {
-  if (!ev.player || skipForReactions(ev.type) || !ctx.manifest.reactions.length) return;
+  if (!ev.player || skipForReactions(ev.type) || !ctx.manifest.reactions.rules.length) return;
   if (!throttle(`world:react:${ctx.game}:${ev.world}:${ev.player}`, opt(ctx, "reactionEveryMs", 750), ctx.now())) return;
   evaluateReactions(ctx, ev.player, { fire: true });
 }
 
 function reactTick(ctx: TickContext): void {
-  if (!ctx.manifest.reactions.length) return;
+  if (!ctx.manifest.reactions.rules.length) return;
   for (const player of ctx.activePlayers.slice(0, 200)) evaluateReactions(scopeFor(ctx, ctx.world, player), player, { fire: true });
 }
 
 export default defineModule({
   id: "world",
   description: "World reactions: rumours (spread + mutation), factions + reputation, NPC relationships, reactive rules.",
-  projections: [rumoursProjection, factionsProjection],
+  projections: [rumoursProjection, factionsProjection, ledgerProjection],
   signalHandlers: [
     { types: [...RUMOUR_SIGNAL_TYPES, "lf.observer.moment", "lf.persona.memory"], handle: onRumourSource },
     { types: ["combat.*", "economy.*", "social.*", "world.*", "lf.persona.attitude", "lf.quests.completed"], handle: onReputationSource },
     { types: ["*"], handle: reactOnEvent },
+    // Reaction Library (R1): the 20 recipes switched on in manifest reactions.library
+    { types: ["*"], handle: onLibraryEvent },
   ],
   asks: {
     "world.reactions": {
@@ -106,11 +111,12 @@ export default defineModule({
     { name: "rumour-decay", everyMs: 30_000, run: decayTick },
     { name: "rumour-flavour", everyMs: 45_000, run: flavourTick },
     { name: "reactions", everyMs: 5000, run: reactTick },
+    { name: "reaction-library", everyMs: 5000, run: libraryTick },
   ],
   routes: worldRoutes(contexts),
   init(ctx) {
     contexts.set(ctx.game, ctx);
-    for (const r of ctx.manifest.reactions) {
+    for (const r of ctx.manifest.reactions.rules) {
       const err = checkDsl(r.when);
       if (err) ctx.log.warn("reaction rule has an invalid condition and will never fire", { rule: r.id, when: r.when, error: err });
     }

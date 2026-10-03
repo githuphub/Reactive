@@ -42,6 +42,30 @@ stays inside the rules the designer wrote.
 - **Live dashboard.** Signal stream, player models, NPC memories, rumour graph, factions, Director timeline,
   3D gallery, review/bake queue, cost meters, manifest validator and "simulate player" presets.
 
+## 50 ways your world reacts (20 shipped)
+
+One manifest line switches on ready-made reactions. Each one combines what the world knows about the player into
+a line and an effect that fit *this* moment. That includes traits, gear and colours, blood and mud, time and
+weather, rumours, nickname, debts and promises. NPCs never repeat themselves while a line is in their ledger.
+
+```yaml
+reactions:
+  library: all      # or pick: [outfit_comments, deed_nicknames, promises_remembered, dodge_bait, ...]
+```
+
+| | | | |
+|---|---|---|---|
+| Outfit comments | Bloodied, wet, burnt, muddy | Deed nicknames that spread | Lies caught |
+| Promises remembered | Town mood | Rich attention (pickpockets, beggars, tax) | Broke support (charity, loan sharks) |
+| Collector interest | Haggle memory | Bosses remember your attempts | Dodge bait |
+| Flawless → secret boss phase | Coward rumours + bounty hunters | Companion grief + revenge quest | Time and weather barks |
+| Becoming a regular | Absence recap | Property damage (bills, repairs, guards) | Avoided areas |
+
+The other 30 are planned. Every reaction carries a `why` (the recipe plus the facets it was chosen for), and the
+dashboard's **Reactions** panel shows fingerprints and the novelty ledger per NPC. The JS SDK's `autoEmit()` and
+the Godot addon send the clock, weather, appearance, sessions and visited places for you.
+→ [docs/reactions.md](docs/reactions.md)
+
 ## Architecture
 
 ```
@@ -160,6 +184,7 @@ described in the [manifest reference](docs/manifest.md).
 | [Protocol](docs/protocol.md) | REST + WebSocket, for Unity, Unreal or your own engine |
 | [Self-hosting](docs/self-hosting.md) | Node, Docker, env vars, providers, costs and budgets |
 | [Dashboard](docs/dashboard.md) | What every panel shows |
+| [Reaction Library](docs/reactions.md) | 20 one-line reactions, the combination engine, signals and payloads |
 | [Recipes](docs/recipes/README.md) | NPC that comments on your armour · boss that punishes dodging · thieves target rich players · voice conversation · forge gear from a prompt · personal achievements · bake packs for consoles / offline |
 | [Contracts](docs/CONTRACTS.md) | Internals: modules, projections, how everything plugs in |
 | [Contributing](CONTRIBUTING.md) | Repo layout, conventions, how to add a module |

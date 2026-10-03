@@ -61,6 +61,25 @@ func _ready() -> void:
 	lf.request_failed.connect(_on_request_failed)
 	lf.config_loaded.connect(_on_config)
 	_on_status(lf.status)
+	# Reaction Library (R1): a day/night + weather clock (world.time), mud that dries off, places the inn counts.
+	var clock := LiveWorldClock.new()
+	clock.name = "WorldClock"
+	clock.day_length_min = 12.0
+	clock.auto_weather = true
+	clock.sun = get_node_or_null("Sun") as DirectionalLight3D
+	add_child(clock)
+	lf.appearance_decay = {"muddy": 0.02, "wet": 0.05, "bloodied": 0.01}
+	var inn := LivePlace.new()
+	inn.place_id = "copper_kettle"
+	inn.kind = "inn"
+	inn.zone = "inn"
+	var shape := CollisionShape3D.new()
+	var box := BoxShape3D.new()
+	box.size = Vector3(4, 3, 4)
+	shape.shape = box
+	inn.add_child(shape)
+	inn.position = Vector3(-8, 1.5, -6)
+	add_child(inn)
 	# Local fallbacks keep the village talking when the server is unreachable.
 	lf.set_fallback("npc.bark", _fallback_bark)
 	lf.set_fallback("npc.reply", _fallback_reply)

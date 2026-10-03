@@ -18,6 +18,7 @@ const top: Record<string, z.ZodType> = {
   StoredEvent: P.StoredEvent, ErrorBody: P.ErrorBody, SttResponse: P.SttResponse, ForgeJob: P.ForgeJob,
   Snapshot: P.Snapshot, PublicConfig: P.PublicConfig, BakePack: P.BakePack,
   WsClientMessage: P.WsClientMessage, WsServerMessage: P.WsServerMessage,
+  ReactionInfo: P.ReactionInfo, ReactionDirectiveArgs: P.ReactionDirectiveArgs,
 };
 for (const [name, s] of Object.entries(P.PROJECTIONS)) top[`Projection_${name}`] = s.schema;
 
@@ -47,6 +48,9 @@ writeFileSync(
     npcActions: P.BUILTIN_NPC_ACTIONS,
     moments: P.BUILTIN_MOMENTS,
     dslFunctions: P.DSL_FUNCTIONS,
+    reactionRecipes: P.REACTION_RECIPES,
+    commonRecipeParams: P.COMMON_RECIPE_PARAMS,
+    weathers: P.WEATHERS,
     schemas: index,
   }, null, 2) + "\n",
 );

@@ -2,7 +2,7 @@
 // clamps, safety, budgets, model tiering and module toggles. Most sections are optional with sensible defaults so
 // a minimal manifest is just `liveforge: 1` + `game`.
 import { z } from "zod";
-import { DEFAULT_ELEMENTS, MOVE_SHAPES } from "@liveforge/protocol";
+import { DEFAULT_ELEMENTS, MOVE_SHAPES, REACTION_RECIPE_IDS } from "@liveforge/protocol";
 
 const id = z
   .string()
@@ -108,6 +108,69 @@ export const ReactionSchema = z.object({
   flavour: z.boolean().default(false),
   description: z.string().max(300).optional(),
 });
+
+/** One library entry: "outfit_comments", {outfit_comments: {cooldownSec: 30}} or {recipe: outfit_comments, cooldownSec: 30}. */
+const LibraryEntryInput = z.union([
+  z.string().min(1),
+  z.record(z.string(), z.unknown()),
+]);
+export interface LibraryEntry {
+  recipe: string;
+  params: Record<string, unknown>;
+}
+
+function normaliseLibrary(list: unknown[], params: Record<string, Record<string, unknown>>): LibraryEntry[] {
+  const out = new Map<string, LibraryEntry>();
+  const add = (recipe: string, p: Record<string, unknown>) => out.set(recipe, { recipe, params: { ...(out.get(recipe)?.params ?? {}), ...p } });
+  for (const item of list) {
+    if (item === "all" || item === "*") for (const id of REACTION_RECIPE_IDS) add(id, {});
+    else if (typeof item === "string") add(item.trim(), {});
+    else if (item && typeof item === "object") {
+      const o = item as Record<string, unknown>;
+      if (typeof o.recipe === "string") {
+        const { recipe, ...rest } = o;
+        add(recipe as string, rest);
+      } else {
+        for (const [k, v] of Object.entries(o)) add(k, v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : v === false ? { enabled: false } : {});
+      }
+    }
+  }
+  for (const [k, p] of Object.entries(params)) if (out.has(k)) add(k, p);
+  return [...out.values()];
+}
+
+/**
+ * Reaction Library block (R1): `reactions: { rules: [...], library: [outfit_comments, ...], params: {...} }`.
+ * A plain list is still accepted as `rules` (the original form).
+ */
+export const ReactionsBlockSchema = z.object({
+  /** Designer rules (when -> then). */
+  rules: z.array(ReactionSchema).default([]),
+  /** Library recipes to switch on: ids, or {id: params}. "all" = every shipped recipe. */
+  library: z.union([z.literal("all"), z.array(LibraryEntryInput)]).default([]),
+  /** Per-recipe params (merged over inline ones). */
+  params: z.record(z.string(), z.record(z.string(), z.unknown())).default({}),
+  /** Combination engine knobs. */
+  engine: z.object({
+    /** Lines kept per speaker in the novelty ledger (never repeated while in it). */
+    ledgerSize: z.number().int().min(2).max(60).default(16),
+    /** Observer trait score that counts as an active facet. */
+    traitThreshold: z.number().min(0).max(1).default(0.5),
+    /** Minutes a moment stays a facet. */
+    momentMinutes: z.number().min(1).max(240).default(15),
+    /** Let the LLM write fresh variants in the background (keyed servers only). */
+    ai: z.boolean().default(true),
+  }).prefault({}),
+});
+
+const ReactionsField = z
+  .union([z.array(ReactionSchema), ReactionsBlockSchema])
+  .transform((v) => {
+    if (Array.isArray(v)) return { rules: v, library: [] as LibraryEntry[], engine: ReactionsBlockSchema.shape.engine.parse({}) };
+    const lib = v.library === "all" ? ["all"] : v.library;
+    return { rules: v.rules, library: normaliseLibrary(lib, v.params), engine: v.engine };
+  });
+export type ReactionsConfig = z.output<typeof ReactionsField>;
 
 export const StatSchema = z.object({ min: z.number(), max: z.number(), default: z.number().optional() });
 
@@ -288,8 +351,11 @@ export const ManifestSchema = z.object({
   allowUndeclaredSignals: z.boolean().default(false),
   /** Action schema: the only actions NPCs / directives may perform. */
   actions: z.record(z.string(), ActionSchema).default({}),
-  /** Reactive rules: when <player-model condition> then <directive>. */
-  reactions: z.array(ReactionSchema).default([]),
+  /**
+   * Reactive rules + the Reaction Library. Either a list of rules (when <player-model condition> then <directive>)
+   * or `{rules, library, params, engine}`. Parsed form: `{rules, library: [{recipe, params}], engine}`.
+   */
+  reactions: ReactionsField.prefault([]),
   items: ItemSchemaConfig.optional(),
   quests: QuestSchemaConfig.prefault({}),
   moves: MoveSchemaConfig.prefault({}),

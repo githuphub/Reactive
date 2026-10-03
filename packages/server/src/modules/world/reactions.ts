@@ -58,11 +58,11 @@ export interface EvalOptions {
 /** Evaluate every manifest reaction for one player. Returns the rules whose condition is currently true. */
 export function evaluateReactions(ctx: ScopedContext, player: string, o: EvalOptions): { rule: Reaction; draft: LooseDirectiveDraft; fired: boolean }[] {
   const m = ctx.manifest;
-  if (!m.reactions.length) return [];
+  if (!m.reactions.rules.length) return [];
   const env = o.env ?? makeDslEnv(ctx, ctx.world, player);
   const now = ctx.now();
   const out: { rule: Reaction; draft: LooseDirectiveDraft; fired: boolean }[] = [];
-  for (const rule of m.reactions) {
+  for (const rule of m.reactions.rules) {
     const res = evalWith(env, rule.when);
     if (res.error) {
       const wk = `${ctx.game}:${rule.id}:${res.error}`;

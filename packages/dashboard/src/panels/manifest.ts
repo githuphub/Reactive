@@ -31,7 +31,7 @@ function summary(m: Manifest): HTMLElement {
     h("div", { class: "sum-grid" },
       row("personas", m.personas.length), row("factions", m.factions.length), row("relationships", m.relationships.length),
       row("zones", m.zones.length), row("actions", Object.keys(m.actions).length), row("custom signals", Object.keys(m.signals).length),
-      row("designer traits", Object.keys(m.traits).length), row("reactions", m.reactions.length), row("bosses", m.bosses.length),
+      row("designer traits", Object.keys(m.traits).length), row("reactions", m.reactions.rules.length), row("library recipes", m.reactions.library.length), row("bosses", m.bosses.length),
       row("engine moves", m.moves.engine.length), row("achievements", m.achievements.length), row("item families", m.items?.families.length ?? 0),
       row("safety rating", m.safety.rating), row("difficulty", `${m.clamps.difficulty.mode} ${m.clamps.difficulty.aggressionMin}-${m.clamps.difficulty.aggressionMax}`),
       row("budget / day", `$${m.budgets.game.usdPerDay}`), row("models", `${m.models.fast} / ${m.models.rich}`)),
