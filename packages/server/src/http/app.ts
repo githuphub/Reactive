@@ -13,6 +13,7 @@ import type { LfEnv, LiveforgeModule } from "../module.js";
 import { adminRoutes } from "./admin.js";
 import { dashboardRoutes } from "../admin/dashboard.js";
 import { dashboardAdminRoutes } from "../admin/routes.js";
+import { cassetteAdminRoutes } from "../admin/cassettes.js";
 
 const errBody = (code: ErrorCode, message: string, details?: unknown) => ({ error: { code, message, ...(details !== undefined ? { details } : {}) } });
 
@@ -153,6 +154,7 @@ export function createApp(lf: Liveforge, modules: LiveforgeModule[]): Hono<LfEnv
   });
   app.route("/admin", adminRoutes(lf, { parseManifest, validateManifestObject, SimulateRequest }));
   app.route("/admin", dashboardAdminRoutes(lf));
+  app.route("/admin", cassetteAdminRoutes());
   for (const m of modules) if (m.routes?.admin) app.route(`/admin/m/${m.id}`, m.routes.admin);
 
   return app;
