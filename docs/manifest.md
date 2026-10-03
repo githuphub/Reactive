@@ -34,7 +34,7 @@ and `-`, for example `old_tom`.
 | `signals` | map type → spec | `{}` | [custom signals](#signals) |
 | `allowUndeclaredSignals` | bool | `false` | Accept custom signal types not declared under `signals` (stored, flagged). |
 | `actions` | map name → spec | `{}` | [action schema](#actions): the only actions NPCs and directives may perform. |
-| `reactions` | list | `[]` | [reaction rules](#reactions) |
+| `reactions` | list or block | `[]` | [reaction rules](#reactions) + the [Reaction Library](reactions.md) |
 | `items` | object | none | [item schema](#items). Without it, the forge uses generic stats. |
 | `quests` | object | defaults | [quest schema](#quests) |
 | `moves` | object | defaults | [move schema](#moves) |
@@ -227,6 +227,30 @@ reactions:
 | `cooldown` | seconds | `300` | Per player. |
 | `flavour` | bool | `false` | Let the LLM flavour it (a named NPC, a bark, a plan). The rules version fires first. |
 | `description` | string | | Shown in the dashboard. |
+| `once` | bool | `false` | Fire at most once per player. |
+
+### Block form: rules + the Reaction Library
+
+```yaml
+reactions:
+  rules: [ ...the rules above... ]
+  library: [outfit_comments, deed_nicknames, promises_remembered, dodge_bait]   # or: all
+  params:
+    rich_attention: { pickpocket: kit, gold: 400 }
+  engine: { ledgerSize: 16, traitThreshold: 0.5, momentMinutes: 15, ai: true }
+```
+
+| Field | Type | Default | |
+|---|---|---|---|
+| `rules` | list | `[]` | The rules above. |
+| `library` | list of recipe ids, or `all` | `[]` | Entries may also be `{recipe_id: params}` or `{recipe: id, ...params}`. Unknown ids are errors. |
+| `params` | map recipe → params | `{}` | Merged over inline params. Unknown params are warnings. |
+| `engine.ledgerSize` | int 2-60 | `16` | Lines per speaker × player that are never repeated. |
+| `engine.traitThreshold` | 0-1 | `0.5` | Trait score that counts as a facet. |
+| `engine.momentMinutes` | minutes | `15` | How long a moment stays a facet. |
+| `engine.ai` | bool | `true` | Background AI variants (keyed servers only). |
+
+Every recipe and its params: [Reaction Library](reactions.md).
 
 ## items
 

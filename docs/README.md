@@ -18,6 +18,8 @@ described, inside the rules you set. It runs on your own server, works with any 
 - [Protocol](protocol.md): REST + WebSocket, built-in signals, ask and directive kinds, admin API, Unity/Unreal
   examples
 - [Dashboard](dashboard.md): every panel, and a demo-video walkthrough
+- [Reaction Library](reactions.md): 20 one-line reactions (`reactions.library`), the combination engine, signals
+  and `custom.reaction` payloads
 
 ## Recipes
 
