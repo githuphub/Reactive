@@ -1,0 +1,166 @@
+/* Survival HUD + container screens (lane V1). Uses the V0 tokens from ui/styles.css. */
+
+/* -- status bars -------------------------------------------------------------------------------- */
+.lcs-status {
+  width: 418px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+.lcs-col { display: flex; flex-direction: column; gap: 2px; }
+.lcs-right { align-items: flex-end; }
+.lcs-row { display: flex; gap: 0; height: 18px; }
+.lcs-food { flex-direction: row-reverse; }
+.lcs-air { flex-direction: row-reverse; }
+.lcs-icon {
+  width: 18px;
+  height: 18px;
+  margin-right: 1px;
+  background-size: 100% 100%;
+  image-rendering: pixelated;
+  filter: drop-shadow(1px 1px 0 rgba(0, 0, 0, 0.45));
+}
+.lcs-low .lcs-icon { animation: lcs-shake 0.35s steps(2) infinite; }
+.lcs-low .lcs-icon:nth-child(2n) { animation-delay: 0.12s; }
+.lcs-starving .lcs-icon { animation: lcs-shake 0.6s steps(2) infinite; }
+@keyframes lcs-shake {
+  0% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
+}
+
+.lcs-vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(ellipse at center, rgba(160, 0, 0, 0) 45%, rgba(170, 0, 0, 0.55) 100%);
+}
+.lcs-fire {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 40%;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s;
+  background: linear-gradient(to top, rgba(255, 110, 20, 0.55), rgba(255, 180, 40, 0.2) 50%, rgba(255, 200, 60, 0));
+  animation: lcs-flicker 0.25s steps(3) infinite;
+}
+@keyframes lcs-flicker {
+  50% { filter: brightness(1.25); }
+}
+.lcs-indicator {
+  position: absolute;
+  left: 50%;
+  top: calc(50% + 16px);
+  width: 34px;
+  height: 4px;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.lcs-indicator > div { height: 100%; width: 0; background: #e8e8e8; }
+.lcs-indicator.lcs-full > div { background: #ffd84a; }
+.lcs-indicator.lcs-eat > div { background: #c98a3a; }
+
+/* -- death screen ------------------------------------------------------------------------------- */
+.lcs-death {
+  background: radial-gradient(ellipse at center, rgba(120, 0, 0, 0.35), rgba(70, 0, 0, 0.7));
+}
+.lcs-death-panel { text-align: center; min-width: 300px; }
+.lcs-death h1 {
+  margin: 0 0 8px;
+  font-size: 54px;
+  color: #fff;
+  text-shadow: 4px 4px 0 #3a0000;
+  letter-spacing: 2px;
+}
+.lcs-death-cause { color: #f3d3d3; margin-bottom: 22px; font-size: 16px; }
+
+/* -- container screens -------------------------------------------------------------------------- */
+.lcs-panel {
+  background: rgba(22, 24, 32, 0.94);
+  border: 1px solid var(--lc-panel-border);
+  border-radius: 6px;
+  padding: 14px 16px 16px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.55);
+}
+.lcs-title { text-align: center; font-size: 18px; margin-bottom: 8px; letter-spacing: 1px; }
+.lcs-subtitle {
+  font-size: 11px;
+  color: #aab;
+  margin: 10px 0 4px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  font-family: var(--lc-mono);
+}
+.lcs-grid { display: grid; gap: 2px; }
+.lcs-slot { cursor: pointer; }
+.lcs-slot:hover { background: rgba(150, 150, 170, 0.6); }
+.lcs-slot.lcs-drag { box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.7); }
+.lcs-output { border-color: rgba(255, 216, 74, 0.55); }
+.lcs-hotbar-row { margin-top: 8px; }
+.lcs-craft { display: flex; align-items: center; justify-content: center; gap: 16px; margin: 4px 0 6px; }
+.lcs-arrow { font-size: 26px; color: #c8c8d0; }
+.lcs-cursor {
+  position: fixed;
+  width: 32px;
+  height: 32px;
+  pointer-events: none;
+  z-index: 20;
+  display: none;
+}
+.lcs-cursor canvas { width: 32px; height: 32px; image-rendering: pixelated; }
+.lcs-cursor .lc-slot-count { right: -4px; bottom: -4px; }
+.lcs-tooltip {
+  position: fixed;
+  pointer-events: none;
+  display: none;
+  z-index: 21;
+  background: rgba(16, 6, 24, 0.95);
+  border: 1px solid #5a2a9a;
+  border-radius: 3px;
+  padding: 4px 8px;
+  white-space: pre;
+  font-size: 13px;
+  line-height: 1.35;
+  color: #fff;
+}
+.lcs-tabs { display: flex; gap: 6px; margin-bottom: 8px; }
+.lcs-tab {
+  font: 13px var(--lc-font);
+  color: #fff;
+  background: linear-gradient(#55596a, #3f424e);
+  border: 1px solid #22242b;
+  border-radius: 3px;
+  padding: 4px 12px;
+  cursor: pointer;
+}
+.lcs-tab:hover, .lcs-tab-on { background: linear-gradient(#7c8fb0, #5a6b8c); }
+.lcs-search {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 6px 8px;
+  margin-bottom: 6px;
+  background: #0f1015;
+  color: #fff;
+  border: 1px solid #44485a;
+  border-radius: 3px;
+  font: 13px var(--lc-font);
+}
+.lcs-nav { display: flex; gap: 6px; justify-content: flex-end; margin-top: 4px; }
+
+.lcs-furnace { display: flex; align-items: center; justify-content: center; gap: 22px; margin: 4px 0; }
+.lcs-furnace-left { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.lcs-flame {
+  width: 22px;
+  height: 22px;
+  opacity: 0.35;
+  clip-path: polygon(50% 0, 70% 30%, 85% 20%, 100% 70%, 80% 100%, 20% 100%, 0 70%, 15% 25%, 32% 40%);
+  background: linear-gradient(to top, #ff8a1e calc(var(--burn, 0) * 100%), #3a3a44 calc(var(--burn, 0) * 100%));
+}
+.lcs-flame.lcs-lit { opacity: 1; }
+.lcs-progress { width: 64px; height: 10px; background: #2c2e38; border-radius: 2px; overflow: hidden; }
+.lcs-progress > div { height: 100%; width: 0; background: linear-gradient(90deg, #e8e8e8, #ffd84a); }
