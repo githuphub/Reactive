@@ -102,6 +102,8 @@ export const ReactionSchema = z.object({
   }),
   /** Seconds before the rule can fire again for the same player. */
   cooldown: z.number().min(0).default(300),
+  /** Fire at most once per player (default false = repeat after the cooldown). 0 cooldown = fire on each false->true edge. */
+  once: z.boolean().default(false),
   /** Let the LLM flavour it (named NPC, bark, plan). */
   flavour: z.boolean().default(false),
   description: z.string().max(300).optional(),
