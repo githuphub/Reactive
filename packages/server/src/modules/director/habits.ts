@@ -3,6 +3,7 @@
 // player's recent combat signals - plus active habit / trait labels, gear tags and the favourite element.
 import { cleanHabits, type MoveHabits, type StoredEvent } from "@liveforge/protocol";
 import type { ScopedContext } from "../../module.js";
+import { gearTags, traitAt } from "../observer/view.js";
 
 export interface PlayerRead {
   habits: MoveHabits;
@@ -20,17 +21,24 @@ export interface PlayerRead {
 
 const WINDOW_MS = 2 * 60_000;
 
-/** Observer traits (empty when the Observer is disabled or has not seen the player). */
-export function traitScores(ctx: ScopedContext, player: string | null): Record<string, number> {
-  if (!player) return {};
+/** The Observer's player model (null when the Observer is disabled or has not seen the player). */
+function playerModel(ctx: ScopedContext, player: string | null) {
+  if (!player) return null;
   try {
-    const pm = ctx.projections.get("observer.player_model", { world: ctx.world, player });
-    const out: Record<string, number> = {};
-    for (const [k, t] of Object.entries(pm?.traits ?? {})) if (t && typeof t.score === "number") out[k] = t.score;
-    return out;
+    return ctx.projections.get("observer.player_model", { world: ctx.world, player }) ?? null;
   } catch {
-    return {};
+    return null;
   }
+}
+
+/** Observer trait scores decayed to now (K1 view.traitAt); empty without an Observer model. */
+export function traitScores(ctx: ScopedContext, player: string | null): Record<string, number> {
+  const pm = playerModel(ctx, player);
+  if (!pm) return {};
+  const now = ctx.now();
+  const out: Record<string, number> = {};
+  for (const k of Object.keys(pm.traits ?? {})) out[k] = traitAt(pm, k, now, ctx.manifest);
+  return out;
 }
 
 const num = (v: unknown, d = 0) => (typeof v === "number" && Number.isFinite(v) ? v : d);
@@ -123,8 +131,12 @@ export function readPlayer(ctx: ScopedContext, player: string | null, explicit: 
   for (const [k, v] of derived) if (v >= 0.5 && !labels.some(([x]) => x === k)) labels.push([k, v]);
   labels.sort((a, b) => b[1] - a[1]);
 
-  // gear: the game's list, else tags from recent gear.equipped signals
+  // gear: the game's list, else the Observer's equipped gear tags, else tags from recent gear.equipped signals
   let gear = (gearParam ?? []).map((g) => g.toLowerCase());
+  if (!gear.length) {
+    const pm = playerModel(ctx, player);
+    if (pm) gear = gearTags(pm).map((g) => g.toLowerCase());
+  }
   if (!gear.length && player) {
     const eq = ctx.events({ world: ctx.world, player, type: "gear.equipped", limit: 10, desc: true });
     const set = new Set<string>();
