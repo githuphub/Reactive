@@ -1,4 +1,5 @@
 // Server configuration from environment variables (see .env.example). Provider keys live ONLY here.
+import { existsSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
 import type { LogLevel } from "./log.js";
 
@@ -80,7 +81,13 @@ function parseKeys(v: string | undefined): Record<string, string[]> {
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): ServerConfig {
   const dev = bool(env.LIVEFORGE_DEV, env.NODE_ENV !== "production");
-  const manifests = (env.LIVEFORGE_MANIFESTS ?? "liveforge.yaml")
+  // Default: ./liveforge.yaml, else (dev convenience) every examples/*.liveforge.yaml.
+  let defaultManifests = "liveforge.yaml";
+  if (!env.LIVEFORGE_MANIFESTS && !existsSync("liveforge.yaml") && existsSync("examples")) {
+    const ex = readdirSync("examples").filter((f) => f.endsWith(".liveforge.yaml")).map((f) => `examples/${f}`);
+    if (ex.length) defaultManifests = ex.join(",");
+  }
+  const manifests = (env.LIVEFORGE_MANIFESTS ?? defaultManifests)
     .split(/[,;]/)
     .map((s) => s.trim())
     .filter(Boolean)
