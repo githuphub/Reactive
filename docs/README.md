@@ -20,6 +20,8 @@ described, inside the rules you set. It runs on your own server, works with any 
 - [Dashboard](dashboard.md): every panel, and a demo-video walkthrough
 - [Reaction Library](reactions.md): 20 one-line reactions (`reactions.library`), the combination engine, signals
   and `custom.reaction` payloads
+- [Agents](agents.md): tool-calling NPC agents (`agent.goal`, tool registry, rules fallback) and the Brain feed
+- [Builder](builder.md): the Voxel DSL, templates and `builder.plan`
 
 ## Recipes
 
