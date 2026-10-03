@@ -126,7 +126,7 @@ export class Game {
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
     this.renderer.setSize(window.innerWidth, window.innerHeight, false);
     this.renderer.info.autoReset = true;
-    this.camera = new THREE.PerspectiveCamera(this.settings.fov, window.innerWidth / window.innerHeight, 0.05, 1000);
+    this.camera = new THREE.PerspectiveCamera(this.settings.fov, window.innerWidth / window.innerHeight, 0.08, 1000);
     this.scene.add(this.camera);
 
     this.atlas = new TextureAtlas();
@@ -271,6 +271,19 @@ export class Game {
     this.player.teleport(x, gy, z);
   }
 
+  /**
+   * Projects a world position to CSS pixels (for speech bubbles, name tags, markers).
+   * `visible` is false when the point is behind the camera or off screen.
+   */
+  worldToScreen(x: number, y: number, z: number): { x: number; y: number; visible: boolean; distance: number } {
+    const v = tmpProject.set(x, y, z);
+    const distance = v.distanceTo(this.camera.position);
+    v.project(this.camera);
+    const w = window.innerWidth, h = window.innerHeight;
+    const visible = v.z > -1 && v.z < 1 && Math.abs(v.x) <= 1.1 && Math.abs(v.y) <= 1.1;
+    return { x: (v.x * 0.5 + 0.5) * w, y: (-v.y * 0.5 + 0.5) * h, visible, distance };
+  }
+
   /** Starts loading and the frame loop. Resolves when the player is in the world. */
   async start(): Promise<void> {
     const loading = new LoadingScreen(this.ui.root, this.seedText);
@@ -337,7 +350,7 @@ export class Game {
     const input = this.input;
     const screens = this.ui.screens;
     input.onKey((e) => {
-      if (screens.isOpen) return screens.handleKey(e) || true;
+      if (screens.isOpen) return screens.handleKey(e);
       if (!this.ready) return false;
       if (e.code === KEYS.debug) {
         this.debug.toggle();
@@ -476,3 +489,5 @@ export class Game {
     this.playerModel.tick(dt);
   }
 }
+
+const tmpProject = new THREE.Vector3();

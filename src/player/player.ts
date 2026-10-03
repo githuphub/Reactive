@@ -44,6 +44,8 @@ export class Player implements Body {
   viewMode: ViewMode = 'first';
   /** Smoothed eye height (sneak transition). */
   eyeHeight = EYE;
+  /** Free-form per-player data for other systems (health, hunger, reputation, ...). */
+  readonly data: Record<string, unknown> = {};
   private lastSpace = -1;
   private lastForward = -1;
   private walkDist = 0;

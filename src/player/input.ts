@@ -39,6 +39,9 @@ export class Input {
         e.preventDefault();
         return;
       }
+      // Let text fields (chat, signs, trade search) receive their keys untouched.
+      const t = e.target as HTMLElement | null;
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
       if (['Space', 'F3', 'F5', 'F1', 'Tab', 'AltLeft'].includes(e.code)) e.preventDefault();
       if (e.ctrlKey && ['KeyS', 'KeyD', 'KeyW', 'KeyA'].includes(e.code) && this.locked) e.preventDefault();
       if (!e.repeat) this.pressedKeys.add(e.code);
