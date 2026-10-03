@@ -1598,6 +1598,115 @@
           }
         ]
       }
+    },
+    "builder": {
+      "default": {},
+      "type": "object",
+      "properties": {
+        "palette": {
+          "default": [],
+          "maxItems": 8,
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 48
+          }
+        },
+        "blockIds": {
+          "maxItems": 512,
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 48
+          }
+        },
+        "aliases": {
+          "default": {},
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "maxBlocks": {
+          "default": 4000,
+          "type": "integer",
+          "minimum": 16,
+          "maximum": 20000
+        },
+        "fallbackBlock": {
+          "type": "string",
+          "maxLength": 48
+        },
+        "styleGuide": {
+          "type": "string",
+          "maxLength": 1000
+        }
+      }
+    },
+    "agents": {
+      "default": {},
+      "type": "object",
+      "properties": {
+        "tools": {
+          "default": [],
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "pattern": "^[a-zA-Z0-9_-]{1,64}$"
+              },
+              "description": {
+                "default": "",
+                "type": "string",
+                "maxLength": 1000
+              },
+              "schema": {
+                "default": {
+                  "type": "object",
+                  "properties": {}
+                },
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {}
+              }
+            },
+            "required": [
+              "name"
+            ]
+          }
+        },
+        "maxSteps": {
+          "default": 12,
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 40
+        },
+        "toolTimeoutMs": {
+          "default": 30000,
+          "type": "integer",
+          "minimum": 1000,
+          "maximum": 600000
+        },
+        "maxTokens": {
+          "default": 1500,
+          "type": "integer",
+          "minimum": 256,
+          "maximum": 8000
+        },
+        "guidance": {
+          "type": "string",
+          "maxLength": 2000
+        }
+      }
     }
   },
   "required": [

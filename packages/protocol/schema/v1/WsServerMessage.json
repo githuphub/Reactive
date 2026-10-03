@@ -70,7 +70,8 @@
               "upgrades",
               "chunks",
               "events",
-              "jobs"
+              "jobs",
+              "brain"
             ]
           }
         }
@@ -446,6 +447,88 @@
       "required": [
         "t",
         "error"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "t": {
+          "type": "string",
+          "const": "brain"
+        },
+        "entry": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "maxLength": 64
+            },
+            "ts": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "source": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 32
+            },
+            "actor": {
+              "type": "string",
+              "maxLength": 64
+            },
+            "kind": {
+              "type": "string",
+              "enum": [
+                "goal",
+                "thought",
+                "tool_call",
+                "tool_result",
+                "plan",
+                "decision",
+                "line"
+              ]
+            },
+            "text": {
+              "type": "string",
+              "maxLength": 1000
+            },
+            "data": {},
+            "model": {
+              "type": "string",
+              "enum": [
+                "sonnet",
+                "haiku",
+                "rules",
+                "cache",
+                "replay"
+              ]
+            },
+            "ms": {
+              "type": "number"
+            },
+            "ref": {
+              "type": "string",
+              "maxLength": 64
+            },
+            "world": {
+              "type": "string",
+              "maxLength": 64
+            }
+          },
+          "required": [
+            "id",
+            "ts",
+            "source",
+            "actor",
+            "kind",
+            "text"
+          ]
+        }
+      },
+      "required": [
+        "t",
+        "entry"
       ]
     }
   ],

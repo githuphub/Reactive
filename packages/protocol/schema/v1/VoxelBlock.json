@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "x": {
+      "type": "integer",
+      "minimum": -9007199254740991,
+      "maximum": 9007199254740991
+    },
+    "y": {
+      "type": "integer",
+      "minimum": -9007199254740991,
+      "maximum": 9007199254740991
+    },
+    "z": {
+      "type": "integer",
+      "minimum": -9007199254740991,
+      "maximum": 9007199254740991
+    },
+    "block": {
+      "type": "string"
+    },
+    "facing": {
+      "type": "string",
+      "enum": [
+        "north",
+        "south",
+        "east",
+        "west"
+      ]
+    }
+  },
+  "required": [
+    "x",
+    "y",
+    "z",
+    "block"
+  ],
+  "$id": "https://liveforge.dev/schema/v1/VoxelBlock.json",
+  "title": "VoxelBlock"
+}

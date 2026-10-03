@@ -29,7 +29,8 @@
               "upgrades",
               "chunks",
               "events",
-              "jobs"
+              "jobs",
+              "brain"
             ]
           }
         }

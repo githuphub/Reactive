@@ -1,0 +1,123 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "runId": {
+      "type": "string"
+    },
+    "npc": {
+      "type": "string"
+    },
+    "goal": {
+      "type": "string"
+    },
+    "state": {
+      "type": "string",
+      "enum": [
+        "running",
+        "done",
+        "failed",
+        "interrupted"
+      ]
+    },
+    "source": {
+      "default": "rules",
+      "type": "string",
+      "enum": [
+        "ai",
+        "rules"
+      ]
+    },
+    "player": {
+      "default": null,
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "startedAt": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    },
+    "endedAt": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    },
+    "plan": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "summary": {
+      "type": "string"
+    },
+    "steps": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "i": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "plan",
+              "thought",
+              "tool_call",
+              "tool_result",
+              "error",
+              "done"
+            ]
+          },
+          "ts": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "tool": {
+            "type": "string"
+          },
+          "callId": {
+            "type": "string"
+          },
+          "input": {},
+          "output": {},
+          "ok": {
+            "type": "boolean"
+          },
+          "text": {
+            "type": "string"
+          },
+          "model": {
+            "type": "string"
+          },
+          "ms": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "i",
+          "kind",
+          "ts"
+        ]
+      }
+    }
+  },
+  "required": [
+    "runId",
+    "npc",
+    "goal",
+    "state",
+    "startedAt"
+  ],
+  "$id": "https://liveforge.dev/schema/v1/AgentRun.json",
+  "title": "AgentRun"
+}
