@@ -67,7 +67,15 @@ export const galleryProjection: Projection<ForgeGallery> = {
       const status = (REVIEW as readonly string[]).includes(String(d.status)) ? (d.status as GalleryEntry["review"]) : null;
       if (e && status) e.review = status;
     } else if (ev.type === "lf.forge.job" && typeof d.jobId === "string") {
-      for (const e of entries) if (patchMesh(e.result, d.jobId, String(d.state ?? "queued"), d.url)) break;
+      let hit = false;
+      for (const e of entries) if ((hit = patchMesh(e.result, d.jobId, String(d.state ?? "queued"), d.url))) break;
+      // the instant answer may have been sent before the job id was known: attach by askId
+      const owner = !hit && typeof d.askId === "string" ? entries.find((e) => e.id === d.askId) : undefined;
+      if (owner && isObj(owner.result)) {
+        const r = owner.result;
+        const holder = [r.item, r.creature, r.prop].find(isObj);
+        if (holder) holder.mesh = { jobId: d.jobId, state: String(d.state ?? "queued"), ...(typeof d.url === "string" ? { url: d.url } : {}) };
+      }
     }
     return state;
   },

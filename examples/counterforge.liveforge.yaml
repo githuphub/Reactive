@@ -186,6 +186,10 @@ items:
   budget: [1.4, 1.6, 1.9, 2.2, 2.6]
   tags: [Piercing, Reflective, Grapple, Knockback, Lifesteal, Swift, Heavy, Explosive]
   creativity: { max: 0.8, rawPowerPenalty: true }
+  # developer assets forge.look may restyle (Variant v1: recolour / material swaps by slot)
+  assets:
+    - { id: student_robes, kind: outfit, slots: [robe, trim, hood] }
+    - { id: titan_plating, kind: boss, slots: [plate, rivets, core] }
 
 quests:
   objectiveTypes: [kill, fetch, talk, explore, deliver, survive, defeat_boss, forge]
@@ -257,6 +261,33 @@ modules:
   observer: true
   persona: true
   world: true
-  director: true
-  forge: true
+  # K3: Director + Forge options (all optional; see packages/server/src/modules/{director/options.ts,forge/env.ts})
+  director:
+    enabled: true
+    options:
+      tactics: [flank, kite, ambush, shield_wall, focus_healer, rush, hold, surround, retreat]
+      eliteModifiers:
+        - { id: mirrored, counters: [ranged_camper, range_long, piercing, reflective], description: "a slag mirror that bounces bolts back" }
+        - { id: anvil_plated, counters: [glass_cannon, heavy, berserker], description: "plating that shrugs off big hits" }
+        - { id: quickened, counters: [ranged_camper, range_long, dodger, swift], description: "closes distance in a heartbeat" }
+        - { id: guardbreaker, counters: [turtle, blocker], description: "hammer blows that shatter blocks" }
+        - { id: veilbound, counters: [fire, ice, lightning], description: "the Veil drinks your favourite element" }
+      spawnTable:
+        default: [hollow, hollow_archer]
+        forge_hall: [slag_imp, hollow, hollow_brute]
+        lecture_hall: [chalk_wisp, hollow_archer]
+        courtyard: [hollow]
+      autoPacing: false
+      peakSec: 12
+      inventPerPhase: 1
+  forge:
+    enabled: true
+    options:
+      # Counterforge summon behaviours (apps/game/src/summons) - forge.creature only emits these
+      creatureBehaviours: [charge, orbit, turret, wall, trap, bomb, heal_zone, rain, ride, platform, decoy]
+      creatureStats: { hp: { min: 10, max: 2000, default: 120 }, damage: { min: 1, max: 60, default: 12 }, speed: { min: 0, max: 14, default: 6 } }
+      meshWaitMs: 1500
+      bakeWorld: _bake
+      maxBake: 50
+      lootRarityBoost: { elite: 1, boss: 2 }
   quests: true

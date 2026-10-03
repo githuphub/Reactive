@@ -86,7 +86,8 @@ export default defineModule({
       instant(ctx, p) {
         const plan = bossPhaseRules(ctx, p);
         commitPhase(ctx, plan.result, plan.invented, plan.why, "rules");
-        ctx.kv.set(`ask:${ctx.askId}`, plan.invented.map((x) => x.move.name));
+        // remembered for the upgrade (which replaces the rules-invented moves); only when an upgrade can run
+        if (ctx.llm && plan.invented.length) ctx.kv.set(`ask:${ctx.askId}`, plan.invented.map((x) => x.move.name));
         return { result: plan.result, why: plan.why.slice(0, 300), source: "rules" };
       },
       async upgrade(ctx, p, instant) {
