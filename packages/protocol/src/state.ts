@@ -45,6 +45,8 @@ export const PlayerModel = z.object({
   stats: z.record(z.string(), z.union([z.number(), z.string(), z.boolean()])).default({}),
   eventCount: z.number().int().default(0),
   lastSeen: Timestamp.optional(),
+  /** Observer-private accumulators behind the built-in trait scores (decayed counters, seen sets). Shape may change. */
+  acc: z.record(z.string(), z.unknown()).optional(),
 });
 export type PlayerModel = z.infer<typeof PlayerModel>;
 
@@ -54,6 +56,8 @@ export const MemoryEntry = z.object({
   salience: Unit,
   ts: Timestamp,
   kind: z.enum(["conversation", "witnessed", "rumour", "gift", "harm", "trade", "other"]).default("other"),
+  /** Optional reference (ask id, moment id, rumour id) so a later event can replace / sharpen this entry. */
+  ref: z.string().max(64).optional(),
 });
 export type MemoryEntry = z.infer<typeof MemoryEntry>;
 
