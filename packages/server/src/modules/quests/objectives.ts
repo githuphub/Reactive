@@ -82,7 +82,7 @@ export function startObjective(ctx: ScopedContext, player: string, req: Objectiv
   } else {
     const list = req.trigger.includes("boss") ? BOSS : req.trigger.startsWith("moment") ? COMEBACK : ENCOUNTER;
     const env = makeDslEnv(ctx, ctx.world, player);
-    const trait = (t?: string) => (t ? numOr(env.model?.traits?.[t]?.score, 0) : 0);
+    const trait = (t?: string) => (t ? numOr(env.call("trait", [t]), 0) : 0);
     // Stretch: prefer templates whose countered trait the player shows (push them out of their habit).
     const ranked = [...list].sort((a, b) => trait(b.counters) - trait(a.counters));
     const top = ranked.filter((t) => trait(t.counters) === trait(ranked[0].counters));

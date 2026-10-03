@@ -109,11 +109,13 @@ Branch `K2`. Code lives in `packages/server/src/modules/world/*` and `packages/s
 - `examples/counterforge.liveforge.yaml`: two reactions, `feared_wardens_keep_distance` and `famous_challenger` (uses `once` + `flavour`). The validator says ok.
 
 ## DSL
-The canonical env is K1's `modules/observer/dsl-env.ts`, which did not exist when I built this. A thin stand-in is isolated in `modules/world/dsl-env-stub.ts` (`makeDslEnv(ctx, world, player, {notBefore?})`). All World and Quests code reaches it only through `modules/world/dsl.ts`. **To swap at merge,** change the import in `world/dsl.ts` to K1's `makeDslEnv` and delete the stub. Two things K2 needs from K1's env:
-- `notBefore` window clipping, used by dynamic objectives and quest conditions. If K1 lacks it, keep a wrapper.
-- `env.model` and `env.zone()`, used for templates. These can be read from projections instead.
+World and Quests use K1's canonical env (`modules/observer/dsl-env.ts`, which re-exports `packages/server/src/dsl/`). They reach it only through the thin adapter `modules/world/dsl.ts`. That adapter adds `evalWith` / `evalCondition`, which return the compile error so it can be logged once, and `conditionProgress`, which gives the 0-1 progress used for progression suggestions.
 
-The stub reads the event log directly. It reads the observer, persona and world projections only when those modules are present. It tolerates K1's `{field=value}` filter syntax.
+I made two additive changes to the shared env (`packages/server/src/dsl/env.ts`). Neither changes how the Observer behaves unless the new option or member is used:
+- **`DslEnvOptions.notBefore`:** window functions, `last` / `since` and `moment()` ignore events before this time. Dynamic objectives and quest conditions use it.
+- **`LiveDslEnv.zone()`:** returns the player-model stat `zone`, else the last `movement.entered_zone`.
+
+Trait scores are read through `env.call("trait", …)`, so they are decayed exactly as the Observer decays them.
 
 ## How to try
 1. `LIVEFORGE_MANIFESTS=examples/counterforge.liveforge.yaml npm run dev`.

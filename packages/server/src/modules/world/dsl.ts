@@ -1,30 +1,11 @@
-// DSL adapter for World + Quests: one place that picks the DslEnv implementation and caches compiled conditions.
-// When K1's canonical env lands, point the import below at it (same signature: makeDslEnv(ctx, world, player, opts)).
-import { checkDsl, compileDsl, dslTruthy, evalDsl, parseDsl, type DslEnv, type DslExpr, type DslValue } from "@liveforge/protocol";
-import { makeDslEnv, type DslEnvOptions, type DslHost, type HostDslEnv } from "./dsl-env-stub.js";
+// Thin DSL adapter for World + Quests over K1's canonical env (modules/observer/dsl-env.ts -> server/src/dsl).
+// Adds a result shape with the compile error (for one-time warnings) and a 0-1 progress estimate for suggestions.
+import { dslTruthy, evalDsl, parseDsl, type DslEnv, type DslExpr, type DslValue } from "@liveforge/protocol";
+import { compileRule, makeDslEnv, type DslEnvOptions, type DslHost, type LiveDslEnv } from "../observer/dsl-env.js";
 
-export { makeDslEnv, type DslEnvOptions, type DslHost, type HostDslEnv };
-
-const compiled = new Map<string, ((env: DslEnv) => DslValue) | { error: string }>();
-
-/** Compile once (bounded cache). Returns the error message instead of throwing. */
-export function compileCached(src: string): ((env: DslEnv) => DslValue) | { error: string } {
-  let c = compiled.get(src);
-  if (!c) {
-    const err = checkDsl(src);
-    if (err) c = { error: err };
-    else {
-      try {
-        c = compileDsl(src);
-      } catch (e) {
-        c = { error: (e as Error).message };
-      }
-    }
-    if (compiled.size > 1000) compiled.clear();
-    compiled.set(src, c);
-  }
-  return c;
-}
+export { makeDslEnv, type DslEnvOptions, type DslHost };
+/** The env World + Quests use (K1's LiveDslEnv: model, zone(), notBefore support). */
+export type HostDslEnv = LiveDslEnv;
 
 export interface ConditionResult {
   ok: boolean;
@@ -32,12 +13,12 @@ export interface ConditionResult {
   error?: string;
 }
 
-/** Evaluate a DSL condition with an env (errors -> ok:false + error, never throws). */
+/** Evaluate a DSL condition with an env (compile errors -> ok:false + error, never throws). */
 export function evalWith(env: DslEnv, src: string): ConditionResult {
-  const fn = compileCached(src);
-  if (typeof fn !== "function") return { ok: false, value: false, error: fn.error };
+  const c = compileRule(src);
+  if (!c.run) return { ok: false, value: false, error: c.error ?? "does not compile" };
   try {
-    const value = fn(env);
+    const value = c.run(env);
     return { ok: dslTruthy(value), value };
   } catch (e) {
     return { ok: false, value: false, error: (e as Error).message };

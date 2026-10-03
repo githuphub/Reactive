@@ -21,6 +21,11 @@ export interface DslEnvOptions {
   defaultWindowMs?: number;
   /** Cap on events loaded for window functions (default 5000, newest kept). */
   maxEvents?: number;
+  /**
+   * Ignore events before this time (ms): window functions, last/since and moment() only see events at or after it.
+   * Used by K2 dynamic objectives and quest conditions so "count(combat.dodged, 30s)" counts from the start time.
+   */
+  notBefore?: number;
 }
 
 /** A DslEnv bound to one player, plus the data it read (handy for evidence strings). */
@@ -30,6 +35,8 @@ export interface LiveDslEnv extends DslEnv {
   readonly now: number;
   /** The player's Observer model (empty when unknown / no player). */
   readonly model: ModelState;
+  /** The player's current zone: model stat "zone", else the last movement.entered_zone ("" when unknown). */
+  zone(): string;
 }
 
 const HOUR = 3_600_000;
@@ -45,6 +52,7 @@ export function makeDslEnv(ctx: DslHost, world: string, player: string | null, o
   const now = opts.now ?? ctx.now();
   const defaultWindow = opts.defaultWindowMs ?? HOUR;
   const maxEvents = opts.maxEvents ?? 5000;
+  const floor = opts.notBefore ?? 0;
   const model = player ? readModel((n, s) => ctx.projections.get(n, s), world, player) : readModel(() => undefined, world, "");
   const manifest = ctx.manifest;
 
@@ -53,11 +61,11 @@ export function makeDslEnv(ctx: DslHost, world: string, player: string | null, o
   let loaded: StoredEvent[] = [];
   const windowEvents = (windowMs: number): StoredEvent[] => {
     if (windowMs > loadedWindow) {
-      loaded = ctx.events({ world, ...(player ? { player } : {}), since: Math.max(0, now - windowMs), limit: maxEvents, desc: true })
+      loaded = ctx.events({ world, ...(player ? { player } : {}), since: Math.max(0, floor, now - windowMs), limit: maxEvents, desc: true })
         .filter((e) => !e.type.startsWith("lf."));
       loadedWindow = windowMs;
     }
-    const since = now - windowMs;
+    const since = Math.max(floor, now - windowMs);
     return loaded.filter((e) => e.ts >= since && e.ts <= now + 60_000);
   };
   const matching = (refName: string, windowMs: number, withField: boolean) => {
@@ -68,7 +76,7 @@ export function makeDslEnv(ctx: DslHost, world: string, player: string | null, o
   const lastMatching = (refName: string, withField: boolean): { ev: StoredEvent | undefined; field: string | null } => {
     const ref = parseDslRef(refName, withField);
     const q = ctx.events({ world, ...(player ? { player } : {}), ...(ref.type !== "*" ? { type: ref.type } : {}), desc: true, limit: 200 });
-    return { ev: q.find((e) => !e.type.startsWith("lf.") && typeMatches(ref.type, e.type) && matchDslFilter(ref.filter, e.data)), field: ref.field };
+    return { ev: q.find((e) => e.ts >= floor && !e.type.startsWith("lf.") && typeMatches(ref.type, e.type) && matchDslFilter(ref.filter, e.data)), field: ref.field };
   };
   const windowArg = (v: DslValue | undefined) => (v === undefined ? defaultWindow : Math.max(1, num(v, defaultWindow)));
 
@@ -87,8 +95,17 @@ export function makeDslEnv(ctx: DslHost, world: string, player: string | null, o
     }
   };
 
+  let zoneCache: string | undefined;
+  const zone = (): string => {
+    if (zoneCache !== undefined) return zoneCache;
+    const z = model.stats.zone;
+    if (typeof z === "string" && z) return (zoneCache = z);
+    const ev = player ? ctx.events({ world, player, type: "movement.entered_zone", desc: true, limit: 1 })[0] : undefined;
+    return (zoneCache = typeof ev?.data.zone === "string" ? ev.data.zone : "");
+  };
+
   const env: LiveDslEnv = {
-    world, player, now, model,
+    world, player, now, model, zone,
     ident(name) {
       if (opts.vars && name in opts.vars) return opts.vars[name];
       if (name in model.traits || name in BUILTIN_TRAITS || name in manifest.traits) return trait(name);
@@ -127,7 +144,7 @@ export function makeDslEnv(ctx: DslHost, world: string, player: string | null, o
           case "stat": return stat(String(args[0]));
           case "moment": {
             const kind = String(args[0]);
-            const since = now - windowArg(args[1]);
+            const since = Math.max(floor, now - windowArg(args[1]));
             return model.moments.filter((m) => (kind === "*" || m.kind === kind) && m.ts >= since).length;
           }
           case "rep": {

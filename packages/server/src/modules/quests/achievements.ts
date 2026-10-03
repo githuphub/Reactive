@@ -73,7 +73,7 @@ const rarityFor = (stretch: number): Rarity => (stretch >= 2.5 ? "epic" : stretc
 export function generatePersonal(ctx: ScopedContext, player: string, env?: HostDslEnv): Achievement[] {
   const log = questLog(ctx, ctx.world, player);
   const e = env ?? makeDslEnv(ctx, ctx.world, player);
-  const traits = Object.entries(e.model?.traits ?? {}).map(([k, v]) => [k, numOr(v?.score, 0)] as const).filter(([, v]) => v >= opt(ctx, "personalTraitMin", 0.6)).sort((a, b) => b[1] - a[1]);
+  const traits = Object.keys(e.model.traits ?? {}).map((k) => [k, numOr(e.call("trait", [k]), 0)] as const).filter(([, v]) => v >= opt(ctx, "personalTraitMin", 0.6)).sort((a, b) => b[1] - a[1]);
   const have = new Set([...log.personal, ...log.achievements].map((a) => a.id));
   const max = opt(ctx, "maxPersonalPending", 6);
   const out: Achievement[] = [];
