@@ -1,6 +1,6 @@
 // Per-call forge environment: the manifest's item schema, elements, clamps and the module options
 // (manifest modules.forge.options), resolved once per manifest object.
-import type { Manifest } from "@liveforge/manifest";
+import { moduleOptions, type Manifest } from "@liveforge/manifest";
 import { itemSchema, type ItemSchema, type StatRange } from "./schema.js";
 import { clampN, finOr, isObj } from "./model.js";
 
@@ -65,8 +65,11 @@ function readOptions(raw: Record<string, unknown>): ForgeOptions {
   };
 }
 
-/** Forge environment for a manifest + module options. */
-export function forgeEnv(manifest: Manifest, options: Record<string, unknown>): ForgeEnv {
+/**
+ * Forge environment for a manifest (cached per manifest object). Options always come from the manifest's
+ * modules.forge.options, so other modules (the Director's loot drops) get the same environment.
+ */
+export function forgeEnv(manifest: Manifest, _options?: Record<string, unknown>): ForgeEnv {
   let env = ENV_CACHE.get(manifest);
   if (!env) {
     env = {
@@ -75,7 +78,7 @@ export function forgeEnv(manifest: Manifest, options: Record<string, unknown>): 
       elements: manifest.elements.length ? manifest.elements : ["physical"],
       maxParts: manifest.clamps.forge.maxParts,
       factions: manifest.factions.map((f) => f.id),
-      options: readOptions(options ?? {}),
+      options: readOptions(moduleOptions(manifest, "forge") ?? {}),
     };
     ENV_CACHE.set(manifest, env);
   }
