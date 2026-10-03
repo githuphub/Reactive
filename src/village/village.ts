@@ -1040,6 +1040,9 @@ function isHostile(e: Entity): boolean {
   if (e.removed) return false;
   if (e.data.hostile === true) return true;
   if (e.data.villager) return false;
+  // V1 mobs carry a category; fall back to known hostile types.
+  const cat = (e as { category?: string }).category;
+  if (cat) return cat === 'hostile';
   return HOSTILE_TYPES.has(e.type);
 }
 

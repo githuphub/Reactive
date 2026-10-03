@@ -4,13 +4,15 @@
  * click), N to toggle name tags, ownership reactions and the `village` save slot.
  */
 import type { GamePlugin } from '../game/plugins';
+import { getSpawnDirector } from '../mobs';
 import { COINS, registerVillageItems } from './items';
 import { Npc } from './npc/npc';
 import { village, type SavedVillage } from './village';
 
 const plugin: GamePlugin = {
   name: 'village',
-  order: 40,
+  // Before survival (10) so E on a targeted villager opens the villager menu, not the inventory.
+  order: 5,
   init(game) {
     registerVillageItems();
     village.attach(game);
@@ -31,6 +33,13 @@ const plugin: GamePlugin = {
 
     game.events.once('ready', () => {
       village.spawnCast(saved);
+      // No natural hostile spawns inside Oakhollow (raids use spawnWave, which is not vetoed).
+      const site = game.villageSite;
+      if (site) {
+        getSpawnDirector(game).onNaturalSpawn((ctx) => {
+          if (ctx.category === 'hostile' && Math.hypot(ctx.x - site.x, ctx.z - site.z) < site.radius + 8) return false;
+        });
+      }
       if (firstVisit) {
         game.inventory.add({ item: COINS, count: 12 });
         game.save.markDirty('village_coins');
