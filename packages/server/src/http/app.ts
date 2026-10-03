@@ -11,6 +11,8 @@ import { LfError } from "../errors.js";
 import type { Liveforge } from "../core/runtime.js";
 import type { LfEnv, LiveforgeModule } from "../module.js";
 import { adminRoutes } from "./admin.js";
+import { dashboardRoutes } from "../admin/dashboard.js";
+import { dashboardAdminRoutes } from "../admin/routes.js";
 
 const errBody = (code: ErrorCode, message: string, details?: unknown) => ({ error: { code, message, ...(details !== undefined ? { details } : {}) } });
 
@@ -46,6 +48,9 @@ export function createApp(lf: Liveforge, modules: LiveforgeModule[]): Hono<LfEnv
   app.notFound((c) => c.json(errBody("not_found", `no route ${c.req.method} ${c.req.path}`), 404));
 
   app.get("/health", (c) => c.json({ ok: true, protocol: PROTOCOL_ID, games: [...lf.games.keys()], llm: !!lf.providers.llm }));
+
+  // dashboard static files at /dashboard (K5); no auth - it asks for the admin key itself
+  app.route("/", dashboardRoutes());
 
   // ---------------------------------------------------------------- auth: /v1/* (SDK or admin key)
   app.use("/v1/*", async (c, next) => {
@@ -147,6 +152,7 @@ export function createApp(lf: Liveforge, modules: LiveforgeModule[]): Hono<LfEnv
     await next();
   });
   app.route("/admin", adminRoutes(lf, { parseManifest, validateManifestObject, SimulateRequest }));
+  app.route("/admin", dashboardAdminRoutes(lf));
   for (const m of modules) if (m.routes?.admin) app.route(`/admin/m/${m.id}`, m.routes.admin);
 
   return app;

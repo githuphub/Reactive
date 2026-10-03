@@ -15,7 +15,7 @@
   ],
   "engines": { "node": ">=22" },
   "scripts": {
-    "build": "tsc -b && npm run build:schemas -w @liveforge/protocol && npm run build:schemas -w @liveforge/manifest",
+    "build": "tsc -b && npm run build:schemas -w @liveforge/protocol && npm run build:schemas -w @liveforge/manifest && npm run build:web -w @liveforge/dashboard",
     "typecheck": "tsc -b",
     "dev": "tsc -b packages/protocol packages/manifest && tsx watch --clear-screen=false packages/server/src/main.ts",
     "start": "node packages/server/dist/main.js",
