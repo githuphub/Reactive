@@ -12,6 +12,8 @@ import {
 import { parseManifest, type Manifest } from "@liveforge/manifest";
 import manifestYaml from "../../../../examples/counterforge.liveforge.yaml?raw";
 import { sampleBlueprint, vfxFor, SAMPLE_KINDS, type SampleKind } from "../viz/samples";
+import { LivecraftMock } from "./demo-livecraft";
+import type { AgentRun, BrainEntry, BuildEntry, CassetteInfo, CassetteMode } from "./brain";
 import type { BakeRequest, BakeResult, DataSource, EventQuery, GameInfo, LiveHandlers, ManifestDoc, SimulateResult, WorldSummary } from "./types";
 
 const WORLD = "academy";
@@ -69,6 +71,8 @@ export class DemoSource implements DataSource {
   private timers: ReturnType<typeof setInterval>[] = [];
   private started = Date.now();
   private tensionNow = 0.2;
+  /** K7 panels (Agents, Builds, Brain, village mind, cassettes): a scripted Livecraft loop. */
+  private readonly lc: LivecraftMock;
 
   constructor() {
     const r = parseManifest(manifestYaml, { filename: "examples/counterforge.liveforge.yaml" });
@@ -84,6 +88,8 @@ export class DemoSource implements DataSource {
     );
     for (const b of this.m.bosses) this.director.bosses[b.id] = { phase: 1, invented: [], attune: null };
     this.seed();
+    this.lc = new LivecraftMock((b) => { for (const l of this.listeners) l.onBrain?.(structuredClone(b)); });
+    this.lc.start();
     this.timers.push(setInterval(() => this.drain(), 170));
     this.timers.push(setInterval(() => this.ambient(), 1100));
     this.timers.push(setInterval(() => this.tick(), 2200));
@@ -145,6 +151,7 @@ export class DemoSource implements DataSource {
         case "director.state": return this.director;
         case "forge.gallery": return this.gallery;
         case "core.directives": return this.directiveLog;
+        case "factions.mind": return this.lc.state();
         default: return null;
       }
     })();
@@ -234,10 +241,34 @@ export class DemoSource implements DataSource {
     this.listeners.add(h);
     queueMicrotask(() => h.onStatus("demo"));
     for (const e of this.log.slice(-120)) h.onEvent(structuredClone(e));
+    for (const b of this.lc.history) h.onBrain?.(structuredClone(b));
     return () => this.listeners.delete(h);
   }
 
+  // ---- K7 panels
+  async agentRuns(): Promise<AgentRun[]> {
+    return structuredClone(this.lc.runs);
+  }
+
+  async builds(): Promise<BuildEntry[]> {
+    return structuredClone(this.lc.builds);
+  }
+
+  async brainHistory(): Promise<BrainEntry[]> {
+    return structuredClone(this.lc.history);
+  }
+
+  async cassettes(): Promise<CassetteInfo | null> {
+    return structuredClone(this.lc.cassette);
+  }
+
+  async setCassetteMode(mode: CassetteMode): Promise<CassetteInfo> {
+    if (mode !== "replay") throw new Error("demo data has no API key: only replay is possible");
+    return this.lc.setMode(mode);
+  }
+
   close(): void {
+    this.lc.stop();
     for (const t of this.timers) clearInterval(t);
     this.timers = [];
     this.listeners.clear();

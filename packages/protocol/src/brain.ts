@@ -48,7 +48,7 @@ export type BrainPage = z.infer<typeof BrainPage>;
  * else haiku models -> "haiku", any other model -> "sonnet", no model -> "rules".
  */
 export function brainModel(model?: string | null, source?: string | null): BrainModel {
-  if (source === "replay") return "replay";
+  if (source === "replay" || (typeof model === "string" && model.startsWith("replay:"))) return "replay";
   if (source === "cache") return "cache";
   if (source === "rules" || source === "bake") return "rules";
   if (!model) return "rules";

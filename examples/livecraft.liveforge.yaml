@@ -1,0 +1,512 @@
+# yaml-language-server: $schema=../packages/manifest/schema/liveforge.schema.json
+# Livecraft: a bright blocky sandbox (Three.js) and the flagship Liveforge demo. Villagers of Oakhollow plan and
+# build with tools (agents + builder), the village mind adapts prices, guards and night raids (factions), NPCs
+# remember and gossip (persona + world), and anything can be forged (forge).
+# Spec: Livecraft docs/specs/2026-10-03-livecraft-design.md (sections 1.2 and 2).
+liveforge: 1
+
+game:
+  id: livecraft
+  name: Livecraft
+  description: A bright blocky world where the villagers think, build, remember and plan the night.
+
+lore:
+  tone: bright, warm and playful; villagers are proud of their craft, a little nosy, and never cruel
+  bible: |
+    Livecraft is a bright blocky world of cubes: grassy plains, birch and oak forests, sandy deserts, snowy taiga
+    and tall mountains with caves full of ore. Everything is built from blocks, and anyone can mine and place them.
+    Days are sunny and busy; nights are dark, and monsters (zombies, skeletons, creepers and spiders) come out to
+    raid. Torches keep them away, walls slow them down, and clever monsters learn how you fight.
+    The village of Oakhollow sits in the plains by a river: timber houses with brick roofs, a well in the square,
+    wheat farms, a smithy and a little library. Its people are proud of what they build.
+    - Bram is the village builder: warm, proud of his craft, he can build anything if you ask nicely.
+    - Mara farms the wheat fields. Her house by the farm is her pride; she is sharp-tongued and forgives slowly.
+    - Hilde runs the smithy and trades tools and ores. She haggles hard and remembers every deal.
+    - Pip keeps the library and hears every rumour first; whatever Pip knows, the village knows by supper.
+    - Captain Rowan leads the village guard and plans the night watch.
+    - The Iron Golem guards the village. It never speaks; it watches, creaks and stands between danger and villagers.
+    Currency is emeralds. Trust is earned by helping, trading and building for the village, and lost by breaking
+    what others built. Grief a house and the village will talk about it for days.
+  glossary:
+    Oakhollow: the village in the plains by the river
+    emeralds: the village currency
+    the night watch: Captain Rowan's guard rotation when monsters raid
+    griefing: breaking what someone else built
+
+elements: [physical, fire, ice, lightning, nature]
+
+zones:
+  - { id: oakhollow, name: Oakhollow, kind: village, neighbours: [farm, smithy, library, river_quarry, oak_forest] }
+  - { id: farm, name: Mara's farm, kind: farm, neighbours: [oakhollow] }
+  - { id: smithy, name: Hilde's smithy, kind: shop, neighbours: [oakhollow] }
+  - { id: library, name: Pip's library, kind: interior, neighbours: [oakhollow] }
+  - { id: bram_plot, name: Bram's building plot, kind: plot, neighbours: [oakhollow] }
+  - { id: river_quarry, name: The river quarry, kind: wild, neighbours: [oakhollow, mines] }
+  - { id: oak_forest, name: The oak forest, kind: wild, neighbours: [oakhollow, mines] }
+  - { id: mines, name: The old mines, kind: cave, neighbours: [river_quarry, oak_forest] }
+
+# ---------------------------------------------------------------- the village mind (factions module)
+factions:
+  - id: oakhollow
+    name: Oakhollow
+    description: A proud plains village of builders and farmers. Slow to anger, slower to forget.
+    attitude: 0.1
+    priceRange: [0.75, 1.8]
+    members: [bram, mara, hilde, pip, captain_rowan, iron_golem]
+    home: oakhollow
+    traits: { proud: 0.8, nosy: 0.7, festive: 0.6, superstitious: 0.3 }
+    guards: [captain_rowan, iron_golem]
+    posts: [gate, square, well, farm, walls]
+    raid:
+      mobs: [zombie, skeleton, creeper, spider, baby_zombie]
+      captains: [Lady Webweaver, Old Rattlebones, Mossjaw the Patient, Captain Creepwick, Gravelmaw]
+      size: medium
+
+personas:
+  - id: bram
+    name: Bram
+    role: Village builder
+    faction: oakhollow
+    personality: >-
+      Warm, broad-shouldered builder who is proud of every block he places and talks about roofs the way others talk
+      about poetry. Happy to build for anyone who asks nicely; narrates his work as he goes ("bottom up, as my father
+      taught me"). Cannot stand sloppy corners or broken houses.
+    voice: { pitch: 0.9, rate: 0.95, style: warm, proud }
+    knowledge: [building, blocks and materials, every house in Oakhollow, the river quarry, roofs and towers]
+    likes: [good timber, symmetry, people who help carry blocks]
+    dislikes: [griefers, crooked walls, creepers]
+    allowedActions: [emote, trade, give, quest_offer, follow, build, flee]
+    zone: bram_plot
+    greeting: Ah, a visitor! Need something built?
+    barks:
+      - Bottom up, always bottom up.
+      - That roof won't lay itself.
+      - Oak for the walls, spruce for the trim. Trust me.
+  - id: mara
+    name: Mara
+    role: Farmer
+    faction: oakhollow
+    personality: >-
+      Sharp-tongued farmer who owns the house by the wheat fields and guards it fiercely. Says exactly what she
+      thinks, forgives slowly, but is fiercely loyal to anyone who helps her. Pays fairly in bread and emeralds.
+    voice: { pitch: 1.1, rate: 1.1, style: sharp, dry }
+    knowledge: [wheat, farming, the weather, her house, who walks through her fields]
+    secrets: [She buried her grandmother's emeralds under the third fence post.]
+    likes: [hard work, wheat, people who wipe their boots]
+    dislikes: [griefers, trampled crops, excuses]
+    allowedActions: [emote, trade, give, quest_offer, flee, hostile, call_guards]
+    zone: farm
+    greeting: Mind the wheat.
+    barks:
+      - Off the crops, please.
+      - If you break it, you mend it. Simple.
+  - id: hilde
+    name: Hilde
+    role: Smith and trader
+    faction: oakhollow
+    personality: >-
+      Soot-streaked smith who trades tools, ores and ingots. Loves a good haggle and remembers every deal ever struck;
+      gives her best prices to those who bring iron and treat her work with respect.
+    voice: { pitch: 0.95, rate: 1.0, style: brisk, shrewd }
+    knowledge: [smithing, ores, tools, prices, the mines]
+    likes: [iron, a fair haggle, sharp tools]
+    dislikes: [hagglers who never buy, rust]
+    allowedActions: [emote, trade, give, quest_offer, flee]
+    zone: smithy
+    greeting: Buying or selling? Either way, wipe your hands.
+    barks:
+      - Iron's up this week. Don't ask why.
+      - Good steel never lies.
+  - id: pip
+    name: Pip
+    role: Librarian and gossip
+    faction: oakhollow
+    personality: >-
+      Small, quick and bright-eyed librarian who hears every rumour first and loves passing them on "in confidence".
+      Knows the old stories of the mines and the monsters, and keeps a ledger of who did what.
+    voice: { pitch: 1.25, rate: 1.2, style: eager, whispery }
+    knowledge: [village gossip, old stories, the monsters, the mines, who is where]
+    likes: [news, books, secrets]
+    dislikes: [silence, people who return books late]
+    allowedActions: [emote, give, quest_offer, follow, flee]
+    zone: library
+    greeting: Oh! Have you heard?
+    barks:
+      - I shouldn't say, but...
+      - Everyone's talking about it.
+  - id: captain_rowan
+    name: Captain Rowan
+    role: Guard captain
+    faction: oakhollow
+    personality: >-
+      Steady, dry-humoured captain of Oakhollow's small guard. Plans the night watch, reads monsters' habits and
+      expects the same discipline from visitors. Respects anyone who helps defend the walls.
+    voice: { pitch: 0.85, rate: 0.95, style: steady, clipped }
+    knowledge: [the night watch, monsters, raids, the village walls, defence]
+    likes: [order, torches, people who stand their ground]
+    dislikes: [vandals, cowards, creepers near the walls]
+    allowedActions: [emote, give, quest_offer, follow, guard, hostile, call_guards]
+    zone: oakhollow
+    greeting: Keep your torch lit after dark.
+    barks:
+      - Torches up before sundown.
+      - The night watch starts at dusk.
+  - id: iron_golem
+    name: Iron Golem
+    role: Village guardian (non-verbal)
+    faction: oakhollow
+    personality: >-
+      A huge iron guardian. It NEVER speaks words: it only emotes (creaks, nods, stares, offers a flower, stamps).
+      Gentle with villagers and children, it stands between danger and the village and confronts griefers.
+    voice: { pitch: 0.5, rate: 0.6, style: silent }
+    knowledge: [the village, threats]
+    likes: [villagers, poppies]
+    dislikes: [monsters, griefers]
+    allowedActions: [emote, follow, guard, hostile]
+    zone: oakhollow
+    barks:
+      - "*creaks and stares*"
+      - "*offers a poppy*"
+
+relationships:
+  - { a: bram, b: mara, kind: friend, strength: 0.7, note: Bram built Mara's house }
+  - { a: mara, b: hilde, kind: rival, strength: 0.4, note: they argue about the price of hoes }
+  - { a: pip, b: bram, kind: family, strength: 0.6, note: Pip is Bram's nephew }
+  - { a: captain_rowan, b: iron_golem, kind: ally, strength: 0.9 }
+  - { a: pip, b: hilde, kind: friend, strength: 0.5 }
+
+# ---------------------------------------------------------------- what the game reports
+signals:
+  block.broken:
+    description: The player broke a block. owner = the villager whose house it was part of (only inside a house).
+    data: { block: string, x: number, y: number, z: number, "owner?": string, "village?": string, "tool?": string, "value?": number }
+  block.placed:
+    description: The player placed a block. owner = the villager whose house it is (repairs), village = inside a village.
+    data: { block: string, x: number, y: number, z: number, "owner?": string, "village?": string }
+  build.pillared:
+    description: The player pillared up (stacked blocks under themselves) to escape or snipe.
+    data: { height: number, "x?": number, "z?": number }
+  combat.shot_bow:
+    description: The player shot an arrow.
+    data: { "target?": string, "hit?": boolean, "distance?": number }
+  combat.hid:
+    description: The player hid in a hole / tunnel during danger. depth = blocks below the surface.
+    data: { depth: number, "enemies?": number }
+  movement.sprinted:
+    description: The player sprinted away / kited for a while.
+    data: { seconds: number, "from?": string }
+  item.crafted:
+    description: The player crafted an item.
+    data: { item: string, "count?": number }
+  item.forged:
+    description: The player forged an item with forge.item (the voxel item is in the hotbar).
+    data: { item: string, "name?": string, "effect?": string }
+  item.used:
+    description: The player used an item (lava bucket, flint and steel, potion ...).
+    data: { item: string, "target?": string }
+  night.survived:
+    description: Dawn broke and the player was alive (sent once per night).
+    data: { night: number, "deaths?": number }
+
+actions:
+  emote: { description: Play an emote (creak, nod, glare, wave, offer_flower, stamp ...)., args: { name: { type: string, required: true } } }
+  trade:
+    description: Open the trade screen with a price multiplier.
+    args: { priceMultiplier: { type: number, min: 0.5, max: 2.5, required: true } }
+  quest_offer: { description: Offer a quest (the quests module fills it)., args: {} }
+  follow: { description: Follow the player., args: {} }
+  flee: { description: Run away to safety., args: {} }
+  hostile: { description: Turn hostile (the golem confronts the player)., args: {} }
+  give: { description: Give the player an item., args: { item: { type: string, required: true }, count: { type: number, min: 1, max: 64 } } }
+  build:
+    description: Build something for the player (runs builder.plan and places it block by block).
+    args: { prompt: { type: string, required: true } }
+  guard:
+    description: Stand guard at a post (gate, square, well, farm, walls, home:<npc>, player:<id>).
+    args: { post: { type: string, required: true } }
+  call_guards: { description: Call Captain Rowan and the golem., args: {}, by: [npc, world] }
+  # steal: none - nobody in Oakhollow steals.
+
+# ---------------------------------------------------------------- player model
+traits:
+  builder: count(block.placed, 10m) >= 40
+  griefer: count(world.property_damaged, 15m) >= 3 | count(block.broken{village=oakhollow}, 15m) >= 6
+  pillarer: count(build.pillared, 10m) >= 2
+  archer: count(combat.shot_bow, 10m) >= 10
+  hider: count(combat.hid, 10m) >= 2
+  generous: count(social.gave, 30m) >= 3
+  # rich is built in (economy.gold vs modules.observer.options.richGold)
+
+moments:
+  first_night_survived: count(night.survived, 24h) >= 1
+  griefed_house: count(world.property_damaged, 5m) >= 3
+  built_for_village: count(block.placed{village=oakhollow}, 10m) >= 20
+
+# ---------------------------------------------------------------- reactions
+reactions:
+  rules:
+    - id: repair_mara_house
+      when: count(world.property_damaged{owner=mara}, 15m) >= 3
+      then:
+        kind: quest.offer
+        target: npc:mara
+        args:
+          giver: mara
+          quest:
+            id: repair_mara_house
+            title: Mend Mara's house
+            summary: You broke Mara's house. Put every block back, and Bram may lend a hand.
+            giver: mara
+            objectives:
+              - { id: rebuild, type: repair, target: mara_house, count: 12, description: Place 12 blocks back into Mara's house, condition: "count(block.placed{owner=mara}, 30m) >= 12" }
+              - { id: apologise, type: talk, target: mara, description: Tell Mara it's fixed }
+            rewards:
+              - { type: reputation, id: oakhollow, amount: 0.3, description: Oakhollow trusts you again }
+              - { type: item, id: bread, amount: 3, description: Three loaves of Mara's bread }
+            dialogue:
+              offer: You broke it. You mend it. Every block, mind.
+              accept: Good. Bram has spare planks if you ask nicely.
+              complete: Hm. Better than before, actually. Thank you.
+            origin: { kind: npc, ref: mara }
+            tags: [dynamic, repair]
+      cooldown: 900
+      flavour: true
+      description: Grief Mara's house and she demands you repair it (a dynamic quest the LLM may re-word).
+    - id: gather_wheat
+      when: count(social.talked_to{npc=mara}, 30m) >= 1 & count(world.property_damaged{owner=mara}, 60m) == 0
+      then:
+        kind: quest.offer
+        target: npc:mara
+        args:
+          giver: mara
+          quest:
+            id: gather_wheat
+            title: Bring in the wheat
+            summary: Mara needs sixteen bundles of wheat before the rain.
+            giver: mara
+            objectives:
+              - { id: wheat, type: fetch, target: wheat, count: 16, description: Harvest 16 wheat }
+              - { id: deliver, type: deliver, target: mara, description: Bring the wheat to Mara }
+            rewards:
+              - { type: item, id: bread, amount: 5 }
+              - { type: reputation, id: oakhollow, amount: 0.1 }
+            dialogue: { offer: "Rain's coming. Sixteen bundles of wheat, quick as you can.", complete: "Just in time. Here, fresh bread." }
+            origin: { kind: designer }
+      once: true
+      description: Talk to Mara on a good day and she asks for help with the harvest.
+    - id: defend_the_village
+      when: count(world.time{phase=dusk}, 10m) >= 1 & rep(oakhollow) > -0.3
+      then:
+        kind: quest.offer
+        target: npc:captain_rowan
+        args:
+          giver: captain_rowan
+          quest:
+            id: defend_the_village
+            title: Hold the walls tonight
+            summary: Captain Rowan needs one more pair of hands on the night watch.
+            giver: captain_rowan
+            objectives:
+              - { id: kill, type: kill, target: zombie, count: 5, description: Defeat 5 raiders }
+              - { id: survive, type: survive, target: night, description: Survive until dawn, condition: "count(night.survived, 12h) >= 1" }
+            rewards:
+              - { type: reputation, id: oakhollow, amount: 0.25 }
+              - { type: title, id: night_watch, description: Night Watch }
+            dialogue: { offer: "They're coming at dusk. Will you stand the watch with us?", complete: "You held. Oakhollow won't forget it." }
+            origin: { kind: designer }
+      cooldown: 1200
+      flavour: true
+      description: At dusk the captain asks for help on the walls.
+    - id: statue_for_the_mender
+      when: count(block.placed{owner=mara}, 60m) >= 12 & count(world.property_damaged{owner=mara}, 120m) >= 1
+      then:
+        kind: custom.statue
+        target: npc:bram
+        args: { npc: bram, prompt: "a statue of {{name}} in their outfit colours, on a stone plinth by the well" }
+      once: true
+      description: Repair Mara's house and the village builds a statue of you (Bram runs builder.plan with your outfit colours).
+
+  # R1 Reaction Library: every recipe that makes sense without bosses (17 of 20).
+  library: [outfit_comments, appearance_state, deed_nicknames, lies_caught, promises_remembered, town_mood,
+            rich_attention, broke_support, collector_interest, haggle_memory, coward_rumour, companion_grief,
+            time_weather_barks, inn_regular, absence_recap, property_damage, avoided_area]
+  params:
+    outfit_comments: { speakers: [bram, mara, hilde, pip, captain_rowan] }
+    appearance_state: { healer: mara, speakers: [bram, mara, hilde, pip, captain_rowan] }
+    deed_nicknames: { minGapSec: 240 }
+    town_mood: { streak: 3, priceShift: 0.1, speakers: [bram, mara, hilde, pip, captain_rowan] }
+    rich_attention: { merchant: hilde, gold: 64 }
+    broke_support: { gold: 3, charityGold: 2 }
+    collector_interest: { collector: hilde }
+    haggle_memory: { step: 0.05 }
+    coward_rumour: { flees: 3, challenger: "a creeper with a grudge", challengerUnit: creeper }
+    companion_grief: { giver: captain_rowan }
+    time_weather_barks: { speakers: [bram, mara, hilde, pip, captain_rowan] }
+    inn_regular: { visits: 3, kinds: [shop, interior], owners: { smithy: hilde, library: pip } }
+    absence_recap: { companion: pip, minHours: 6 }
+    property_damage: { guardsAfter: 3, repairOver: 5 }
+    avoided_area: { giver: pip, afterMin: 15, zones: [mines, oak_forest, river_quarry] }
+  engine: { ledgerSize: 16, traitThreshold: 0.5 }
+
+# ---------------------------------------------------------------- forge anything
+items:
+  families: [pickaxe, sword, axe, shovel, hoe, bow, crossbow, spear, hammer, staff, shield, helmet, chestplate, boots]
+  slots: [weapon, offhand, head, chest, feet, tool]
+  stats:
+    damage: { min: 1, max: 20, default: 5 }
+    speed: { min: 1, max: 20, default: 8 }
+    mining: { min: 0, max: 20, default: 6 }
+    durability: { min: 10, max: 2000, default: 250 }
+  budget: [1.4, 1.6, 1.9, 2.2, 2.6]
+  # effect enum the game implements on forged items
+  tags: [chain_lightning, fire_trail, vein_mine, knockback_burst, heal_aura, frost_slow]
+  creativity: { max: 0.85, rawPowerPenalty: true }
+
+quests:
+  objectiveTypes: [fetch, kill, talk, explore, deliver, survive, repair, build, forge]
+  rewardTypes: [item, reputation, title, xp]
+  maxObjectives: 3
+  maxActive: 4
+  givers: [mara, bram, hilde, pip, captain_rowan]
+  rewards: { goldMax: 64, xpMax: 500 }
+
+achievements:
+  - { id: night_owl, title: Night Owl, description: Survive your first night., condition: "count(night.survived, 24h) >= 1", glyph: moon }
+  - { id: master_builder, title: Master Builder, description: Place 200 blocks in half an hour., condition: "count(block.placed, 30m) >= 200", glyph: brick, rarity: uncommon }
+  - { id: mender, title: The Mender, description: Rebuild what you broke., condition: "count(block.placed{owner=mara}, 60m) >= 12 & count(world.property_damaged{owner=mara}, 120m) >= 1", glyph: hammer, rarity: rare }
+  - { id: sky_high, title: Sky High, description: Pillar 12 blocks up., condition: "max(build.pillared.height, 30m) >= 12", glyph: tower }
+  - { id: friend_of_oakhollow, title: Friend of Oakhollow, description: Earn the village's trust., condition: rep(oakhollow) >= 0.6, glyph: heart, rarity: rare }
+  - { id: forgemaster, title: Forgemaster, description: Forge three items., condition: "count(item.forged, 60m) >= 3", glyph: anvil, rarity: uncommon }
+
+clamps:
+  difficulty: { mode: hidden, aggressionMin: 0.3, aggressionMax: 0.95, maxStep: 0.2 }
+  pacing: { maxSpawnPerMin: 30, maxWaveSize: 12, breatherSec: [5, 30], lootPerMin: 4 }
+  forge: { maxParts: 32, maxPerMinPerPlayer: 20, meshJobs: false }
+  npc: { maxReplyChars: 400, priceMultiplier: [0.5, 2.5] }
+
+safety:
+  rating: E
+  refusedTopics: [real-world politics, real people, the player's personal data]
+  inWorldOnly: true
+
+budgets:
+  game: { tokensPerMin: 600000, usdPerDay: 40 }
+  player: { tokensPerMin: 80000, usdPerDay: 5 }
+
+models:
+  fast: claude-haiku-4-5
+  rich: claude-sonnet-5-5
+  # Sonnet for villager agents, build plans, forge designs and conversation; Haiku for everything else
+  # (village mind, raid plans, barks, classification).
+  overrides:
+    agent.goal: rich
+    builder.plan: rich
+    npc.reply: rich
+    forge.item: rich
+    forge.armour_set: rich
+    forge.look: rich
+    forge.vfx: rich
+    forge.creature: rich
+    forge.npc_look: rich
+    forge.prop: rich
+    forge.loot: rich
+
+# ---------------------------------------------------------------- agents + builder (K6 modules)
+agents:
+  maxSteps: 14
+  toolTimeoutMs: 45000      # build calls report progress, which extends this
+  maxTokens: 1500
+  guidance: >-
+    Villagers of Oakhollow are practical and cheerful and narrate what they do in one short line. Plan with build,
+    gather what is missing, then place. Never break other villagers' houses.
+  tools:
+    - name: walk_to
+      description: Walk to a place (named spot, NPC id, or x,y,z).
+      schema: { type: object, properties: { target: { type: string, description: "spot name, npc id or player" }, x: { type: number }, y: { type: number }, z: { type: number } }, required: [target] }
+    - name: look_at
+      description: Turn to look at someone or something.
+      schema: { type: object, properties: { target: { type: string } }, required: [target] }
+    - name: mine
+      description: Mine blocks of one type nearby.
+      schema: { type: object, properties: { block: { type: string }, count: { type: integer } }, required: [block, count] }
+    - name: place
+      description: Place one block, or a range of an expanded build plan (from / to indexes).
+      schema: { type: object, properties: { block: { type: string }, x: { type: integer }, y: { type: integer }, z: { type: integer }, plan: { type: string }, from: { type: integer }, to: { type: integer } }, required: [] }
+    - name: gather
+      description: Gather a material (wood, clay, wheat, stone ...) from the world.
+      schema: { type: object, properties: { block: { type: string }, count: { type: integer } }, required: [block, count] }
+    - name: give
+      description: Give the player an item.
+      schema: { type: object, properties: { item: { type: string }, count: { type: integer } }, required: [item] }
+    - name: take
+      description: Take an item the player offers.
+      schema: { type: object, properties: { item: { type: string }, count: { type: integer } }, required: [item] }
+    - name: follow
+      description: Follow someone until told to stop.
+      schema: { type: object, properties: { target: { type: string } }, required: [target] }
+    - name: say
+      description: Say a line out loud (speech bubble + voice).
+      schema: { type: object, properties: { text: { type: string } }, required: [text] }
+    - name: emote
+      description: Play an emote (wave, nod, think, cheer, hammer, glare).
+      schema: { type: object, properties: { name: { type: string } }, required: [name] }
+    - name: build
+      description: Plan a structure with builder.plan, then place it bottom-up. Returns the materials needed.
+      schema: { type: object, properties: { prompt: { type: string }, width: { type: integer }, depth: { type: integer }, height: { type: integer } }, required: [prompt] }
+    - name: trade
+      description: Open a trade with the player at a price multiplier.
+      schema: { type: object, properties: { priceMultiplier: { type: number } }, required: [priceMultiplier] }
+    - name: guard
+      description: Stand guard at a post.
+      schema: { type: object, properties: { post: { type: string } }, required: [post] }
+    - name: wait
+      description: Wait a few seconds.
+      schema: { type: object, properties: { seconds: { type: number } }, required: [seconds] }
+
+builder:
+  # by role: wall, trim, roof, floor, glass, accent
+  palette: [oak_planks, spruce_log, bricks, cobblestone, glass, torch]
+  # every Livecraft block id a plan may use (plans are mapped onto these)
+  blockIds: [grass, dirt, stone, cobblestone, mossy_cobblestone, sand, gravel, clay, sandstone, snow, ice, oak_log,
+             oak_planks, birch_log, birch_planks, spruce_log, spruce_planks, glass, bricks, stone_bricks, white_wool,
+             red_wool, blue_wool, yellow_wool, green_wool, black_wool, hay_bale, bookshelf, pumpkin, torch, glow_lamp,
+             door, ladder, farmland, wheat, crafting_table, furnace, chest, iron_block, gold_block, diamond_block,
+             obsidian, water, dirt_path]
+  aliases: { thatch: hay_bale, hay: hay_bale, straw: hay_bale, lantern: glow_lamp, lamp: glow_lamp, path: dirt_path, wool: white_wool }
+  maxBlocks: 4000
+  fallbackBlock: oak_planks
+  styleGuide: >-
+    Oakhollow builds timber houses: oak plank walls, spruce log corners, brick or plank gable roofs, cobblestone
+    foundations, glass windows and a torch by every door. Towers are round stone brick.
+
+modules:
+  observer:
+    enabled: true
+    options: { richGold: 64 }
+  persona: true
+  world:
+    enabled: true
+    options:
+      playerNoun: the traveller
+      # Livecraft custom signals feed reputation (the village mind's trust) too
+      reputation:
+        - { signal: block.broken, field: owner, delta: -0.02, reason: "broke part of {ref}'s house" }
+        - { signal: block.placed, field: owner, delta: 0.015, reason: "repaired {ref}'s house" }
+        - { signal: night.survived, faction: oakhollow, delta: 0.02, reason: "survived a night with the village" }
+  director:
+    enabled: true
+    options:
+      spawnTable:
+        default: [zombie, skeleton, creeper, spider]
+        oakhollow: [zombie, skeleton, spider, baby_zombie]
+        mines: [skeleton, creeper, spider]
+      autoPacing: false
+  forge: true
+  quests: true
+  # K7 village mind
+  factions:
+    enabled: true
+    options: { council: true, councilCooldownSec: 30, postureMinSec: 20, windowMin: 10, directorTimeline: true }
+  # NPC agents (tool use) and voxel build plans
+  agents: true
+  builder: true

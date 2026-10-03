@@ -8,6 +8,9 @@ export type { AutoEmitOptions, AppearanceKey, AppearanceState, OutfitPiece } fro
 export type { LiveforgeConfig, LiveforgeConfig as LiveforgeClientOptions, AskOptions, FallbackFn, OnOptions } from "./client.js";
 export type { AskHandle, AskPartial } from "./ask.js";
 export { FallbackCache } from "./cache.js";
+// Village minds (K7): lf.factions.state / raidPlan / onPosture / onGuardPosts / reportThreat.
+export { FactionsApi } from "./factions.js";
+export type { FactionsHost, ThreatReport } from "./factions.js";
 export type { CachedAnswer, FallbackCacheOptions } from "./cache.js";
 export { LiveforgeError, isLiveforgeError } from "./errors.js";
 export type { LiveforgeErrorCode } from "./errors.js";

@@ -65,6 +65,7 @@ export function brainFromEvent(ev: StoredEvent, m: Manifest): BrainDraft | null 
   switch (ev.type) {
     case "lf.director.decision": {
       const dec = (d.decision ?? {}) as { kind?: string; summary?: string; why?: string; source?: string; data?: unknown };
+      if (dec.kind === "faction_posture" || dec.kind === "raid_plan") return null; // K7 factions pushes its own Brain entries
       const model = dec.source === "ai" ? tierBadge(m, `director.${dec.kind ?? "pacing"}`) : brainModel(null, dec.source ?? "rules");
       return { source: "director", actor: "director", kind: "decision", text: `${clip(dec.summary, 200)}${dec.why ? ` (${clip(dec.why, 300)})` : ""}`, data: { kind: dec.kind, ...(dec.data !== undefined ? { data: dec.data } : {}) }, model, ts: ev.ts };
     }

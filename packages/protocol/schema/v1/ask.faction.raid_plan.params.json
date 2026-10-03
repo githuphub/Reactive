@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "faction": {
+      "type": "string",
+      "maxLength": 64
+    },
+    "player": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[A-Za-z0-9_\\-.:]+$"
+    },
+    "night": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9999
+    },
+    "size": {
+      "type": "string",
+      "enum": [
+        "small",
+        "medium",
+        "large"
+      ]
+    }
+  },
+  "$id": "https://liveforge.dev/schema/v1/ask.faction.raid_plan.params.json",
+  "title": "ask.faction.raid_plan.params"
+}

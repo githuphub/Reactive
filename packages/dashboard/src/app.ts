@@ -1,6 +1,7 @@
 // App state + a small pub/sub bus shared by every panel.
 import type { Directive, StoredEvent } from "@liveforge/protocol";
 import type { ConnStatus, DataSource, GameInfo, WorldSummary } from "./api/types";
+import { brainSig, type BrainEntry } from "./api/brain";
 
 export interface AppState {
   source: DataSource;
@@ -13,7 +14,7 @@ export interface AppState {
   connDetail?: string;
 }
 
-type Topic = "event" | "directive" | "state" | "tick";
+type Topic = "event" | "directive" | "state" | "tick" | "brain";
 type Handler = (payload: unknown) => void;
 
 /** Ring buffers of the live stream (the stream panel and the overview read these). */
@@ -22,6 +23,8 @@ export const live = {
   directives: [] as Directive[],
   /** Event arrival times for the rate meter. */
   arrivals: [] as number[],
+  /** Brain feed: WS {t:"brain"} entries (+ GET /v1/brain history), oldest first. */
+  brain: [] as BrainEntry[],
 };
 
 const MAX_EVENTS = 1500;
@@ -63,6 +66,8 @@ export function initApp(s: AppState): void {
   live.events = [];
   live.directives = [];
   live.arrivals = [];
+  live.brain = [];
+  brainSeen.clear();
 }
 
 export function resetApp(): void {
@@ -82,6 +87,23 @@ export function pushEvent(e: StoredEvent): void {
   live.arrivals.push(now);
   while (live.arrivals.length && now - live.arrivals[0] > 60_000) live.arrivals.shift();
   bus.emit("event", e);
+}
+
+const MAX_BRAIN = 600;
+const brainSeen = new Map<string, number>();
+
+/** Add a Brain entry (de-duplicated by id and by content within 15 s) and notify panels. */
+export function pushBrain(b: BrainEntry): void {
+  const sig = brainSig(b);
+  const prev = brainSeen.get(b.id) ?? brainSeen.get(sig);
+  if (prev !== undefined && Math.abs(prev - b.ts) < 15_000) return;
+  brainSeen.set(b.id, b.ts);
+  brainSeen.set(sig, b.ts);
+  if (brainSeen.size > 4000) brainSeen.clear();
+  live.brain.push(b);
+  live.brain.sort((x, y) => x.ts - y.ts);
+  if (live.brain.length > MAX_BRAIN) live.brain.splice(0, live.brain.length - MAX_BRAIN);
+  bus.emit("brain", b);
 }
 
 /** boss.move_added pairs: the AI upgrade re-sends the move; the later directive replaces the earlier one. */

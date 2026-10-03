@@ -18,6 +18,8 @@ described, inside the rules you set. It runs on your own server, works with any 
 - [Protocol](protocol.md): REST + WebSocket, built-in signals, ask and directive kinds, admin API, Unity/Unreal
   examples
 - [Dashboard](dashboard.md): every panel, and a demo-video walkthrough
+- [Village mind (factions)](factions.md): posture, prices, guard posts and adaptive night raids per village
+- [Record / replay cassettes](record-replay.md): deterministic, cost-free demos with no API key
 - [Reaction Library](reactions.md): 20 one-line reactions (`reactions.library`), the combination engine, signals
   and `custom.reaction` payloads
 - [Agents](agents.md): tool-calling NPC agents (`agent.goal`, tool registry, rules fallback) and the Brain feed

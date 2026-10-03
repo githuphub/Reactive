@@ -3,8 +3,9 @@
 import "./styles.css";
 import { AdminError, type ConnStatus, type DataSource, type WorldSummary } from "./api/types";
 import { LiveSource } from "./api/admin";
-import { app, bus, eventRate, hasApp, initApp, pushDirective, pushEvent, resetApp, setState } from "./app";
-import { fmtNum, h, icon, label, render } from "./ui/dom";
+import { app, bus, eventRate, hasApp, initApp, pushBrain, pushDirective, pushEvent, resetApp, setState } from "./app";
+import { fmtNum, h, icon, label, render, toast } from "./ui/dom";
+import type { CassetteInfo, CassetteMode } from "./api/brain";
 import type { PanelDef } from "./panels/panel";
 import { overviewPanel } from "./panels/overview";
 import { streamPanel } from "./panels/stream";
@@ -19,9 +20,13 @@ import { metersPanel } from "./panels/meters";
 import { manifestPanel } from "./panels/manifest";
 import { simulatePanel } from "./panels/simulate";
 import { reactionsPanel } from "./panels/reactions";
+import { brainPanel } from "./panels/brain";
+import { agentsPanel } from "./panels/agents";
+import { buildsPanel } from "./panels/builds";
 
 const NAV: { group: string; panels: PanelDef[] }[] = [
   { group: "Live", panels: [overviewPanel, streamPanel, simulatePanel] },
+  { group: "Brain", panels: [brainPanel, agentsPanel, buildsPanel] },
   { group: "Players", panels: [playersPanel, npcsPanel] },
   { group: "World", panels: [rumoursPanel, factionsPanel, directorPanel, reactionsPanel] },
   { group: "Forge", panels: [galleryPanel, reviewPanel] },
@@ -42,6 +47,42 @@ const root = document.getElementById("app")!;
 let disposePanel: (() => void) | null = null;
 let disconnect: (() => void) | null = null;
 let worldTimer: ReturnType<typeof setInterval> | null = null;
+let cassetteTimer: ReturnType<typeof setInterval> | null = null;
+/** LLM provider mode (K7 cassettes); null when the server has no cassette routes. */
+let cassette: CassetteInfo | null = null;
+
+const CASSETTE_COLORS: Record<CassetteMode, string> = { live: "#3fa34d", record: "#e66767", replay: "#c98500" };
+
+async function refreshCassettes() {
+  if (!hasApp()) return;
+  const src = app().source;
+  if (!src.cassettes) return;
+  const next = await src.cassettes().catch(() => null);
+  const changed = JSON.stringify([next?.mode, next?.count]) !== JSON.stringify([cassette?.mode, cassette?.count]);
+  cassette = next;
+  if (changed) drawTopbar();
+}
+
+async function switchCassette(mode: CassetteMode) {
+  const src = app().source;
+  if (!src.setCassetteMode) return;
+  try {
+    cassette = await src.setCassetteMode(mode);
+    toast(`LLM provider: ${mode.toUpperCase()}`, "ok");
+  } catch (e) {
+    toast((e as Error).message, "err");
+  }
+  drawTopbar();
+}
+
+function cassetteBadge(): HTMLElement | null {
+  if (!cassette) return null;
+  const c = cassette;
+  const sel = h("select", { class: "cassette-sel", title: "switch LLM provider mode", onchange: () => void switchCassette(sel.value as CassetteMode) },
+    ...(["live", "record", "replay"] as CassetteMode[]).map((m) => h("option", { value: m, selected: m === c.mode, disabled: m !== "replay" && !c.liveAvailable }, m.toUpperCase()))) as HTMLSelectElement;
+  const tip = `LLM ${c.mode}: ${c.count} cassette(s)${c.stats ? ` · hits ${c.stats.hits + c.stats.looseHits + c.stats.fuzzyHits}, misses ${c.stats.misses}, recorded ${c.stats.recorded}` : ""}${c.liveAvailable ? "" : " · no API key: replay only"}`;
+  return h("div", { class: "cassette", title: tip, style: { borderColor: `${CASSETTE_COLORS[c.mode]}88` } }, h("i", { class: "dot", style: { background: CASSETTE_COLORS[c.mode] } }), sel, h("span", { class: "muted small" }, String(c.count)));
+}
 
 // ------------------------------------------------------------------------------------------ auth storage
 
@@ -167,6 +208,8 @@ async function boot(source: DataSource) {
   renderShell();
   connectWorld();
   worldTimer = setInterval(() => void refreshWorlds(), 5000);
+  cassetteTimer = setInterval(() => void refreshCassettes(), 10_000);
+  void refreshCassettes();
   route();
 }
 
@@ -176,6 +219,7 @@ function connectWorld() {
   disconnect = s.source.connect(s.world, {
     onEvent: pushEvent,
     onDirective: pushDirective,
+    onBrain: pushBrain,
     onStatus: (conn, detail) => {
       if (!hasApp()) return;
       if (app().conn !== conn) {
@@ -192,6 +236,8 @@ function shutdown() {
   disconnect?.();
   disconnect = null;
   if (worldTimer) clearInterval(worldTimer);
+  if (cassetteTimer) clearInterval(cassetteTimer);
+  cassette = null;
   if (hasApp()) app().source.close();
   resetApp();
 }
@@ -232,6 +278,7 @@ function drawTopbar() {
     h("div", { class: "tb-controls" },
       h("label", { class: "tb-field" }, h("span", null, "world"), worldSel),
       h("label", { class: "tb-field" }, h("span", null, "player"), playerSel),
+      cassetteBadge(),
       h("div", { class: "tb-rate", title: "signals per minute" }, h("b", { id: "tb-rate" }, fmtNum(eventRate())), h("span", null, "/min")),
       h("div", { class: "conn", title: s.connDetail ?? "", style: { borderColor: `${connColor}66` } }, h("i", { class: `dot ${s.conn === "live" || s.conn === "demo" ? "pulse" : ""}`, style: { background: connColor } }), connText)));
 }

@@ -124,6 +124,16 @@ export function validateManifestObject(
   // ---- factions / relationships
   m.factions.forEach((f, i) => {
     for (const other of Object.keys(f.relations)) if (!factionIds.has(other)) err(["factions", i, "relations", other], `unknown faction "${other}"`);
+    // village mind (K7)
+    f.members.forEach((id, j) => {
+      if (!personaIds.has(id)) err(["factions", i, "members", j], `unknown persona "${id}" (declare it under personas)`);
+      const p = m.personas.find((x) => x.id === id);
+      if (p?.faction && p.faction !== f.id) warn(["factions", i, "members", j], `"${id}" is a member here but its persona says faction "${p.faction}"`);
+    });
+    f.guards?.forEach((id, j) => {
+      if (!personaIds.has(id)) err(["factions", i, "guards", j], `unknown persona "${id}"`);
+    });
+    if (f.home && zoneIds.size && !zoneIds.has(f.home)) warn(["factions", i, "home"], `zone "${f.home}" is not declared under zones`);
   });
   m.relationships.forEach((r, i) => {
     if (!personaIds.has(r.a)) err(["relationships", i, "a"], `unknown persona "${r.a}"`);

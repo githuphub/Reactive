@@ -8,6 +8,7 @@ import {
   type TierModels,
 } from "./llm.js";
 import type { Logger } from "../log.js";
+import { isReplayModel, withCassettes } from "./cassette.js";
 import type { LlmContentBlock, LlmToolsOptions, LlmToolsResult } from "./llm.js";
 
 export const DEFAULT_MODELS: TierModels = { fast: "claude-haiku-4-5", rich: "claude-sonnet-5-5" };
@@ -65,7 +66,7 @@ export class ClaudeProvider implements LlmProvider {
   private fallbackOk: boolean;
 
   constructor(private readonly opts: ClaudeOptions) {
-    this.client = new Anthropic({ apiKey: opts.apiKey, maxRetries: 0 });
+    this.client = withCassettes(new Anthropic({ apiKey: opts.apiKey, maxRetries: 0 })); // K7: record/replay (providers/cassette.ts)
     this.fallbackOk = opts.refusalFallback;
   }
 
@@ -267,6 +268,7 @@ export class ClaudeProvider implements LlmProvider {
       usage: { inputTokens: msg.usage.input_tokens, outputTokens: msg.usage.output_tokens },
       model: msg.model ?? model,
       ms: Date.now() - started,
+      ...(isReplayModel(msg.model) ? { source: "replay" } : {}),
     };
   }
 }

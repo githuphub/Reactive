@@ -7,10 +7,12 @@ import world from "./world/index.js";
 import director from "./director/index.js";
 import forge from "./forge/index.js";
 import quests from "./quests/index.js";
+import factions from "./factions/index.js";
+
 import agents from "./agents/index.js";
 import builder from "./builder/index.js";
 
-export const BUILTIN_MODULES: LiveforgeModule[] = [observer, persona, world, director, forge, quests, agents, builder];
+export const BUILTIN_MODULES: LiveforgeModule[] = [observer, persona, world, director, forge, quests, agents, builder, factions];
 
 /** Which built-in module answers each ask kind (documentation + sanity check at startup). */
 export const ASK_OWNERS: Record<string, string> = {
@@ -21,6 +23,7 @@ export const ASK_OWNERS: Record<string, string> = {
   "quest.offer": "quests", "achievement.check": "quests",
   "world.reactions": "world",
   "player.model": "observer",
+  "faction.raid_plan": "factions",
   "builder.plan": "builder",
   "agent.goal": "agents",
 };

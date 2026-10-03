@@ -102,6 +102,14 @@ Proximity groups for rumour spread, persona locations and reaction rules (`stat(
 | `attitude` | −1..1 | `0` | Default attitude toward a new player. |
 | `relations` | map faction id → −1..1 | `{}` | Stance toward other factions. Colours gossip and help. |
 | `priceRange` | `[min, max]` | `[0.8, 1.5]` | Price multiplier range applied by reputation (revered → min, hated → max). |
+| `members` | persona ids | `[]` | Village mind: members (merged with personas whose `faction` is this id). |
+| `home` | zone id | | Signals in this zone count as "in the village". |
+| `traits` | map name → number / string / bool | `{}` | Village character for the council prompt, e.g. `{proud: 0.8}`. |
+| `guards` | persona ids | members whose role says guard / captain / golem | Who takes guard posts. |
+| `posts` | strings | `[gate, square, well]` | Guard post ids your game maps to places. `home:<npc>` and `player:<id>` are always allowed. |
+| `raid` | `{mobs?, captains?, size?}` | zombie, skeleton, creeper, spider · medium | Night raids planned by `faction.raid_plan`. |
+
+The village-mind fields are read by the `factions` module (`modules.factions: true`). See [factions.md](factions.md).
 
 ## relationships
 

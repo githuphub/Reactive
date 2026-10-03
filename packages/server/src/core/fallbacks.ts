@@ -2,7 +2,7 @@
 // disabled, doesn't implement the kind yet, or its instant() threw. Lanes replace these with real fast-paths.
 import { expandVoxelPlan, rulesVoxelPlan } from "@liveforge/protocol";
 import {
-  cleanHabits, composeMove, hashString, mulberry32,
+  cleanHabits, composeMove, defaultRaidPlan, hashString, mulberry32, DEFAULT_RAID_MOBS,
   type AskKind, type AskParams, type AskResult, type Blueprint, type BlueprintPart, type ForgedItem, type VfxRecipe,
 } from "@liveforge/protocol";
 import { personaById, type Manifest } from "@liveforge/manifest";
@@ -166,6 +166,11 @@ export function fallbackAnswer<K extends AskKind>(kind: K, params: AskParams<K>,
       return r({ rumours: [], directives: [], attitudes: {} }, "no world engine yet");
     case "player.model":
       return r({ player, traits: {}, moments: [], profile: null, stats: {}, eventCount: 0, top: [] }, "observer disabled: empty model");
+    case "faction.raid_plan": {
+      const f = m.factions.find((x) => x.id === p.faction) ?? m.factions.find((x) => x.raid) ?? m.factions[0];
+      const size = (p.size as "small" | "medium" | "large" | undefined) ?? f?.raid?.size ?? "medium";
+      return r(defaultRaidPlan(f?.raid?.mobs ?? DEFAULT_RAID_MOBS, size), "factions module off: a plain mixed raid");
+    }
     case "builder.plan": {
       const bp = p as unknown as { prompt: string; site: { size: [number, number, number] }; palette?: string[] };
       const rp = rulesVoxelPlan({ prompt: bp.prompt, size: bp.site.size, palette: bp.palette ?? m.builder.palette });

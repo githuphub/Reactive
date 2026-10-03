@@ -24,8 +24,8 @@ import { Metrics } from "./metrics.js";
 import { WsHub } from "./hub.js";
 import { JobRunner } from "./jobs.js";
 import { fallbackAnswer } from "./fallbacks.js";
+import { isReplayModel, priceFor, type Providers } from "../providers/index.js";
 import { BrainBuffer, brainFromEvent } from "./brain.js";
-import { priceFor, type Providers } from "../providers/index.js";
 import type { BrainDraft, BrainEntry } from "@liveforge/protocol";
 import type {
   AskContext, AskHandler, BudgetView, EventContext, LiveforgeModule, ModuleContext, Projection, ProjectionReader,
@@ -414,6 +414,11 @@ export class Liveforge {
       return { pl, effTier, models };
     };
     const account = (task: string | undefined, pl: string | null, model: string, ms: number, usage: { inputTokens: number; outputTokens: number }, error?: string) => {
+      // K7 cassettes: a replayed answer costs nothing and is logged with source "replay".
+      if (isReplayModel(model)) {
+        self.metrics.log({ id: randomUUID(), game, world: null, player: pl, kind: task ?? module, module, stage: "llm", source: "replay", ms, inputTokens: 0, outputTokens: 0, usd: 0, error });
+        return;
+      }
       const [pin, pout] = priceFor(model, self.config.llm.prices);
       const usd = (usage.inputTokens * pin + usage.outputTokens * pout) / 1e6;
       self.budgets.charge(game, pl, { ...usage, usd });

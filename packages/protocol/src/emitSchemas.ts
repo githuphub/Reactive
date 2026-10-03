@@ -19,6 +19,7 @@ const top: Record<string, z.ZodType> = {
   Snapshot: P.Snapshot, PublicConfig: P.PublicConfig, BakePack: P.BakePack,
   WsClientMessage: P.WsClientMessage, WsServerMessage: P.WsServerMessage,
   ReactionInfo: P.ReactionInfo, ReactionDirectiveArgs: P.ReactionDirectiveArgs,
+  FactionMind: P.FactionMind, FactionPostureArgs: P.FactionPostureArgs, GuardPostsArgs: P.GuardPostsArgs,
   VoxelPlan: P.VoxelPlan, VoxelOp: P.VoxelOp, VoxelBlock: P.VoxelBlock, ExpandedPlan: P.ExpandedPlan,
   BrainEntry: P.BrainEntry, BrainPage: P.BrainPage, AgentToolSpec: P.AgentToolSpec, AgentRun: P.AgentRun,
 };

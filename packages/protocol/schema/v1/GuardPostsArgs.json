@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "faction": {
+      "type": "string"
+    },
+    "posts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "npc": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "post": {
+            "type": "string",
+            "maxLength": 64
+          }
+        },
+        "required": [
+          "npc",
+          "post"
+        ]
+      }
+    }
+  },
+  "required": [
+    "faction",
+    "posts"
+  ],
+  "$id": "https://liveforge.dev/schema/v1/GuardPostsArgs.json",
+  "title": "GuardPostsArgs"
+}

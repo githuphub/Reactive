@@ -56,6 +56,26 @@ export const FactionSchema = z.object({
   relations: z.record(z.string(), z.number().min(-1).max(1)).default({}),
   /** Price multiplier range applied by reputation (e.g. [0.8, 1.5]). */
   priceRange: z.tuple([z.number().positive(), z.number().positive()]).default([0.8, 1.5]),
+  // ---- village mind (K7 factions module; all optional)
+  /** Persona ids that belong to this faction (merged with personas whose `faction` is this id). */
+  members: z.array(id).default([]),
+  /** Zone id of the faction's home (signals in that zone count as "in the village"). */
+  home: z.string().max(64).optional(),
+  /** Village character, fed to the council prompt and the rules: e.g. {proud: 0.8, superstitious: 0.4, festive: 0.6}. */
+  traits: z.record(z.string(), z.union([z.number(), z.string(), z.boolean()])).default({}),
+  /** Members who stand guard (default: members whose role mentions guard, captain, golem, watch or soldier). */
+  guards: z.array(id).optional(),
+  /** Guard post ids the game maps to places (default gate, square, well). "home:<npc>" posts are always allowed. */
+  posts: z.array(z.string().min(1).max(64)).optional(),
+  /** Night raids planned by `faction.raid_plan`. */
+  raid: z.object({
+    /** Mob ids the raid may use (default zombie, skeleton, creeper, spider). */
+    mobs: z.array(z.string().min(1).max(32)).min(1).optional(),
+    /** Raid captain names (one is picked per night). */
+    captains: z.array(z.string().min(1).max(48)).optional(),
+    /** Default raid size. */
+    size: z.enum(["small", "medium", "large"]).optional(),
+  }).optional(),
 });
 export type FactionConfig = z.infer<typeof FactionSchema>;
 
@@ -349,7 +369,7 @@ export const AgentsSchema = z.object({
 export type AgentsConfig = z.infer<typeof AgentsSchema>;
 
 const ModuleToggle = z.union([z.boolean(), z.object({ enabled: z.boolean().default(true), options: z.record(z.string(), z.unknown()).default({}) })]);
-export const MODULE_IDS = ["observer", "persona", "world", "director", "forge", "quests", "agents", "builder"] as const;
+export const MODULE_IDS = ["observer", "persona", "world", "director", "forge", "quests", "agents", "builder", "factions"] as const;
 export type ModuleId = (typeof MODULE_IDS)[number];
 export const ModulesSchema = z.object({
   observer: ModuleToggle.default(true),
@@ -358,6 +378,8 @@ export const ModulesSchema = z.object({
   director: ModuleToggle.default(true),
   forge: ModuleToggle.default(true),
   quests: ModuleToggle.default(true),
+  /** Village mind (K7): opt-in, since it pushes posture / guard directives the game must handle. */
+  factions: ModuleToggle.default(false),
 }).catchall(ModuleToggle);
 
 export const ManifestSchema = z.object({
