@@ -98,7 +98,7 @@ export class Liveforge {
   private readonly running = new Set<string>();
   private flushTimer: ReturnType<typeof setInterval> | null = null;
   private dispatchDepth = 0;
-  private readonly shutdownAc = new AbortController();
+  private readonly inflight = new Set<AbortController>();
   readonly log: Logger;
 
   constructor(readonly config: ServerConfig, private readonly opts: LiveforgeOptions) {
@@ -197,7 +197,7 @@ export class Liveforge {
   }
 
   async stop(): Promise<void> {
-    this.shutdownAc.abort();
+    for (const ac of this.inflight) ac.abort();
     if (this.flushTimer) clearInterval(this.flushTimer);
     for (const rt of this.games.values()) rt.timers.forEach(clearInterval);
     this.jobs.stop();
@@ -514,7 +514,6 @@ export class Liveforge {
     const module = owner?.module ?? "core";
     const handler = owner?.handler;
     const ac = new AbortController();
-    this.shutdownAc.signal.addEventListener("abort", () => ac.abort(), { once: true });
     let seq = 0;
     const scoped = this.scopedContext(game, module, world, player, session, ac.signal);
     const ctx: AskContext = Object.assign(scoped, {
@@ -577,6 +576,7 @@ export class Liveforge {
     const response: AnyAskResponse = { id, kind, stage: "instant", result, source, why, upgrade: willUpgrade ? "pending" : "none", ms: Date.now() - started, ts: Date.now() };
     this.metrics.log({ id, game, world, player, kind, module, stage: "instant", source, ms: response.ms!, error: instantError });
     if (willUpgrade) {
+      this.inflight.add(ac);
       this.pending.set(id, { game, response: null, done: false, waiters: [], expires: Date.now() + 5 * 60_000 });
       void this.runUpgrade(game, module, handler!, ctx, params, response, cacheKey, () => seq, ac);
     }
@@ -594,10 +594,9 @@ export class Liveforge {
     let final: AnyAskResponse;
     let error: string | null = null;
     try {
-      const up = await Promise.race([
-        handler.upgrade!(ctx, params, instant.result as never),
-        new Promise<never>((_, rej) => ac.signal.addEventListener("abort", () => rej(new Error(`upgrade timed out after ${timeoutMs}ms`)), { once: true })),
-      ]);
+      const aborted = new Promise<never>((_, rej) => ac.signal.addEventListener("abort", () => rej(new Error(`upgrade aborted (timeout ${timeoutMs}ms or shutdown)`)), { once: true }));
+      aborted.catch(() => {});
+      const up = await Promise.race([handler.upgrade!(ctx, params, instant.result as never), aborted]);
       const ok = up ? ASKS[instant.kind as AskKind].result.safeParse(up.result) : null;
       if (up && ok?.success) {
         final = { id: instant.id, kind: instant.kind, stage: "upgrade", result: ok.data, source: "ai", why: up.why ?? instant.why, ms: Date.now() - started, ts: Date.now() };
@@ -611,6 +610,7 @@ export class Liveforge {
       final = { ...instant, stage: "upgrade", upgrade: undefined, why: instant.why ?? "kept instant answer", ms: Date.now() - started, ts: Date.now() };
     } finally {
       clearTimeout(timer);
+      this.inflight.delete(ac);
     }
     if (error) this.log.warn("upgrade failed; instant answer stands", { game, kind: instant.kind, module, error });
     if (chunkCount() > 0) this.hub.chunk(game, ctx.world, ctx.player!, instant.id, chunkCount(), "", true);

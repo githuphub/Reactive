@@ -228,6 +228,7 @@ Connect to `GET /v1/ws?key=<pk or admin>[&game=<id>][&world=&player=]`. Passing 
 - Delivery rules:
   - Upgrades, chunks and jobs go only to sockets subscribed with that world **and** player.
   - A directive with `player:null` goes to every socket subscribed to that world.
+  - Admin sockets subscribed without a player also receive every player's directives and jobs (dashboard).
 - The server pings every 30 s. Clients should reconnect with backoff and re-subscribe.
 
 ## 11. SDK contract (K4)

@@ -121,7 +121,8 @@ export class WsHub {
     let n = 0;
     for (const c of this.conns) {
       if (c.game !== game) continue;
-      const hit = c.subs.some((s) => s.world === world && s.topics.has(topic) && (player === null || s.player === player || (topic === "events" && s.player === null)));
+      // admin spectators (subscribed without a player) see every player's directives / jobs in the world
+      const hit = c.subs.some((s) => s.world === world && s.topics.has(topic) && (player === null || s.player === player || (c.admin && s.player === null && (topic === "directives" || topic === "jobs"))));
       if (hit) { this.send(c, msg); n++; }
     }
     return n;
