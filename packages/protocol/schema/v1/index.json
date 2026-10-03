@@ -142,6 +142,12 @@
         "target": "string"
       }
     },
+    "social.approach": {
+      "description": "The player walked up to an NPC to interact (Persona prefetches a greeting).",
+      "data": {
+        "npc": "string"
+      }
+    },
     "movement.entered_zone": {
       "description": "The player entered a zone.",
       "data": {
@@ -161,6 +167,13 @@
       "data": {
         "from?": "string",
         "hp?": "number"
+      }
+    },
+    "movement.near_npc": {
+      "description": "The player came within talking range of an NPC (Persona prefetches a greeting).",
+      "data": {
+        "npc": "string",
+        "distance?": "number"
       }
     },
     "gear.equipped": {
@@ -241,6 +254,7 @@
     "forge.loot",
     "quest.offer",
     "achievement.check",
+    "player.model",
     "world.reactions"
   ],
   "directiveKinds": [
@@ -373,6 +387,8 @@
     "ask.quest.offer.result": "ask.quest.offer.result.json",
     "ask.achievement.check.params": "ask.achievement.check.params.json",
     "ask.achievement.check.result": "ask.achievement.check.result.json",
+    "ask.player.model.params": "ask.player.model.params.json",
+    "ask.player.model.result": "ask.player.model.result.json",
     "ask.world.reactions.params": "ask.world.reactions.params.json",
     "ask.world.reactions.result": "ask.world.reactions.result.json",
     "directive.npc.action.args": "directive.npc.action.args.json",
