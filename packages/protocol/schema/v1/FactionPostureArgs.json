@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "faction": {
+      "type": "string"
+    },
+    "posture": {
+      "type": "string",
+      "enum": [
+        "calm",
+        "wary",
+        "hostile",
+        "festive"
+      ]
+    },
+    "priceMult": {
+      "type": "number"
+    },
+    "announcement": {
+      "type": "string",
+      "maxLength": 200
+    },
+    "previous": {
+      "type": "string",
+      "enum": [
+        "calm",
+        "wary",
+        "hostile",
+        "festive"
+      ]
+    }
+  },
+  "required": [
+    "faction",
+    "posture",
+    "priceMult",
+    "announcement"
+  ],
+  "$id": "https://liveforge.dev/schema/v1/FactionPostureArgs.json",
+  "title": "FactionPostureArgs"
+}

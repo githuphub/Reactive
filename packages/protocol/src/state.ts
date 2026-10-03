@@ -1,6 +1,7 @@
 // Projection state shapes (read by the dashboard via /admin/projections and exported in snapshots).
 // Owner lanes may ADD optional fields; renaming / removing fields is a protocol change.
 import { ReactionLedger } from "./reactions.js";
+import { FactionMindState } from "./factions.js";
 import { z } from "zod";
 import { Bag, Timestamp, Unit } from "./common.js";
 import { Achievement, Moment, Quest, Rumour } from "./content.js";
@@ -163,6 +164,7 @@ export const PROJECTIONS = {
   "forge.gallery": { scope: "world", owner: "K3 forge", schema: ForgeGallery },
   "core.directives": { scope: "world", owner: "K0 core", schema: DirectiveLog },
   "world.reaction_ledger": { scope: "player", owner: "R1 world reactions-lib", schema: ReactionLedger },
+  "factions.mind": { scope: "world", owner: "K7 factions", schema: FactionMindState },
 } as const;
 export type ProjectionName = keyof typeof PROJECTIONS;
 export type ProjectionState<N extends ProjectionName> = z.infer<(typeof PROJECTIONS)[N]["schema"]>;

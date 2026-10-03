@@ -1,0 +1,424 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "faction": {
+      "type": "string"
+    },
+    "posture": {
+      "default": "calm",
+      "type": "string",
+      "enum": [
+        "calm",
+        "wary",
+        "hostile",
+        "festive"
+      ]
+    },
+    "priceMult": {
+      "default": 1,
+      "type": "number"
+    },
+    "trust": {
+      "default": {},
+      "type": "object",
+      "propertyNames": {
+        "type": "string"
+      },
+      "additionalProperties": {
+        "type": "number",
+        "minimum": -1,
+        "maximum": 1
+      }
+    },
+    "damage": {
+      "default": {},
+      "type": "object",
+      "properties": {
+        "count": {
+          "default": 0,
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "value": {
+          "default": 0,
+          "type": "number",
+          "minimum": 0
+        },
+        "recent": {
+          "default": [],
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "ts": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "player": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "object": {
+                "type": "string",
+                "maxLength": 64
+              },
+              "owner": {
+                "type": "string",
+                "maxLength": 64
+              },
+              "value": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "ts",
+              "player",
+              "object"
+            ]
+          }
+        }
+      }
+    },
+    "threats": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "maxLength": 32
+          },
+          "source": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "level": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "ts": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 160
+          }
+        },
+        "required": [
+          "kind",
+          "source",
+          "level",
+          "ts"
+        ]
+      }
+    },
+    "guards": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "npc": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "post": {
+            "type": "string",
+            "maxLength": 64
+          }
+        },
+        "required": [
+          "npc",
+          "post"
+        ]
+      }
+    },
+    "lastPlan": {
+      "type": "object",
+      "properties": {
+        "ts": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "council",
+            "raid"
+          ]
+        },
+        "summary": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "why": {
+          "type": "string",
+          "maxLength": 300
+        },
+        "source": {
+          "type": "string",
+          "maxLength": 16
+        },
+        "model": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "posture": {
+          "type": "string",
+          "enum": [
+            "calm",
+            "wary",
+            "hostile",
+            "festive"
+          ]
+        },
+        "priceMult": {
+          "type": "number"
+        },
+        "announcement": {
+          "type": "string",
+          "maxLength": 200
+        }
+      },
+      "required": [
+        "ts",
+        "kind",
+        "summary",
+        "why",
+        "source"
+      ]
+    },
+    "mood": {
+      "default": 0,
+      "type": "number",
+      "minimum": -1,
+      "maximum": 1
+    },
+    "moodTs": {
+      "default": 0,
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    },
+    "rumours": {
+      "default": {},
+      "type": "object",
+      "properties": {
+        "count": {
+          "default": 0,
+          "type": "integer",
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991
+        },
+        "sentiment": {
+          "default": 0,
+          "type": "number"
+        }
+      }
+    },
+    "seen": {
+      "default": {},
+      "type": "object",
+      "propertyNames": {
+        "type": "string"
+      },
+      "additionalProperties": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      }
+    },
+    "phase": {
+      "type": "string",
+      "maxLength": 16
+    },
+    "day": {
+      "type": "integer",
+      "minimum": -9007199254740991,
+      "maximum": 9007199254740991
+    },
+    "postureSince": {
+      "default": 0,
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    },
+    "history": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "ts": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "posture": {
+            "type": "string",
+            "enum": [
+              "calm",
+              "wary",
+              "hostile",
+              "festive"
+            ]
+          },
+          "priceMult": {
+            "type": "number"
+          },
+          "why": {
+            "type": "string",
+            "maxLength": 300
+          },
+          "source": {
+            "type": "string",
+            "maxLength": 16
+          }
+        },
+        "required": [
+          "ts",
+          "posture",
+          "priceMult",
+          "why",
+          "source"
+        ]
+      }
+    },
+    "raids": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "ts": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "player": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "night": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "size": {
+            "type": "string",
+            "enum": [
+              "small",
+              "medium",
+              "large"
+            ]
+          },
+          "waves": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "mob": {
+                  "type": "string"
+                },
+                "count": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "tactic": {
+                  "type": "string"
+                },
+                "spawn": {
+                  "type": "string",
+                  "enum": [
+                    "edge",
+                    "underground",
+                    "behind_player",
+                    "rooftops"
+                  ]
+                }
+              },
+              "required": [
+                "mob",
+                "count",
+                "tactic",
+                "spawn"
+              ]
+            }
+          },
+          "counters": {
+            "default": [],
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "habit": {
+                  "type": "string"
+                },
+                "tactic": {
+                  "type": "string"
+                },
+                "why": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "habit",
+                "tactic",
+                "why"
+              ]
+            }
+          },
+          "captain": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "taunt": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "name",
+              "taunt"
+            ]
+          },
+          "why": {
+            "type": "string",
+            "maxLength": 300
+          },
+          "source": {
+            "type": "string",
+            "maxLength": 16
+          }
+        },
+        "required": [
+          "ts",
+          "player",
+          "size",
+          "waves",
+          "why",
+          "source"
+        ]
+      }
+    }
+  },
+  "required": [
+    "faction"
+  ],
+  "$id": "https://liveforge.dev/schema/v1/FactionMind.json",
+  "title": "FactionMind"
+}

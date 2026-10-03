@@ -1,0 +1,154 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "waves": {
+      "minItems": 1,
+      "maxItems": 8,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "mob": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 32
+          },
+          "count": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 20
+          },
+          "tactic": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 40
+          },
+          "spawn": {
+            "type": "string",
+            "enum": [
+              "edge",
+              "underground",
+              "behind_player",
+              "rooftops"
+            ]
+          },
+          "delaySec": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 600
+          }
+        },
+        "required": [
+          "mob",
+          "count",
+          "tactic",
+          "spawn"
+        ]
+      }
+    },
+    "captain": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "maxLength": 48
+        },
+        "taunt": {
+          "type": "string",
+          "maxLength": 200
+        }
+      },
+      "required": [
+        "name",
+        "taunt"
+      ]
+    },
+    "counters": {
+      "default": [],
+      "maxItems": 6,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "habit": {
+            "type": "string",
+            "maxLength": 32
+          },
+          "tactic": {
+            "type": "string",
+            "maxLength": 40
+          },
+          "why": {
+            "type": "string",
+            "maxLength": 200
+          }
+        },
+        "required": [
+          "habit",
+          "tactic",
+          "why"
+        ]
+      }
+    },
+    "why": {
+      "type": "string",
+      "maxLength": 300
+    },
+    "faction": {
+      "type": "string",
+      "maxLength": 64
+    },
+    "night": {
+      "type": "integer",
+      "minimum": -9007199254740991,
+      "maximum": 9007199254740991
+    },
+    "size": {
+      "type": "string",
+      "enum": [
+        "small",
+        "medium",
+        "large"
+      ]
+    },
+    "aggression": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "habits": {
+      "maxItems": 6,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "habit": {
+            "type": "string",
+            "maxLength": 32
+          },
+          "score": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "evidence": {
+            "type": "string",
+            "maxLength": 120
+          }
+        },
+        "required": [
+          "habit",
+          "score",
+          "evidence"
+        ]
+      }
+    }
+  },
+  "required": [
+    "waves",
+    "why"
+  ],
+  "$id": "https://liveforge.dev/schema/v1/ask.faction.raid_plan.result.json",
+  "title": "ask.faction.raid_plan.result"
+}

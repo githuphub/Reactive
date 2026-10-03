@@ -9,6 +9,7 @@ import { Variant } from "./variant.js";
 import { EngineMoveRef, MoveSpec } from "./moves.js";
 import { DirectiveDraftSchema } from "./directives.js";
 import { PlayerModel } from "./state.js";
+import { RaidPlanParams, RaidPlanResult } from "./factions.js";
 
 /** Free-form habits bag (keys of MoveHabits in moves.ts, or game-specific numbers). Cleaned with cleanHabits. */
 const Habits = z.record(z.string(), z.unknown());
@@ -231,6 +232,8 @@ export const ASKS = {
       top: z.array(z.object({ trait: z.string(), score: Unit })).default([]),
     }),
   },
+  /** Village mind (K7 factions): a night raid that counters the player's habits (pillaring, bow, hiding ...). */
+  "faction.raid_plan": { params: RaidPlanParams, result: RaidPlanResult },
   "world.reactions": {
     params: z.object({ zone: z.string().optional(), npcs: z.array(z.string()).max(32).optional() }),
     result: z.object({
