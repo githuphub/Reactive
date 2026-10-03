@@ -1,0 +1,1461 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "liveforge": {
+      "type": "number",
+      "const": 1
+    },
+    "game": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[a-z0-9][a-z0-9_\\-]*$"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 1000
+        }
+      },
+      "required": [
+        "id",
+        "name"
+      ]
+    },
+    "lore": {
+      "type": "object",
+      "properties": {
+        "bible": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 20000
+        },
+        "tone": {
+          "default": "neutral",
+          "type": "string",
+          "maxLength": 300
+        },
+        "glossary": {
+          "default": {},
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "bible"
+      ]
+    },
+    "elements": {
+      "default": [
+        "physical",
+        "fire",
+        "ice",
+        "lightning"
+      ],
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "zones": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[a-z0-9][a-z0-9_\\-]*$"
+          },
+          "name": {
+            "type": "string"
+          },
+          "kind": {
+            "default": "area",
+            "type": "string"
+          },
+          "neighbours": {
+            "default": [],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ]
+      }
+    },
+    "personas": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[a-z0-9][a-z0-9_\\-]*$"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "role": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "faction": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[a-z0-9][a-z0-9_\\-]*$"
+          },
+          "personality": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 800
+          },
+          "voice": {
+            "default": {},
+            "type": "object",
+            "properties": {
+              "pitch": {
+                "type": "number",
+                "minimum": 0.5,
+                "maximum": 2
+              },
+              "rate": {
+                "type": "number",
+                "minimum": 0.5,
+                "maximum": 2
+              },
+              "accent": {
+                "type": "string",
+                "maxLength": 32
+              },
+              "style": {
+                "type": "string",
+                "maxLength": 64
+              },
+              "voiceId": {
+                "type": "string",
+                "maxLength": 64
+              }
+            }
+          },
+          "knowledge": {
+            "default": [],
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 200
+            }
+          },
+          "secrets": {
+            "default": [],
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 300
+            }
+          },
+          "likes": {
+            "default": [],
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 80
+            }
+          },
+          "dislikes": {
+            "default": [],
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 80
+            }
+          },
+          "allowedActions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "zone": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "barks": {
+            "default": [],
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 200
+            }
+          },
+          "greeting": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "asset": {
+            "type": "string",
+            "maxLength": 128
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "role",
+          "personality"
+        ]
+      }
+    },
+    "factions": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[a-z0-9][a-z0-9_\\-]*$"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 400
+          },
+          "attitude": {
+            "default": 0,
+            "type": "number",
+            "minimum": -1,
+            "maximum": 1
+          },
+          "relations": {
+            "default": {},
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "type": "number",
+              "minimum": -1,
+              "maximum": 1
+            }
+          },
+          "priceRange": {
+            "default": [
+              0.8,
+              1.5
+            ],
+            "type": "array",
+            "prefixItems": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0
+              },
+              {
+                "type": "number",
+                "exclusiveMinimum": 0
+              }
+            ],
+            "items": false,
+            "minItems": 2,
+            "maxItems": 2
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ]
+      }
+    },
+    "relationships": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "a": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[a-z0-9][a-z0-9_\\-]*$"
+          },
+          "b": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[a-z0-9][a-z0-9_\\-]*$"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "rival",
+              "family",
+              "ally",
+              "friend",
+              "lover",
+              "mentor",
+              "enemy",
+              "employer"
+            ]
+          },
+          "strength": {
+            "default": 0.5,
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 200
+          }
+        },
+        "required": [
+          "a",
+          "b",
+          "kind"
+        ]
+      }
+    },
+    "traits": {
+      "default": {},
+      "type": "object",
+      "propertyNames": {
+        "type": "string"
+      },
+      "additionalProperties": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 400
+      }
+    },
+    "moments": {
+      "default": {},
+      "type": "object",
+      "propertyNames": {
+        "type": "string"
+      },
+      "additionalProperties": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 400
+      }
+    },
+    "signals": {
+      "default": {},
+      "type": "object",
+      "propertyNames": {
+        "type": "string"
+      },
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "description": {
+            "default": "",
+            "type": "string",
+            "maxLength": 300
+          },
+          "data": {
+            "default": {},
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "type": "string",
+              "enum": [
+                "string",
+                "number",
+                "boolean",
+                "string[]",
+                "object"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "allowUndeclaredSignals": {
+      "default": false,
+      "type": "boolean"
+    },
+    "actions": {
+      "default": {},
+      "type": "object",
+      "propertyNames": {
+        "type": "string"
+      },
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "description": {
+            "default": "",
+            "type": "string",
+            "maxLength": 300
+          },
+          "args": {
+            "default": {},
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "string",
+                    "number",
+                    "boolean"
+                  ]
+                },
+                "min": {
+                  "type": "number"
+                },
+                "max": {
+                  "type": "number"
+                },
+                "enum": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "required": {
+                  "default": false,
+                  "type": "boolean"
+                },
+                "description": {
+                  "type": "string",
+                  "maxLength": 200
+                }
+              },
+              "required": [
+                "type"
+              ]
+            }
+          },
+          "by": {
+            "default": [
+              "npc"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "npc",
+                "director",
+                "world"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "reactions": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[a-z0-9][a-z0-9_\\-]*$"
+          },
+          "when": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 400
+          },
+          "then": {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "minLength": 1
+              },
+              "target": {
+                "type": "string",
+                "minLength": 1
+              },
+              "args": {
+                "default": {},
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {}
+              }
+            },
+            "required": [
+              "kind",
+              "target"
+            ]
+          },
+          "cooldown": {
+            "default": 300,
+            "type": "number",
+            "minimum": 0
+          },
+          "flavour": {
+            "default": false,
+            "type": "boolean"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 300
+          }
+        },
+        "required": [
+          "id",
+          "when",
+          "then"
+        ]
+      }
+    },
+    "items": {
+      "type": "object",
+      "properties": {
+        "families": {
+          "minItems": 1,
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "slots": {
+          "default": [
+            "weapon",
+            "offhand",
+            "head",
+            "chest",
+            "hands",
+            "legs",
+            "feet",
+            "trinket"
+          ],
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "rarities": {
+          "default": [
+            "common",
+            "uncommon",
+            "rare",
+            "epic",
+            "legendary"
+          ],
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "stats": {
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "min": {
+                "type": "number"
+              },
+              "max": {
+                "type": "number"
+              },
+              "default": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "min",
+              "max"
+            ]
+          }
+        },
+        "budget": {
+          "default": 2,
+          "anyOf": [
+            {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "number",
+                "exclusiveMinimum": 0
+              }
+            }
+          ]
+        },
+        "tags": {
+          "default": [],
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "creativity": {
+          "default": {
+            "max": 0.7,
+            "rawPowerPenalty": true
+          },
+          "type": "object",
+          "properties": {
+            "max": {
+              "default": 0.7,
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "rawPowerPenalty": {
+              "default": true,
+              "type": "boolean"
+            }
+          }
+        },
+        "assets": {
+          "default": [],
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "kind": {
+                "type": "string"
+              },
+              "slots": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            },
+            "required": [
+              "id"
+            ]
+          }
+        }
+      },
+      "required": [
+        "families",
+        "stats"
+      ]
+    },
+    "quests": {
+      "default": {},
+      "type": "object",
+      "properties": {
+        "objectiveTypes": {
+          "default": [
+            "kill",
+            "fetch",
+            "talk",
+            "explore",
+            "deliver",
+            "escort",
+            "survive",
+            "defeat_boss"
+          ],
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "rewardTypes": {
+          "default": [
+            "gold",
+            "item",
+            "xp",
+            "reputation",
+            "title"
+          ],
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "maxObjectives": {
+          "default": 3,
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 8
+        },
+        "maxActive": {
+          "default": 3,
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 20
+        },
+        "givers": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "rewards": {
+          "default": {
+            "goldMax": 500,
+            "xpMax": 1000
+          },
+          "type": "object",
+          "properties": {
+            "goldMax": {
+              "default": 500,
+              "type": "number",
+              "minimum": 0
+            },
+            "xpMax": {
+              "default": 1000,
+              "type": "number",
+              "minimum": 0
+            }
+          }
+        }
+      }
+    },
+    "moves": {
+      "default": {},
+      "type": "object",
+      "properties": {
+        "grammar": {
+          "default": true,
+          "type": "boolean"
+        },
+        "shapes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "slam",
+              "beam",
+              "projectile",
+              "ring",
+              "spikes",
+              "meteor",
+              "grab",
+              "summon"
+            ]
+          }
+        },
+        "damageScale": {
+          "default": 1,
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "engine": {
+          "default": [],
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "description": {
+                "type": "string",
+                "maxLength": 300
+              },
+              "shape": {
+                "type": "string",
+                "enum": [
+                  "slam",
+                  "beam",
+                  "projectile",
+                  "ring",
+                  "spikes",
+                  "meteor",
+                  "grab",
+                  "summon"
+                ]
+              },
+              "params": {
+                "default": {},
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {
+                  "type": "object",
+                  "properties": {
+                    "min": {
+                      "type": "number"
+                    },
+                    "max": {
+                      "type": "number"
+                    },
+                    "default": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "min",
+                    "max"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ]
+          }
+        }
+      }
+    },
+    "bosses": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[a-z0-9][a-z0-9_\\-]*$"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "persona": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[a-z0-9][a-z0-9_\\-]*$"
+          },
+          "description": {
+            "default": "",
+            "type": "string",
+            "maxLength": 600
+          },
+          "phases": {
+            "default": 3,
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9
+          },
+          "moves": {
+            "default": [],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "counters": {
+            "default": [],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "maxInvented": {
+            "default": 3,
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 6
+          },
+          "asset": {
+            "type": "string",
+            "maxLength": 128
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ]
+      }
+    },
+    "progression": {
+      "default": {},
+      "type": "object",
+      "properties": {
+        "unlocks": {
+          "default": [],
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "kind": {
+                "default": "ability",
+                "type": "string"
+              },
+              "condition": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 400
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ]
+          }
+        },
+        "levels": {
+          "type": "object",
+          "properties": {
+            "max": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "xpCurve": {
+              "default": "quadratic",
+              "type": "string",
+              "enum": [
+                "linear",
+                "quadratic",
+                "exponential"
+              ]
+            }
+          },
+          "required": [
+            "max"
+          ]
+        }
+      }
+    },
+    "achievements": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[a-z0-9][a-z0-9_\\-]*$"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "condition": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 400
+          },
+          "glyph": {
+            "type": "string",
+            "maxLength": 32
+          },
+          "rarity": {
+            "default": "common",
+            "type": "string",
+            "enum": [
+              "common",
+              "uncommon",
+              "rare",
+              "epic",
+              "legendary"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "description",
+          "condition"
+        ]
+      }
+    },
+    "clamps": {
+      "default": {},
+      "type": "object",
+      "properties": {
+        "difficulty": {
+          "default": {},
+          "type": "object",
+          "properties": {
+            "mode": {
+              "default": "hidden",
+              "type": "string",
+              "enum": [
+                "hidden",
+                "assist",
+                "off"
+              ]
+            },
+            "aggressionMin": {
+              "default": 0.2,
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "aggressionMax": {
+              "default": 0.9,
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "maxStep": {
+              "default": 0.15,
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          }
+        },
+        "pacing": {
+          "default": {},
+          "type": "object",
+          "properties": {
+            "maxSpawnPerMin": {
+              "default": 12,
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "maxWaveSize": {
+              "default": 8,
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "breatherSec": {
+              "default": [
+                8,
+                30
+              ],
+              "type": "array",
+              "prefixItems": [
+                {
+                  "type": "number",
+                  "minimum": 0
+                },
+                {
+                  "type": "number",
+                  "minimum": 0
+                }
+              ],
+              "items": false,
+              "minItems": 2,
+              "maxItems": 2
+            },
+            "lootPerMin": {
+              "default": 2,
+              "type": "number",
+              "minimum": 0
+            }
+          }
+        },
+        "forge": {
+          "default": {},
+          "type": "object",
+          "properties": {
+            "maxParts": {
+              "default": 24,
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 64
+            },
+            "maxPerMinPerPlayer": {
+              "default": 6,
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "meshJobs": {
+              "default": false,
+              "type": "boolean"
+            }
+          }
+        },
+        "npc": {
+          "default": {},
+          "type": "object",
+          "properties": {
+            "maxReplyChars": {
+              "default": 400,
+              "type": "integer",
+              "minimum": 40,
+              "maximum": 1200
+            },
+            "priceMultiplier": {
+              "default": [
+                0.5,
+                2
+              ],
+              "type": "array",
+              "prefixItems": [
+                {
+                  "type": "number",
+                  "exclusiveMinimum": 0
+                },
+                {
+                  "type": "number",
+                  "exclusiveMinimum": 0
+                }
+              ],
+              "items": false,
+              "minItems": 2,
+              "maxItems": 2
+            }
+          }
+        }
+      }
+    },
+    "safety": {
+      "default": {},
+      "type": "object",
+      "properties": {
+        "rating": {
+          "default": "T",
+          "type": "string",
+          "enum": [
+            "E",
+            "T",
+            "M"
+          ]
+        },
+        "blocked": {
+          "default": [],
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "refusedTopics": {
+          "default": [
+            "real-world politics",
+            "real people",
+            "the player's personal data"
+          ],
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "inWorldOnly": {
+          "default": true,
+          "type": "boolean"
+        }
+      }
+    },
+    "budgets": {
+      "default": {},
+      "type": "object",
+      "properties": {
+        "game": {
+          "default": {
+            "tokensPerMin": 200000,
+            "usdPerDay": 20
+          },
+          "type": "object",
+          "properties": {
+            "tokensPerMin": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "usdPerDay": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            }
+          },
+          "required": [
+            "tokensPerMin",
+            "usdPerDay"
+          ]
+        },
+        "player": {
+          "default": {
+            "tokensPerMin": 20000,
+            "usdPerDay": 1
+          },
+          "type": "object",
+          "properties": {
+            "tokensPerMin": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "usdPerDay": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            }
+          },
+          "required": [
+            "tokensPerMin",
+            "usdPerDay"
+          ]
+        }
+      }
+    },
+    "models": {
+      "default": {},
+      "type": "object",
+      "properties": {
+        "fast": {
+          "default": "claude-haiku-4-5",
+          "type": "string"
+        },
+        "rich": {
+          "default": "claude-sonnet-5-5",
+          "type": "string"
+        },
+        "overrides": {
+          "default": {},
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {
+            "type": "string",
+            "enum": [
+              "fast",
+              "rich"
+            ]
+          }
+        }
+      }
+    },
+    "modules": {
+      "default": {},
+      "type": "object",
+      "properties": {
+        "observer": {
+          "default": true,
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "enabled": {
+                  "default": true,
+                  "type": "boolean"
+                },
+                "options": {
+                  "default": {},
+                  "type": "object",
+                  "propertyNames": {
+                    "type": "string"
+                  },
+                  "additionalProperties": {}
+                }
+              }
+            }
+          ]
+        },
+        "persona": {
+          "default": true,
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "enabled": {
+                  "default": true,
+                  "type": "boolean"
+                },
+                "options": {
+                  "default": {},
+                  "type": "object",
+                  "propertyNames": {
+                    "type": "string"
+                  },
+                  "additionalProperties": {}
+                }
+              }
+            }
+          ]
+        },
+        "world": {
+          "default": true,
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "enabled": {
+                  "default": true,
+                  "type": "boolean"
+                },
+                "options": {
+                  "default": {},
+                  "type": "object",
+                  "propertyNames": {
+                    "type": "string"
+                  },
+                  "additionalProperties": {}
+                }
+              }
+            }
+          ]
+        },
+        "director": {
+          "default": true,
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "enabled": {
+                  "default": true,
+                  "type": "boolean"
+                },
+                "options": {
+                  "default": {},
+                  "type": "object",
+                  "propertyNames": {
+                    "type": "string"
+                  },
+                  "additionalProperties": {}
+                }
+              }
+            }
+          ]
+        },
+        "forge": {
+          "default": true,
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "enabled": {
+                  "default": true,
+                  "type": "boolean"
+                },
+                "options": {
+                  "default": {},
+                  "type": "object",
+                  "propertyNames": {
+                    "type": "string"
+                  },
+                  "additionalProperties": {}
+                }
+              }
+            }
+          ]
+        },
+        "quests": {
+          "default": true,
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "enabled": {
+                  "default": true,
+                  "type": "boolean"
+                },
+                "options": {
+                  "default": {},
+                  "type": "object",
+                  "propertyNames": {
+                    "type": "string"
+                  },
+                  "additionalProperties": {}
+                }
+              }
+            }
+          ]
+        }
+      },
+      "additionalProperties": {
+        "anyOf": [
+          {
+            "type": "boolean"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "enabled": {
+                "default": true,
+                "type": "boolean"
+              },
+              "options": {
+                "default": {},
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {}
+              }
+            }
+          }
+        ]
+      }
+    }
+  },
+  "required": [
+    "liveforge",
+    "game",
+    "lore"
+  ],
+  "$id": "https://liveforge.dev/schema/v1/liveforge.schema.json",
+  "title": "Liveforge manifest (liveforge.yaml)"
+}

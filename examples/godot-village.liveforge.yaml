@@ -1,0 +1,123 @@
+# yaml-language-server: $schema=../packages/manifest/schema/liveforge.schema.json
+# Godot 4 sample: a small village with four NPCs and a training-dummy "boss" that adapts to how you hit it.
+liveforge: 1
+
+game:
+  id: godot-village
+  name: Thornbury (Liveforge Godot sample)
+
+lore:
+  tone: cosy, gently comic
+  bible: |
+    Thornbury is a village of forty souls at a river crossing. The Copper Kettle inn is the heart of it.
+    A guard keeps the bridge, a travelling merchant parks her wagon on the green, and things go missing at night.
+    Behind the inn stands the Training Dummy, enchanted by a bored wizard to fight back - and to learn.
+
+zones:
+  - { id: green, name: Village Green, kind: hub, neighbours: [inn, bridge, yard] }
+  - { id: inn, name: The Copper Kettle, kind: interior, neighbours: [green] }
+  - { id: bridge, name: The Bridge, kind: area, neighbours: [green] }
+  - { id: yard, name: Training Yard, kind: arena, neighbours: [green] }
+
+factions:
+  - { id: villagers, name: Villagers, attitude: 0.2, relations: { shadows: -0.6 } }
+  - { id: shadows, name: The Night Shadows, attitude: -0.1, relations: { villagers: -0.6 } }
+
+personas:
+  - id: bess
+    name: Bess
+    role: Innkeeper of the Copper Kettle
+    faction: villagers
+    personality: Warm, nosy, generous with stew and opinions. Remembers every face and every debt.
+    voice: { pitch: 1.0, rate: 1.0, style: warm }
+    knowledge: [the inn, village news, travellers]
+    allowedActions: [emote, trade, give, quest_offer]
+    zone: inn
+    greeting: Sit yourself down, love. Stew's on.
+  - id: aldric
+    name: Aldric
+    role: Bridge guard
+    faction: villagers
+    personality: Stiff, dutiful, secretly bored; loves a rule and a chance to enforce it.
+    voice: { pitch: 0.85, rate: 0.9, style: gruff }
+    knowledge: [the bridge, the law, the Night Shadows]
+    allowedActions: [emote, hostile, call_guards, help, follow]
+    zone: bridge
+  - id: mira
+    name: Mira
+    role: Travelling merchant
+    faction: villagers
+    personality: Shrewd, funny, always upselling. Prices depend on how much she likes you.
+    voice: { pitch: 1.1, rate: 1.15, style: brisk }
+    knowledge: [goods, prices, faraway towns]
+    allowedActions: [emote, trade, give, take]
+    zone: green
+  - id: wick
+    name: Wick
+    role: Thief
+    faction: shadows
+    personality: Nervous, light-fingered, apologetic. Steals from the rich, sometimes gives to himself.
+    voice: { pitch: 1.25, rate: 1.3, style: nervous }
+    knowledge: [back alleys, who is rich]
+    allowedActions: [emote, steal, flee, trade]
+    zone: green
+
+relationships:
+  - { a: aldric, b: wick, kind: enemy, strength: 0.7 }
+  - { a: bess, b: mira, kind: friend, strength: 0.5 }
+
+actions:
+  emote: { args: { name: { type: string, required: true } } }
+  trade: { args: { priceMultiplier: { type: number, min: 0.5, max: 2, required: true } } }
+  give: { args: { item: { type: string, required: true } } }
+  take: { args: { item: { type: string, required: true } } }
+  quest_offer: {}
+  hostile: {}
+  call_guards: { by: [npc, world] }
+  help: {}
+  follow: {}
+  flee: {}
+  steal: { args: { gold: { type: number, min: 1, max: 50 } }, by: [npc, world] }
+
+reactions:
+  - id: thief_targets_rich
+    when: trait(rich) > 0.6
+    then:
+      kind: npc.action
+      target: npc:wick
+      args: { npc: wick, action: { action: steal, args: { gold: 10 } } }
+    cooldown: 300
+    flavour: true
+
+items:
+  families: [sword, axe, hammer, spear, bow, staff, shield_small]
+  slots: [weapon, offhand, head, chest]
+  stats:
+    damage: { min: 1, max: 50 }
+    defence: { min: 0, max: 50 }
+    speed: { min: 1, max: 20 }
+  budget: 1.8
+
+moves:
+  grammar: true
+  engine:
+    - { id: dummy_spin, name: Spin, shape: ring, params: { speed: { min: 0.5, max: 2, default: 1 } } }
+    - { id: dummy_lunge, name: Lunge, shape: grab, params: {} }
+    - { id: dummy_slam, name: Wobble Slam, shape: slam, params: { radius: { min: 1, max: 4, default: 2 } } }
+
+bosses:
+  - id: training_dummy
+    name: The Training Dummy
+    description: An enchanted straw dummy that fights back and learns your favourite swing.
+    phases: 2
+    moves: [dummy_spin, dummy_lunge, dummy_slam]
+    counters: [berserker, turtle, dodger]
+    maxInvented: 2
+
+safety: { rating: E }
+
+budgets:
+  game: { tokensPerMin: 100000, usdPerDay: 5 }
+  player: { tokensPerMin: 20000, usdPerDay: 1 }
+
+modules: { observer: true, persona: true, world: true, director: true, forge: true, quests: true }

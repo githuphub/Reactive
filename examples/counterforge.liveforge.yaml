@@ -1,0 +1,262 @@
+# yaml-language-server: $schema=../packages/manifest/schema/liveforge.schema.json
+# Counterforge + Veil Academy (Act I slim): a forge-fantasy academy where students forge weapons from words.
+liveforge: 1
+
+game:
+  id: counterforge
+  name: Counterforge
+  description: Forge anything you can describe, then survive the bosses that learn how you fight.
+
+lore:
+  tone: wry, warm, a little ominous; students joke, the Veil does not
+  bible: |
+    The Veil Academy sits on a cliff above the Ashen Sea. Students learn Counterforging: speaking a weapon into
+    being at the Great Anvil. Anything can be forged, but the Anvil keeps a ledger - raw power asked for plainly
+    comes out weak; clever, specific requests come out strong.
+    The Veil is the shimmering boundary around the Academy. Things that cross it (Hollows) are echoes of failed
+    forgings. The Forge Titan is the Anvil's guardian, testing every graduate; it studies how students fight and
+    forges counters to their habits. The Hollow Professor was a lecturer who forged himself into the Veil and now
+    haunts the old lecture hall.
+    Currency is forge-marks (gold). The courtyard is the social hub: porters, the library, the refectory.
+    Factions: the Faculty (order, rules), the Porters' Lodge (gossip, favours), the Undercroft (thieves, fences).
+  glossary:
+    Counterforging: speaking a weapon into being at the Great Anvil
+    Hollow: an echo of a failed forging that crossed the Veil
+    forge-marks: the Academy's currency
+
+elements: [physical, fire, ice, lightning]
+
+zones:
+  - { id: courtyard, name: The Courtyard, kind: hub, neighbours: [library, forge_hall, undercroft] }
+  - { id: library, name: The Library, kind: interior, neighbours: [courtyard, lecture_hall] }
+  - { id: forge_hall, name: Forge Hall, kind: arena, neighbours: [courtyard] }
+  - { id: lecture_hall, name: The Old Lecture Hall, kind: arena, neighbours: [library] }
+  - { id: undercroft, name: The Undercroft, kind: interior, neighbours: [courtyard] }
+
+factions:
+  - id: faculty
+    name: The Faculty
+    description: Lecturers and wardens. Value rules, punctuality and not setting the library on fire.
+    attitude: 0.1
+    relations: { porters: 0.3, undercroft: -0.8 }
+  - id: porters
+    name: The Porters' Lodge
+    description: Know everything, tell most of it. Run errands for a price.
+    attitude: 0.2
+    relations: { faculty: 0.3, undercroft: 0.1 }
+  - id: undercroft
+    name: The Undercroft
+    description: Fences, pickpockets and forgers of the other kind.
+    attitude: -0.2
+    relations: { faculty: -0.8, porters: 0.1 }
+    priceRange: [0.6, 1.8]
+
+personas:
+  - id: vale
+    name: Vale
+    role: Academy guide and voice of the Anvil
+    faction: faculty
+    personality: >-
+      Patient, dry-witted mentor who has watched a thousand students forge their first blade. Speaks in short,
+      precise sentences; secretly delighted by creative forgings and disappointed by brute-force ones.
+    voice: { pitch: 1.05, rate: 0.95, accent: en-GB, style: calm, knowing }
+    knowledge: [counterforging, the Great Anvil, the Forge Titan, the Veil, academy rules]
+    secrets: [The Titan was once a student who forged too well.]
+    likes: [clever forgings, curiosity]
+    dislikes: [boasting, raw power requests]
+    allowedActions: [emote, give, quest_offer, reveal, help]
+    zone: courtyard
+    greeting: Back again. What will you make today?
+    barks:
+      - The Anvil remembers every word you give it.
+      - Specific beats strong. Always.
+  - id: pell
+    name: Pell
+    role: Head porter
+    faction: porters
+    personality: >-
+      Gossip with a heart of gold and a ledger of who owes whom. Calls everyone "young master". Trades favours for
+      news and exaggerates every story by exactly one size.
+    voice: { pitch: 0.9, rate: 1.1, accent: en-GB, style: chatty }
+    knowledge: [academy gossip, who is where, errands, the courtyard]
+    likes: [news, tips, punctuality]
+    dislikes: [being ignored, thieves]
+    allowedActions: [emote, trade, give, quest_offer, call_guards, help]
+    zone: courtyard
+    barks:
+      - Heard you've been busy, young master.
+      - Lodge is open. Mind the step.
+  - id: marrow
+    name: Archivist Marrow
+    role: Librarian
+    faction: faculty
+    personality: >-
+      Severe, whispering librarian who forgives anything except damage to books. Knows forbidden lecture notes of
+      the Hollow Professor and will share them only with students who have earned her trust.
+    voice: { pitch: 0.95, rate: 0.85, style: whispering }
+    knowledge: [the library, the Hollow Professor, history of the Veil, forging theory]
+    secrets: [The Hollow Professor's weakness is his own unfinished lecture.]
+    likes: [quiet, returned books, careful questions]
+    dislikes: [noise, fire magic indoors]
+    allowedActions: [emote, give, reveal, quest_offer, hostile]
+    zone: library
+  - id: kit
+    name: Kit Quickfingers
+    role: Pickpocket
+    faction: undercroft
+    personality: >-
+      Cheerful, quick-talking pickpocket who targets anyone who flashes forge-marks. Charming until caught, then
+      flees. Has a soft spot for students who share.
+    voice: { pitch: 1.2, rate: 1.25, style: sly, cheerful }
+    knowledge: [the Undercroft, fences, who is rich, back routes]
+    secrets: [Kit fences stolen forgings to the Hollow Professor's old assistant.]
+    likes: [shiny things, generous marks]
+    dislikes: [guards, porters]
+    allowedActions: [emote, trade, steal, flee, follow, help]
+    zone: courtyard
+    barks:
+      - Lovely purse you've got there. Heavy, is it?
+
+relationships:
+  - { a: pell, b: kit, kind: rival, strength: 0.6, note: Pell has reported Kit to the wardens three times }
+  - { a: vale, b: marrow, kind: ally, strength: 0.7 }
+  - { a: marrow, b: pell, kind: friend, strength: 0.4 }
+
+traits:
+  forge_happy: count(forge.created, 5m) >= 4
+  show_off: count(gear.equipped, 10m) > 6 & trait(rich)
+
+moments:
+  first_titan_phase: count(boss.phase_cleared, 1h) == 1
+
+signals:
+  forge.created:
+    description: The player forged something at the Anvil.
+    data: { prompt: string, family: string, "creativity?": number }
+  boss.phase_cleared:
+    description: A boss phase ended in the player's favour.
+    data: { boss: string, phase: number, "flawless?": boolean }
+
+actions:
+  emote: { description: Play an emote / animation., args: { name: { type: string, required: true } } }
+  trade:
+    description: Open a shop with a price multiplier.
+    args: { priceMultiplier: { type: number, min: 0.5, max: 2, required: true } }
+  give: { description: Give the player an item., args: { item: { type: string, required: true } } }
+  take: { description: Take an item from the player., args: { item: { type: string, required: true } } }
+  quest_offer: { description: Offer a quest (the quests module fills it)., args: {} }
+  reveal: { description: Reveal a secret., args: { secret: { type: string } } }
+  hostile: { description: Turn hostile., args: {} }
+  flee: { description: Run away., args: {} }
+  call_guards: { description: Call the wardens., args: {}, by: [npc, world] }
+  steal:
+    description: Pickpocket the player.
+    args: { gold: { type: number, min: 1, max: 200 } }
+    by: [npc, world]
+  follow: { description: Follow the player., args: {} }
+  help: { description: Help the player in a fight., args: {} }
+
+reactions:
+  - id: pickpocket_rich
+    when: trait(rich) > 0.6 & stat(zone) == "courtyard"
+    then:
+      kind: npc.action
+      target: npc:kit
+      args: { npc: kit, action: { action: steal, args: { gold: 50 } } }
+    cooldown: 600
+    flavour: true
+    description: Flash your marks in the courtyard and Kit comes calling.
+  - id: porters_gossip_famous
+    when: trait(famous) > 0.7
+    then:
+      kind: npc.bark
+      target: npc:pell
+      args: { npc: pell, text: "Everyone's talking about you, young master!" }
+    cooldown: 900
+    flavour: true
+
+items:
+  families: [dagger, sword, greatsword, axe, hammer, spear, scythe, whip, fist, bow, crossbow, gun, cannon, thrown, staff, focus, shield_small, shield_large]
+  slots: [weapon, offhand, head, chest, hands, legs, feet]
+  stats:
+    damage: { min: 1, max: 100, default: 30 }
+    speed: { min: 1, max: 100, default: 50 }
+    range: { min: 1, max: 100, default: 30 }
+    special: { min: 0, max: 100, default: 10 }
+  budget: [1.4, 1.6, 1.9, 2.2, 2.6]
+  tags: [Piercing, Reflective, Grapple, Knockback, Lifesteal, Swift, Heavy, Explosive]
+  creativity: { max: 0.8, rawPowerPenalty: true }
+
+quests:
+  objectiveTypes: [kill, fetch, talk, explore, deliver, survive, defeat_boss, forge]
+  rewardTypes: [gold, item, reputation, title]
+  maxObjectives: 3
+  givers: [vale, pell, marrow]
+
+moves:
+  grammar: true
+  damageScale: 1
+  engine:
+    - { id: slam, name: Anvil Slam, shape: slam, params: { radius: { min: 2, max: 6, default: 3 } } }
+    - { id: barrage, name: Slag Barrage, shape: projectile, params: { count: { min: 3, max: 9, default: 5 } } }
+    - { id: sweep, name: Tong Sweep, shape: beam, params: { arc: { min: 60, max: 240, default: 120 } } }
+    - { id: geysers, name: Forge Geysers, shape: spikes, params: { count: { min: 2, max: 8, default: 4 } } }
+    - { id: chalk_volley, name: Chalk Volley, shape: projectile, params: { count: { min: 3, max: 12, default: 6 } } }
+    - { id: page_storm, name: Page Storm, shape: ring, params: { duration: { min: 2, max: 6, default: 3 } } }
+    - { id: detention, name: Detention, shape: grab, params: {} }
+
+bosses:
+  - id: forge_titan
+    name: The Forge Titan
+    description: The Anvil's guardian. Studies how you fight and forges counters to your habits.
+    phases: 3
+    moves: [slam, barrage, sweep, geysers]
+    counters: [Piercing, Reflective, Swift, Heavy, ranged_camper, dodger, turtle]
+    maxInvented: 3
+  - id: hollow_professor
+    name: The Hollow Professor
+    persona: marrow
+    description: A lecturer who forged himself into the Veil. Lectures while he fights; hates being interrupted.
+    phases: 3
+    moves: [chalk_volley, page_storm, detention]
+    counters: [chatterbox, speedrunner, glass_cannon]
+    maxInvented: 2
+
+progression:
+  unlocks:
+    - { id: second_slot, name: Offhand slot, kind: slot, condition: "count(boss.phase_cleared, 24h) >= 1" }
+
+achievements:
+  - id: wordsmith
+    title: Wordsmith
+    description: Forge five items in five minutes.
+    condition: count(forge.created, 5m) >= 5
+    glyph: anvil
+
+clamps:
+  difficulty: { mode: hidden, aggressionMin: 0.25, aggressionMax: 0.9, maxStep: 0.15 }
+  pacing: { maxSpawnPerMin: 10, maxWaveSize: 6, breatherSec: [8, 25], lootPerMin: 2 }
+  forge: { maxParts: 24, maxPerMinPerPlayer: 8, meshJobs: true }
+  npc: { maxReplyChars: 360, priceMultiplier: [0.5, 2] }
+
+safety:
+  rating: T
+  refusedTopics: [real-world politics, real people, the player's personal data]
+  inWorldOnly: true
+
+budgets:
+  game: { tokensPerMin: 300000, usdPerDay: 25 }
+  player: { tokensPerMin: 30000, usdPerDay: 2 }
+
+models:
+  fast: claude-haiku-4-5
+  rich: claude-sonnet-5-5
+  overrides: { observer.profile: rich, quest.offer: rich }
+
+modules:
+  observer: true
+  persona: true
+  world: true
+  director: true
+  forge: true
+  quests: true
