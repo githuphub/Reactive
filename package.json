@@ -4,8 +4,12 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "link:liveforge": "node scripts/link-liveforge.mjs",
+    "predev": "node scripts/link-liveforge.mjs --quiet",
     "dev": "vite",
+    "prebuild": "node scripts/link-liveforge.mjs --quiet",
     "build": "vite build",
+    "pretypecheck": "node scripts/link-liveforge.mjs --quiet",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "preview": "vite preview"
   },
