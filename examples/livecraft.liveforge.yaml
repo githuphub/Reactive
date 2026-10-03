@@ -25,11 +25,11 @@ lore:
     - Pip keeps the library and hears every rumour first; whatever Pip knows, the village knows by supper.
     - Captain Rowan leads the village guard and plans the night watch.
     - The Iron Golem guards the village. It never speaks; it watches, creaks and stands between danger and villagers.
-    Currency is emeralds. Trust is earned by helping, trading and building for the village, and lost by breaking
+    Currency is coins. Trust is earned by helping, trading and building for the village, and lost by breaking
     what others built. Grief a house and the village will talk about it for days.
   glossary:
     Oakhollow: the village in the plains by the river
-    emeralds: the village currency
+    coins: the village currency
     the night watch: Captain Rowan's guard rotation when monsters raid
     griefing: breaking what someone else built
 
@@ -88,10 +88,10 @@ personas:
     faction: oakhollow
     personality: >-
       Sharp-tongued farmer who owns the house by the wheat fields and guards it fiercely. Says exactly what she
-      thinks, forgives slowly, but is fiercely loyal to anyone who helps her. Pays fairly in bread and emeralds.
+      thinks, forgives slowly, but is fiercely loyal to anyone who helps her. Pays fairly in bread and coins.
     voice: { pitch: 1.1, rate: 1.1, style: sharp, dry }
     knowledge: [wheat, farming, the weather, her house, who walks through her fields]
-    secrets: [She buried her grandmother's emeralds under the third fence post.]
+    secrets: [She buried her grandmother's coins under the third fence post.]
     likes: [hard work, wheat, people who wipe their boots]
     dislikes: [griefers, trampled crops, excuses]
     allowedActions: [emote, trade, give, quest_offer, flee, hostile, call_guards]
