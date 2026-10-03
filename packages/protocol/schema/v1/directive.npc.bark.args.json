@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "npc": {
+      "type": "string"
+    },
+    "text": {
+      "type": "string",
+      "maxLength": 300
+    },
+    "emote": {
+      "type": "string",
+      "maxLength": 32
+    },
+    "voice": {
+      "type": "object",
+      "properties": {
+        "pitch": {
+          "type": "number",
+          "minimum": 0.5,
+          "maximum": 2
+        },
+        "rate": {
+          "type": "number",
+          "minimum": 0.5,
+          "maximum": 2
+        },
+        "accent": {
+          "type": "string",
+          "maxLength": 32
+        },
+        "style": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "voiceId": {
+          "type": "string",
+          "maxLength": 64
+        }
+      }
+    }
+  },
+  "required": [
+    "npc",
+    "text"
+  ],
+  "$id": "https://liveforge.dev/schema/v1/directive.npc.bark.args.json",
+  "title": "directive.npc.bark.args"
+}

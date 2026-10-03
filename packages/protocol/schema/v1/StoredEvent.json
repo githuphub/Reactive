@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "seq": {
+      "type": "integer",
+      "minimum": -9007199254740991,
+      "maximum": 9007199254740991
+    },
+    "game": {
+      "type": "string"
+    },
+    "world": {
+      "type": "string"
+    },
+    "player": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "session": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "type": {
+      "type": "string"
+    },
+    "data": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string"
+      },
+      "additionalProperties": {}
+    },
+    "ts": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    },
+    "receivedAt": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    },
+    "origin": {
+      "type": "string",
+      "enum": [
+        "sdk",
+        "module",
+        "admin",
+        "import"
+      ]
+    }
+  },
+  "required": [
+    "seq",
+    "game",
+    "world",
+    "player",
+    "session",
+    "type",
+    "data",
+    "ts",
+    "receivedAt",
+    "origin"
+  ],
+  "$id": "https://liveforge.dev/schema/v1/StoredEvent.json",
+  "title": "StoredEvent"
+}

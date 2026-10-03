@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "prompt": {
+      "type": "string",
+      "maxLength": 400
+    },
+    "family": {
+      "type": "string"
+    },
+    "slot": {
+      "type": "string"
+    },
+    "element": {
+      "type": "string"
+    },
+    "mesh": {
+      "type": "boolean"
+    },
+    "context": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string"
+      },
+      "additionalProperties": {}
+    },
+    "seed": {
+      "type": "integer",
+      "minimum": -9007199254740991,
+      "maximum": 9007199254740991
+    }
+  },
+  "$id": "https://liveforge.dev/schema/v1/ask.forge.item.params.json",
+  "title": "ask.forge.item.params"
+}

@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "npc": {
+      "type": "string"
+    },
+    "rumourId": {
+      "type": "string"
+    },
+    "content": {
+      "type": "string",
+      "maxLength": 280
+    },
+    "heat": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    }
+  },
+  "required": [
+    "npc",
+    "rumourId",
+    "content"
+  ],
+  "$id": "https://liveforge.dev/schema/v1/directive.rumour.heard.args.json",
+  "title": "directive.rumour.heard.args"
+}

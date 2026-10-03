@@ -1,0 +1,16 @@
+{
+  "name": "@liveforge/sdk",
+  "version": "0.1.0",
+  "description": "Liveforge JS/TS client: signals, asks (instant + upgrade), directives over WebSocket.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" }
+  },
+  "files": ["dist"],
+  "sideEffects": false,
+  "scripts": { "build": "tsc -b" },
+  "dependencies": { "@liveforge/protocol": "0.1.0" }
+}

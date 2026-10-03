@@ -1,0 +1,157 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "rumours": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[A-Za-z0-9_\\-.:]+$"
+          },
+          "content": {
+            "type": "string",
+            "maxLength": 280
+          },
+          "truthfulness": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "heat": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "origin": {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "moment",
+                  "memory",
+                  "designer",
+                  "event",
+                  "npc"
+                ]
+              },
+              "ref": {
+                "type": "string",
+                "maxLength": 64
+              },
+              "npc": {
+                "type": "string",
+                "maxLength": 64
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          },
+          "about": {
+            "type": "object",
+            "properties": {
+              "player": {
+                "type": "string"
+              },
+              "npc": {
+                "type": "string"
+              },
+              "faction": {
+                "type": "string"
+              }
+            }
+          },
+          "knownBy": {
+            "default": [],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "createdAt": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "mutations": {
+            "default": 0,
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "history": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "content",
+          "truthfulness",
+          "heat",
+          "origin",
+          "createdAt"
+        ]
+      }
+    },
+    "directives": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "target": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 96
+          },
+          "args": {
+            "default": {},
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {}
+          },
+          "why": {
+            "default": "",
+            "type": "string",
+            "maxLength": 200
+          }
+        },
+        "required": [
+          "kind",
+          "target"
+        ]
+      }
+    },
+    "attitudes": {
+      "default": {},
+      "type": "object",
+      "propertyNames": {
+        "type": "string"
+      },
+      "additionalProperties": {
+        "type": "number",
+        "minimum": -1,
+        "maximum": 1
+      }
+    }
+  },
+  "$id": "https://liveforge.dev/schema/v1/ask.world.reactions.result.json",
+  "title": "ask.world.reactions.result"
+}

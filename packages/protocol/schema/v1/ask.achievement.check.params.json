@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "recent": {
+      "maxItems": 20,
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "$id": "https://liveforge.dev/schema/v1/ask.achievement.check.params.json",
+  "title": "ask.achievement.check.params"
+}

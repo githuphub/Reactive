@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "zone": {
+      "type": "string"
+    },
+    "intensity": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "enemiesAlive": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    },
+    "playerHp": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "sinceLastBreatherSec": {
+      "type": "number",
+      "minimum": 0
+    }
+  },
+  "$id": "https://liveforge.dev/schema/v1/ask.director.pacing.params.json",
+  "title": "ask.director.pacing.params"
+}

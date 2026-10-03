@@ -1,0 +1,395 @@
+{
+  "protocol": "liveforge-protocol/1",
+  "version": "0.1.0",
+  "builtinSignals": {
+    "combat.hit": {
+      "description": "The player hit something.",
+      "data": {
+        "target": "string",
+        "target_type?": "string",
+        "damage": "number",
+        "weapon?": "string",
+        "element?": "string",
+        "range?": "number",
+        "crit?": "boolean"
+      }
+    },
+    "combat.hurt": {
+      "description": "The player took damage. hp = remaining fraction 0-1.",
+      "data": {
+        "source": "string",
+        "source_type?": "string",
+        "damage": "number",
+        "hp": "number",
+        "attack?": "string",
+        "element?": "string"
+      }
+    },
+    "combat.dodged": {
+      "description": "The player dodged an attack.",
+      "data": {
+        "source?": "string",
+        "attack?": "string",
+        "direction?": "string"
+      }
+    },
+    "combat.blocked": {
+      "description": "The player blocked an attack.",
+      "data": {
+        "source?": "string",
+        "attack?": "string",
+        "prevented?": "number"
+      }
+    },
+    "combat.parried": {
+      "description": "The player parried an attack.",
+      "data": {
+        "source?": "string",
+        "attack?": "string"
+      }
+    },
+    "combat.killed": {
+      "description": "The player killed something.",
+      "data": {
+        "target": "string",
+        "target_type": "string",
+        "weapon?": "string",
+        "elite?": "boolean",
+        "boss?": "boolean"
+      }
+    },
+    "combat.died": {
+      "description": "The player died.",
+      "data": {
+        "killer?": "string",
+        "killer_type?": "string"
+      }
+    },
+    "combat.ability_used": {
+      "description": "The player used an ability / spell / skill.",
+      "data": {
+        "ability": "string",
+        "target?": "string",
+        "cost?": "number",
+        "element?": "string"
+      }
+    },
+    "economy.gold": {
+      "description": "The player's gold balance changed. amount = new balance.",
+      "data": {
+        "amount": "number",
+        "delta?": "number",
+        "currency?": "string"
+      }
+    },
+    "economy.bought": {
+      "description": "The player bought something.",
+      "data": {
+        "item": "string",
+        "price": "number",
+        "vendor?": "string",
+        "currency?": "string"
+      }
+    },
+    "economy.sold": {
+      "description": "The player sold something.",
+      "data": {
+        "item": "string",
+        "price": "number",
+        "vendor?": "string"
+      }
+    },
+    "economy.stole": {
+      "description": "The player stole something.",
+      "data": {
+        "from": "string",
+        "item?": "string",
+        "value?": "number",
+        "seen?": "boolean"
+      }
+    },
+    "social.said": {
+      "description": "The player said something (typed or STT).",
+      "data": {
+        "text": "string",
+        "to?": "string"
+      }
+    },
+    "social.talked_to": {
+      "description": "The player started a conversation.",
+      "data": {
+        "npc": "string"
+      }
+    },
+    "social.gave": {
+      "description": "The player gave something.",
+      "data": {
+        "to": "string",
+        "item?": "string",
+        "gold?": "number"
+      }
+    },
+    "social.lied": {
+      "description": "The player lied (game-detected, e.g. a dialogue choice).",
+      "data": {
+        "to": "string",
+        "about?": "string"
+      }
+    },
+    "social.threatened": {
+      "description": "The player threatened someone.",
+      "data": {
+        "target": "string"
+      }
+    },
+    "movement.entered_zone": {
+      "description": "The player entered a zone.",
+      "data": {
+        "zone": "string",
+        "kind?": "string"
+      }
+    },
+    "movement.explored": {
+      "description": "The player discovered something / somewhere new.",
+      "data": {
+        "zone?": "string",
+        "discovery?": "string"
+      }
+    },
+    "movement.fled": {
+      "description": "The player ran from a fight.",
+      "data": {
+        "from?": "string",
+        "hp?": "number"
+      }
+    },
+    "gear.equipped": {
+      "description": "The player equipped an item.",
+      "data": {
+        "item": "string",
+        "slot": "string",
+        "name?": "string",
+        "tags?": "string[]",
+        "value?": "number"
+      }
+    },
+    "gear.unequipped": {
+      "description": "The player unequipped an item.",
+      "data": {
+        "item": "string",
+        "slot": "string"
+      }
+    },
+    "quest.accepted": {
+      "description": "The player accepted a quest.",
+      "data": {
+        "quest": "string",
+        "giver?": "string"
+      }
+    },
+    "quest.completed": {
+      "description": "The player completed a quest.",
+      "data": {
+        "quest": "string"
+      }
+    },
+    "quest.failed": {
+      "description": "The player failed / abandoned a quest.",
+      "data": {
+        "quest": "string",
+        "reason?": "string"
+      }
+    },
+    "world.destroyed": {
+      "description": "The player destroyed something in the world.",
+      "data": {
+        "object": "string",
+        "zone?": "string",
+        "owner?": "string"
+      }
+    },
+    "world.helped": {
+      "description": "The player helped an NPC.",
+      "data": {
+        "npc": "string",
+        "how?": "string"
+      }
+    },
+    "world.time": {
+      "description": "World clock. hour 0-24; phase dawn|day|dusk|night.",
+      "data": {
+        "hour": "number",
+        "day?": "number",
+        "phase?": "string"
+      }
+    }
+  },
+  "askKinds": [
+    "npc.bark",
+    "npc.reply",
+    "director.boss_phase",
+    "director.boss_move",
+    "director.encounter",
+    "director.pacing",
+    "forge.item",
+    "forge.armour_set",
+    "forge.look",
+    "forge.vfx",
+    "forge.creature",
+    "forge.npc_look",
+    "forge.prop",
+    "forge.loot",
+    "quest.offer",
+    "achievement.check",
+    "world.reactions"
+  ],
+  "directiveKinds": [
+    "npc.action",
+    "npc.bark",
+    "rumour.heard",
+    "spawn.wave",
+    "pacing.breather",
+    "boss.move_added",
+    "boss.adapt",
+    "quest.offer",
+    "quest.update",
+    "achievement.unlocked",
+    "objective.dynamic",
+    "forge.ready",
+    "loot.drop",
+    "difficulty.set",
+    "moment",
+    "world.reaction"
+  ],
+  "npcActions": [
+    "emote",
+    "trade",
+    "give",
+    "take",
+    "quest_offer",
+    "reveal",
+    "hostile",
+    "flee",
+    "call_guards",
+    "steal",
+    "follow",
+    "help",
+    "join"
+  ],
+  "moments": [
+    "near_death_escape",
+    "flawless_phase",
+    "comeback",
+    "betrayal",
+    "absurd_purchase",
+    "first_kill_of_type",
+    "broken_promise"
+  ],
+  "dslFunctions": {
+    "count": "count(signalType, window) - number of matching events in the window (signalType may end in .*)",
+    "sum": "sum(signalType.field, window) - sum of a numeric data field over the window",
+    "avg": "avg(signalType.field, window) - average of a numeric data field over the window",
+    "max": "max(signalType.field, window) - max of a numeric data field over the window",
+    "rate": "rate(signalType, window) - events per minute over the window",
+    "last": "last(signalType.field) - the field of the most recent matching event (0 / \"\" if none)",
+    "since": "since(signalType) - seconds since the most recent matching event (Infinity if none)",
+    "distinct": "distinct(signalType.field, window) - number of distinct values of a field",
+    "trait": "trait(name) - trait score 0-1",
+    "stat": "stat(name) - player-model stat (gold, kills, zone ...)",
+    "moment": "moment(kind, window) - number of moments of that kind in the window",
+    "rep": "rep(faction) - player reputation with a faction (-1..1)",
+    "attitude": "attitude(npc) - an NPC's attitude toward the player (-1..1)",
+    "has": "has(tag) - player has a gear / state tag",
+    "min2": "min2(a, b) - smaller of two numbers",
+    "max2": "max2(a, b) - larger of two numbers"
+  },
+  "schemas": {
+    "Signal": "Signal.json",
+    "SignalBatch": "SignalBatch.json",
+    "SignalBatchResult": "SignalBatchResult.json",
+    "AskRequest": "AskRequest.json",
+    "AskResponse": "AskResponse.json",
+    "Directive": "Directive.json",
+    "Blueprint": "Blueprint.json",
+    "VfxRecipe": "VfxRecipe.json",
+    "Variant": "Variant.json",
+    "MoveSpec": "MoveSpec.json",
+    "EngineMoveRef": "EngineMoveRef.json",
+    "ForgedItem": "ForgedItem.json",
+    "Quest": "Quest.json",
+    "Achievement": "Achievement.json",
+    "Rumour": "Rumour.json",
+    "Moment": "Moment.json",
+    "NpcAction": "NpcAction.json",
+    "VoiceStyle": "VoiceStyle.json",
+    "Creature": "Creature.json",
+    "Prop": "Prop.json",
+    "StoredEvent": "StoredEvent.json",
+    "ErrorBody": "ErrorBody.json",
+    "SttResponse": "SttResponse.json",
+    "ForgeJob": "ForgeJob.json",
+    "Snapshot": "Snapshot.json",
+    "PublicConfig": "PublicConfig.json",
+    "BakePack": "BakePack.json",
+    "WsClientMessage": "WsClientMessage.json",
+    "WsServerMessage": "WsServerMessage.json",
+    "Projection_observer.player_model": "Projection_observer.player_model.json",
+    "Projection_persona.memories": "Projection_persona.memories.json",
+    "Projection_world.rumours": "Projection_world.rumours.json",
+    "Projection_world.factions": "Projection_world.factions.json",
+    "Projection_quests.log": "Projection_quests.log.json",
+    "Projection_director.state": "Projection_director.state.json",
+    "Projection_forge.gallery": "Projection_forge.gallery.json",
+    "Projection_core.directives": "Projection_core.directives.json",
+    "ask.npc.bark.params": "ask.npc.bark.params.json",
+    "ask.npc.bark.result": "ask.npc.bark.result.json",
+    "ask.npc.reply.params": "ask.npc.reply.params.json",
+    "ask.npc.reply.result": "ask.npc.reply.result.json",
+    "ask.director.boss_phase.params": "ask.director.boss_phase.params.json",
+    "ask.director.boss_phase.result": "ask.director.boss_phase.result.json",
+    "ask.director.boss_move.params": "ask.director.boss_move.params.json",
+    "ask.director.boss_move.result": "ask.director.boss_move.result.json",
+    "ask.director.encounter.params": "ask.director.encounter.params.json",
+    "ask.director.encounter.result": "ask.director.encounter.result.json",
+    "ask.director.pacing.params": "ask.director.pacing.params.json",
+    "ask.director.pacing.result": "ask.director.pacing.result.json",
+    "ask.forge.item.params": "ask.forge.item.params.json",
+    "ask.forge.item.result": "ask.forge.item.result.json",
+    "ask.forge.armour_set.params": "ask.forge.armour_set.params.json",
+    "ask.forge.armour_set.result": "ask.forge.armour_set.result.json",
+    "ask.forge.look.params": "ask.forge.look.params.json",
+    "ask.forge.look.result": "ask.forge.look.result.json",
+    "ask.forge.vfx.params": "ask.forge.vfx.params.json",
+    "ask.forge.vfx.result": "ask.forge.vfx.result.json",
+    "ask.forge.creature.params": "ask.forge.creature.params.json",
+    "ask.forge.creature.result": "ask.forge.creature.result.json",
+    "ask.forge.npc_look.params": "ask.forge.npc_look.params.json",
+    "ask.forge.npc_look.result": "ask.forge.npc_look.result.json",
+    "ask.forge.prop.params": "ask.forge.prop.params.json",
+    "ask.forge.prop.result": "ask.forge.prop.result.json",
+    "ask.forge.loot.params": "ask.forge.loot.params.json",
+    "ask.forge.loot.result": "ask.forge.loot.result.json",
+    "ask.quest.offer.params": "ask.quest.offer.params.json",
+    "ask.quest.offer.result": "ask.quest.offer.result.json",
+    "ask.achievement.check.params": "ask.achievement.check.params.json",
+    "ask.achievement.check.result": "ask.achievement.check.result.json",
+    "ask.world.reactions.params": "ask.world.reactions.params.json",
+    "ask.world.reactions.result": "ask.world.reactions.result.json",
+    "directive.npc.action.args": "directive.npc.action.args.json",
+    "directive.npc.bark.args": "directive.npc.bark.args.json",
+    "directive.rumour.heard.args": "directive.rumour.heard.args.json",
+    "directive.spawn.wave.args": "directive.spawn.wave.args.json",
+    "directive.pacing.breather.args": "directive.pacing.breather.args.json",
+    "directive.boss.move_added.args": "directive.boss.move_added.args.json",
+    "directive.boss.adapt.args": "directive.boss.adapt.args.json",
+    "directive.quest.offer.args": "directive.quest.offer.args.json",
+    "directive.quest.update.args": "directive.quest.update.args.json",
+    "directive.achievement.unlocked.args": "directive.achievement.unlocked.args.json",
+    "directive.objective.dynamic.args": "directive.objective.dynamic.args.json",
+    "directive.forge.ready.args": "directive.forge.ready.args.json",
+    "directive.loot.drop.args": "directive.loot.drop.args.json",
+    "directive.difficulty.set.args": "directive.difficulty.set.args.json",
+    "directive.moment.args": "directive.moment.args.json",
+    "directive.world.reaction.args": "directive.world.reaction.args.json"
+  }
+}

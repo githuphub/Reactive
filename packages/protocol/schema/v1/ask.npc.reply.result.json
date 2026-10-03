@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "npc": {
+      "type": "string"
+    },
+    "text": {
+      "type": "string",
+      "maxLength": 1200
+    },
+    "emote": {
+      "type": "string",
+      "maxLength": 32
+    },
+    "voice": {
+      "type": "object",
+      "properties": {
+        "pitch": {
+          "type": "number",
+          "minimum": 0.5,
+          "maximum": 2
+        },
+        "rate": {
+          "type": "number",
+          "minimum": 0.5,
+          "maximum": 2
+        },
+        "accent": {
+          "type": "string",
+          "maxLength": 32
+        },
+        "style": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "voiceId": {
+          "type": "string",
+          "maxLength": 64
+        }
+      }
+    },
+    "actions": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 48
+          },
+          "args": {
+            "default": {},
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {}
+          },
+          "target": {
+            "type": "string",
+            "maxLength": 64
+          }
+        },
+        "required": [
+          "action"
+        ]
+      }
+    },
+    "mood": {
+      "type": "number",
+      "minimum": -1,
+      "maximum": 1
+    },
+    "end": {
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "npc",
+    "text"
+  ],
+  "$id": "https://liveforge.dev/schema/v1/ask.npc.reply.result.json",
+  "title": "ask.npc.reply.result"
+}

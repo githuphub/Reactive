@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "spawner": {
+      "type": "string",
+      "maxLength": 64
+    },
+    "zone": {
+      "type": "string",
+      "maxLength": 64
+    },
+    "position": {
+      "type": "array",
+      "prefixItems": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "number"
+        }
+      ],
+      "items": false,
+      "minItems": 3,
+      "maxItems": 3
+    },
+    "units": {
+      "minItems": 1,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "count": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50
+          },
+          "elite": {
+            "type": "boolean"
+          },
+          "modifiers": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "tactic": {
+            "type": "string",
+            "maxLength": 32
+          }
+        },
+        "required": [
+          "type",
+          "count"
+        ]
+      }
+    }
+  },
+  "required": [
+    "units"
+  ],
+  "$id": "https://liveforge.dev/schema/v1/directive.spawn.wave.args.json",
+  "title": "directive.spawn.wave.args"
+}

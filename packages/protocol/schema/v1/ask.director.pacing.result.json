@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "tension": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "action": {
+      "type": "string",
+      "enum": [
+        "spawn",
+        "breather",
+        "loot",
+        "hold",
+        "escalate"
+      ]
+    },
+    "directives": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "target": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 96
+          },
+          "args": {
+            "default": {},
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {}
+          },
+          "why": {
+            "default": "",
+            "type": "string",
+            "maxLength": 200
+          }
+        },
+        "required": [
+          "kind",
+          "target"
+        ]
+      }
+    },
+    "aggression": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    }
+  },
+  "required": [
+    "tension",
+    "action"
+  ],
+  "$id": "https://liveforge.dev/schema/v1/ask.director.pacing.result.json",
+  "title": "ask.director.pacing.result"
+}

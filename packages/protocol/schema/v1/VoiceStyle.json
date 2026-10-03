@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "pitch": {
+      "type": "number",
+      "minimum": 0.5,
+      "maximum": 2
+    },
+    "rate": {
+      "type": "number",
+      "minimum": 0.5,
+      "maximum": 2
+    },
+    "accent": {
+      "type": "string",
+      "maxLength": 32
+    },
+    "style": {
+      "type": "string",
+      "maxLength": 64
+    },
+    "voiceId": {
+      "type": "string",
+      "maxLength": 64
+    }
+  },
+  "$id": "https://liveforge.dev/schema/v1/VoiceStyle.json",
+  "title": "VoiceStyle"
+}

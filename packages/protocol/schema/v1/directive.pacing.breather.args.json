@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "seconds": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 600
+    },
+    "loot": {
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "seconds"
+  ],
+  "$id": "https://liveforge.dev/schema/v1/directive.pacing.breather.args.json",
+  "title": "directive.pacing.breather.args"
+}

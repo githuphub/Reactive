@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "npc": {
+      "type": "string"
+    },
+    "action": {
+      "type": "object",
+      "properties": {
+        "action": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 48
+        },
+        "args": {
+          "default": {},
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {}
+        },
+        "target": {
+          "type": "string",
+          "maxLength": 64
+        }
+      },
+      "required": [
+        "action"
+      ]
+    },
+    "line": {
+      "type": "string",
+      "maxLength": 300
+    }
+  },
+  "required": [
+    "npc",
+    "action"
+  ],
+  "$id": "https://liveforge.dev/schema/v1/directive.npc.action.args.json",
+  "title": "directive.npc.action.args"
+}

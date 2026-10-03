@@ -1,0 +1,10 @@
+{
+  "name": "@liveforge/dashboard",
+  "version": "0.1.0",
+  "description": "Liveforge dashboard (K5). Skeleton: talks to the server's /admin API and admin WebSocket.",
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "scripts": { "build": "tsc -b" },
+  "dependencies": { "@liveforge/protocol": "0.1.0", "@liveforge/manifest": "0.1.0" }
+}

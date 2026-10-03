@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "npc": {
+      "type": "string"
+    },
+    "prompt": {
+      "type": "string",
+      "maxLength": 400
+    },
+    "asset": {
+      "type": "string"
+    },
+    "seed": {
+      "type": "integer",
+      "minimum": -9007199254740991,
+      "maximum": 9007199254740991
+    }
+  },
+  "required": [
+    "npc",
+    "prompt"
+  ],
+  "$id": "https://liveforge.dev/schema/v1/ask.forge.npc_look.params.json",
+  "title": "ask.forge.npc_look.params"
+}

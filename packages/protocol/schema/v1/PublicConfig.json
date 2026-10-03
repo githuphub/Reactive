@@ -1,0 +1,182 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "protocol": {
+      "type": "string"
+    },
+    "server": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "type": "string"
+        },
+        "wsPath": {
+          "type": "string"
+        },
+        "features": {
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {
+            "type": "boolean"
+          }
+        }
+      },
+      "required": [
+        "version",
+        "wsPath",
+        "features"
+      ]
+    },
+    "game": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "name"
+      ]
+    },
+    "modules": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string"
+      },
+      "additionalProperties": {
+        "type": "boolean"
+      }
+    },
+    "personas": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string"
+          },
+          "faction": {
+            "type": "string"
+          },
+          "voice": {
+            "type": "object",
+            "properties": {
+              "pitch": {
+                "type": "number",
+                "minimum": 0.5,
+                "maximum": 2
+              },
+              "rate": {
+                "type": "number",
+                "minimum": 0.5,
+                "maximum": 2
+              },
+              "accent": {
+                "type": "string",
+                "maxLength": 32
+              },
+              "style": {
+                "type": "string",
+                "maxLength": 64
+              },
+              "voiceId": {
+                "type": "string",
+                "maxLength": 64
+              }
+            }
+          },
+          "zone": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "role"
+        ]
+      }
+    },
+    "bosses": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "phases": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "phases"
+        ]
+      }
+    },
+    "actions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "customSignals": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "elements": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "askKinds": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "directiveKinds": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [
+    "protocol",
+    "server",
+    "game",
+    "modules",
+    "personas",
+    "bosses",
+    "actions",
+    "customSignals",
+    "elements",
+    "askKinds",
+    "directiveKinds"
+  ],
+  "$id": "https://liveforge.dev/schema/v1/PublicConfig.json",
+  "title": "PublicConfig"
+}

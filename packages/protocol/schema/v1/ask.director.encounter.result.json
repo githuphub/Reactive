@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "assignments": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "unit": {
+            "type": "string"
+          },
+          "tactic": {
+            "type": "string",
+            "maxLength": 32
+          },
+          "target": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "unit",
+          "tactic"
+        ]
+      }
+    },
+    "modifiers": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "aggression": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    }
+  },
+  "required": [
+    "assignments",
+    "aggression"
+  ],
+  "$id": "https://liveforge.dev/schema/v1/ask.director.encounter.result.json",
+  "title": "ask.director.encounter.result"
+}

@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "npc": {
+      "type": "string"
+    },
+    "trigger": {
+      "default": "idle",
+      "type": "string",
+      "maxLength": 32
+    },
+    "context": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string"
+      },
+      "additionalProperties": {}
+    }
+  },
+  "required": [
+    "npc"
+  ],
+  "$id": "https://liveforge.dev/schema/v1/ask.npc.bark.params.json",
+  "title": "ask.npc.bark.params"
+}

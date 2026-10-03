@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "count": {
+      "default": 1,
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 5
+    },
+    "enemy": {
+      "type": "string"
+    },
+    "zone": {
+      "type": "string"
+    },
+    "moment": {
+      "type": "string"
+    },
+    "seed": {
+      "type": "integer",
+      "minimum": -9007199254740991,
+      "maximum": 9007199254740991
+    }
+  },
+  "$id": "https://liveforge.dev/schema/v1/ask.forge.loot.params.json",
+  "title": "ask.forge.loot.params"
+}

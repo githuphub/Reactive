@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "protocol": {
+      "type": "string",
+      "const": "liveforge-protocol/1"
+    },
+    "game": {
+      "type": "string"
+    },
+    "createdAt": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    },
+    "entries": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string"
+      },
+      "additionalProperties": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "key": {
+              "type": "string"
+            },
+            "result": {},
+            "tags": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "required": [
+            "key",
+            "result"
+          ]
+        }
+      }
+    }
+  },
+  "required": [
+    "protocol",
+    "game",
+    "createdAt",
+    "entries"
+  ],
+  "$id": "https://liveforge.dev/schema/v1/BakePack.json",
+  "title": "BakePack"
+}

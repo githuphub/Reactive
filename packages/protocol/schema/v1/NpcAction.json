@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "action": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 48
+    },
+    "args": {
+      "default": {},
+      "type": "object",
+      "propertyNames": {
+        "type": "string"
+      },
+      "additionalProperties": {}
+    },
+    "target": {
+      "type": "string",
+      "maxLength": 64
+    }
+  },
+  "required": [
+    "action"
+  ],
+  "$id": "https://liveforge.dev/schema/v1/NpcAction.json",
+  "title": "NpcAction"
+}

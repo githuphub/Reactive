@@ -1,0 +1,33 @@
+{
+  "name": "liveforge",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Self-hostable, engine-agnostic kit that makes games adapt to the player.",
+  "license": "MIT",
+  "type": "module",
+  "workspaces": [
+    "packages/protocol",
+    "packages/manifest",
+    "packages/server",
+    "packages/sdk-js",
+    "packages/sdk-three",
+    "packages/dashboard"
+  ],
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "build": "tsc -b && npm run build:schemas -w @liveforge/protocol && npm run build:schemas -w @liveforge/manifest",
+    "typecheck": "tsc -b --noEmit false && echo typecheck ok",
+    "dev": "tsc -b packages/protocol packages/manifest && tsx watch --clear-screen=false packages/server/src/main.ts",
+    "start": "node packages/server/dist/main.js",
+    "clean": "tsc -b --clean"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  },
+  "allowScripts": {
+    "better-sqlite3": true,
+    "esbuild": true
+  }
+}

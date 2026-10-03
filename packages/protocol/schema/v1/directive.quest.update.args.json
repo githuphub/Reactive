@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "questId": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "completed",
+        "failed",
+        "expired"
+      ]
+    },
+    "objectiveId": {
+      "type": "string"
+    },
+    "progress": {
+      "type": "number"
+    }
+  },
+  "required": [
+    "questId",
+    "status"
+  ],
+  "$id": "https://liveforge.dev/schema/v1/directive.quest.update.args.json",
+  "title": "directive.quest.update.args"
+}

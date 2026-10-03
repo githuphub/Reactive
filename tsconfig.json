@@ -1,0 +1,11 @@
+{
+  "files": [],
+  "references": [
+    { "path": "packages/protocol" },
+    { "path": "packages/manifest" },
+    { "path": "packages/server" },
+    { "path": "packages/sdk-js" },
+    { "path": "packages/sdk-three" },
+    { "path": "packages/dashboard" }
+  ]
+}

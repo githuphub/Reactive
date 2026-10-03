@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "rule": {
+      "type": "string"
+    },
+    "effect": {
+      "type": "string"
+    },
+    "data": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string"
+      },
+      "additionalProperties": {}
+    }
+  },
+  "required": [
+    "rule",
+    "effect"
+  ],
+  "$id": "https://liveforge.dev/schema/v1/directive.world.reaction.args.json",
+  "title": "directive.world.reaction.args"
+}

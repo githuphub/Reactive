@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "boss": {
+      "type": "string"
+    },
+    "phase": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9
+    },
+    "hp": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "habits": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string"
+      },
+      "additionalProperties": {}
+    },
+    "gear": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "existing": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "seed": {
+      "type": "integer",
+      "minimum": -9007199254740991,
+      "maximum": 9007199254740991
+    }
+  },
+  "required": [
+    "boss",
+    "phase"
+  ],
+  "$id": "https://liveforge.dev/schema/v1/ask.director.boss_phase.params.json",
+  "title": "ask.director.boss_phase.params"
+}

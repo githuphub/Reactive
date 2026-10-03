@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "prompt": {
+      "type": "string",
+      "maxLength": 400
+    },
+    "attach": {
+      "type": "string"
+    },
+    "durationSec": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "seed": {
+      "type": "integer",
+      "minimum": -9007199254740991,
+      "maximum": 9007199254740991
+    }
+  },
+  "required": [
+    "prompt"
+  ],
+  "$id": "https://liveforge.dev/schema/v1/ask.forge.vfx.params.json",
+  "title": "ask.forge.vfx.params"
+}

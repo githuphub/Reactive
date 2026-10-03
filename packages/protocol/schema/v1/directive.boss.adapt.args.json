@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "boss": {
+      "type": "string"
+    },
+    "aggression": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "attune": {
+      "anyOf": [
+        {
+          "type": "string",
+          "maxLength": 24
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "weights": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string"
+      },
+      "additionalProperties": {
+        "type": "number"
+      }
+    },
+    "taunt": {
+      "type": "string",
+      "maxLength": 200
+    }
+  },
+  "required": [
+    "boss"
+  ],
+  "$id": "https://liveforge.dev/schema/v1/directive.boss.adapt.args.json",
+  "title": "directive.boss.adapt.args"
+}

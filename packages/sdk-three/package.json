@@ -1,0 +1,18 @@
+{
+  "name": "@liveforge/three",
+  "version": "0.1.0",
+  "description": "Three.js helpers for Liveforge: Blueprint and VFX builders, TTS/mic helpers, LiveNPC/LiveBoss helpers.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" }
+  },
+  "files": ["dist"],
+  "sideEffects": false,
+  "scripts": { "build": "tsc -b" },
+  "dependencies": { "@liveforge/protocol": "0.1.0", "@liveforge/sdk": "0.1.0" },
+  "peerDependencies": { "three": ">=0.160.0" },
+  "devDependencies": { "three": "^0.186.1", "@types/three": "^0.186.0" }
+}

@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "reputation": {
+      "default": {},
+      "type": "object",
+      "propertyNames": {
+        "type": "string"
+      },
+      "additionalProperties": {
+        "type": "object",
+        "propertyNames": {
+          "type": "string"
+        },
+        "additionalProperties": {
+          "type": "number"
+        }
+      }
+    },
+    "relationships": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "a": {
+            "type": "string"
+          },
+          "b": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "strength": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "a",
+          "b",
+          "kind",
+          "strength"
+        ]
+      }
+    }
+  },
+  "$id": "https://liveforge.dev/schema/v1/Projection_world.factions.json",
+  "title": "Projection_world.factions"
+}

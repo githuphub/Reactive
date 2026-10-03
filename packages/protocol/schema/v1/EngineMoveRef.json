@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "moveId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "params": {
+      "default": {},
+      "type": "object",
+      "propertyNames": {
+        "type": "string"
+      },
+      "additionalProperties": {
+        "type": [
+          "number",
+          "string",
+          "boolean"
+        ]
+      }
+    }
+  },
+  "required": [
+    "moveId"
+  ],
+  "$id": "https://liveforge.dev/schema/v1/EngineMoveRef.json",
+  "title": "EngineMoveRef"
+}

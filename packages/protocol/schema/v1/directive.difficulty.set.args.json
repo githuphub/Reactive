@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "aggression": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "mode": {
+      "type": "string",
+      "enum": [
+        "hidden",
+        "assist",
+        "off"
+      ]
+    },
+    "reason": {
+      "type": "string",
+      "maxLength": 200
+    }
+  },
+  "required": [
+    "aggression",
+    "mode"
+  ],
+  "$id": "https://liveforge.dev/schema/v1/directive.difficulty.set.args.json",
+  "title": "directive.difficulty.set.args"
+}

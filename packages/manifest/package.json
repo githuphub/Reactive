@@ -1,0 +1,25 @@
+{
+  "name": "@liveforge/manifest",
+  "version": "0.1.0",
+  "description": "liveforge.yaml schema, loader and human-readable validator.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" },
+    "./node": { "types": "./dist/node.d.ts", "import": "./dist/node.js" },
+    "./schema/*": "./schema/*"
+  },
+  "bin": { "liveforge-validate": "./dist/cli.js" },
+  "files": ["dist", "schema"],
+  "scripts": {
+    "build": "tsc -b && npm run build:schemas",
+    "build:schemas": "node dist/emitSchema.js"
+  },
+  "dependencies": {
+    "@liveforge/protocol": "0.1.0",
+    "yaml": "^2.9.1",
+    "zod": "^4.6.5"
+  }
+}

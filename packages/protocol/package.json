@@ -1,0 +1,20 @@
+{
+  "name": "@liveforge/protocol",
+  "version": "0.1.0",
+  "description": "liveforge-protocol v1: shared types, zod validators and JSON Schemas for every Liveforge SDK.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" },
+    "./schema/*": "./schema/*"
+  },
+  "files": ["dist", "schema"],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsc -b && npm run build:schemas",
+    "build:schemas": "node dist/emitSchemas.js"
+  },
+  "dependencies": { "zod": "^4.6.5" }
+}
