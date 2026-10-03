@@ -95,8 +95,8 @@ export function buildOfferContext(ctx: ScopedContext, player: string, giverId?: 
     if ((e.type === "economy.bought" || e.type === "gear.equipped") && d.item) items.add(str(d.item));
   }
   const model = env.model;
-  const traits = Object.entries(model?.traits ?? {})
-    .map(([k, v]) => [k, numOr(v?.score, 0)] as [string, number])
+  const traits = Object.keys(model.traits ?? {})
+    .map((k) => [k, numOr(env.call("trait", [k]), 0)] as [string, number])
     .filter(([, v]) => v >= 0.3)
     .sort((a, b) => b[1] - a[1]);
   const rumourState = safeProjection<{ rumours?: Rumour[] }>(ctx, "world.rumours", { world: ctx.world });

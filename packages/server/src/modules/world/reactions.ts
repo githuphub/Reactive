@@ -157,7 +157,7 @@ async function flavour(ctx: ScopedContext, env: HostDslEnv, player: string, rule
   const m = ctx.manifest;
   const npcId = draft.target.startsWith("npc:") ? draft.target.slice(4) : str((draft.args as Record<string, unknown>).npc);
   const persona = personaById(m, npcId);
-  const traits = Object.entries(env.model?.traits ?? {}).map(([k, v]) => [k, v?.score ?? 0] as const).sort((a, b) => b[1] - a[1]).slice(0, 4);
+  const traits = Object.keys(env.model.traits ?? {}).map((k) => [k, Number(env.call("trait", [k])) || 0] as const).sort((a, b) => b[1] - a[1]).slice(0, 4);
   const zone = env.zone();
   const key = ctx.cache.key("world.flavour", { rule: rule.id, target: draft.target, zone, trait: traits[0]?.[0] ?? "" });
   let f = ctx.cache.get<Flavour>(key) ?? null;

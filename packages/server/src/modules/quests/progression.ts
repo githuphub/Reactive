@@ -42,7 +42,7 @@ export function suggestProgression(ctx: Pick<ModuleContext, "events" | "projecti
   const m = ctx.manifest;
   const done = new Set(questLog(ctx, world, player).unlocks.map((u) => u.id));
   const e = env ?? makeDslEnv(ctx, world, player);
-  const traits = Object.entries(e.model?.traits ?? {}).map(([k, v]) => [k, numOr(v?.score, 0)] as const).filter(([, v]) => v >= 0.5).sort((a, b) => b[1] - a[1]);
+  const traits = Object.keys(e.model.traits ?? {}).map((k) => [k, numOr(e.call("trait", [k]), 0)] as const).filter(([, v]) => v >= 0.5).sort((a, b) => b[1] - a[1]);
   const out: ProgressionSuggestion[] = [];
   for (const u of m.progression.unlocks) {
     if (done.has(u.id)) continue;
