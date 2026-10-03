@@ -3,7 +3,9 @@
 // dropping, impostor), full VFX recipes, Counterforge quick particles, per-part animation.
 import * as THREE from "three";
 import {
+  BLUEPRINT_ROLES,
   clampBlueprint,
+  clampVfx,
   partMaterial as resolvePartMaterial,
   type Blueprint,
   type BlueprintLimits,
@@ -12,6 +14,7 @@ import {
   type BlueprintShape,
   type Material,
   type ParticleKind,
+  type VfxRecipe,
 } from "@liveforge/protocol";
 import { buildVfx, type VfxObject } from "./vfx.js";
 import { disposeObject, superDispose } from "./dispose.js";
@@ -415,6 +418,29 @@ export class BlueprintObject extends THREE.Group {
 }
 
 /**
+ * protocol clampBlueprint, plus the fields it does not carry over yet: `vfx[]` (each clamped with clampVfx) and the
+ * LOD hint's `dropRolesFar` / `impostorDistance`.
+ */
+function clampWithExtras(input: unknown, limits?: Partial<BlueprintLimits>): Blueprint | null {
+  const bp = clampBlueprint(input, limits);
+  if (!bp || typeof input !== "object" || input === null) return bp;
+  const raw = input as { vfx?: unknown; lod?: { dropRolesFar?: unknown; impostorDistance?: unknown } };
+  if (Array.isArray(raw.vfx) && !bp.vfx) {
+    const vfx = raw.vfx.slice(0, 4).map((r) => clampVfx(r, bp.palette[0])).filter((r): r is VfxRecipe => !!r);
+    if (vfx.length) bp.vfx = vfx;
+  }
+  if (bp.lod && raw.lod && typeof raw.lod === "object") {
+    if (Array.isArray(raw.lod.dropRolesFar) && !bp.lod.dropRolesFar) {
+      const roles = raw.lod.dropRolesFar.filter((r): r is BlueprintRole => typeof r === "string" && (BLUEPRINT_ROLES as readonly string[]).includes(r));
+      if (roles.length) bp.lod.dropRolesFar = roles;
+    }
+    const d = raw.lod.impostorDistance;
+    if (typeof d === "number" && Number.isFinite(d) && d > 0 && bp.lod.impostorDistance === undefined) bp.lod.impostorDistance = Math.min(500, d);
+  }
+  return bp;
+}
+
+/**
  * Builds a Blueprint v1 into a {@link BlueprintObject}. Held items: the grip is the origin and the item extends
  * along +Y. Clamps the input first by default, so any server / LLM / user blueprint is safe to pass.
  * Throws only when nothing usable is left (no parts).
@@ -426,7 +452,7 @@ export class BlueprintObject extends THREE.Group {
  * ```
  */
 export function buildBlueprint(input: Blueprint | unknown, opts: BuildBlueprintOptions = {}): BlueprintObject {
-  const bp = opts.clamp === false ? (input as Blueprint) : clampBlueprint(input, opts.limits);
+  const bp = opts.clamp === false ? (input as Blueprint) : clampWithExtras(input, opts.limits);
   if (!bp || !Array.isArray(bp.parts) || bp.parts.length === 0) throw new Error("[liveforge] blueprint has no usable parts");
   const detail: Detail = opts.detail ?? bp.lod?.detail ?? "medium";
   const dim = opts.dim ?? 0;
