@@ -8,7 +8,9 @@ type FieldTs<F> = F extends "string"
     ? number
     : F extends "boolean"
       ? boolean
-      : F extends "string[]"
+      : F extends "boolean|null"
+        ? boolean | null
+        : F extends "string[]"
         ? string[]
         : Record<string, unknown>;
 type Required_<D> = { [K in keyof D as K extends `${string}?` ? never : K]: FieldTs<D[K]> };
