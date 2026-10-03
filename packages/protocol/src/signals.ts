@@ -24,7 +24,8 @@ export type Signal = z.infer<typeof Signal>;
 export type SignalInput = z.input<typeof Signal>;
 
 /** Field types used to document built-in signals and to declare custom signals in the manifest. */
-export type FieldType = "string" | "number" | "boolean" | "string[]" | "object";
+/** "boolean|null" = true, false or null (unknown); used by social.claim truth. */
+export type FieldType = "string" | "number" | "boolean" | "boolean|null" | "string[]" | "object";
 
 export interface SignalDoc {
   description: string;
@@ -73,12 +74,32 @@ export const BUILTIN_SIGNALS = {
   // ---- world
   "world.destroyed": { description: "The player destroyed something in the world.", data: { object: "string", "zone?": "string", "owner?": "string" } },
   "world.helped": { description: "The player helped an NPC.", data: { npc: "string", "how?": "string" } },
-  "world.time": { description: "World clock. hour 0-24; phase dawn|day|dusk|night.", data: { hour: "number", "day?": "number", "phase?": "string" } },
+  "world.time": { description: "World clock + weather. hour 0-24; day = day counter; phase dawn|day|dusk|night (derived from hour when omitted); weather clear|rain|storm|snow|fog|heat.", data: { hour: "number", "day?": "number", "weather?": "string", "phase?": "string" } },
+  "world.property_damaged": { description: "The player damaged someone's property (Reaction Library: property_damage). value = rough worth in gold.", data: { object: "string", "owner?": "string", "value?": "number", "zone?": "string" } },
+  // ---- appearance (Reaction Library: outfit_comments, appearance_state, collector_interest)
+  "appearance.state": { description: "How the player looks right now, each 0-1 (send on change; omitted = unchanged).", data: { "wet?": "number", "bloodied?": "number", "burnt?": "number", "muddy?": "number" } },
+  "appearance.outfit": { description: "What the player wears. slots = {head|body|back|weapon|...: {id, name, tags[], colors[]}}; style_tags = overall look (\"regal\", \"ragged\").", data: { slots: "object", "style_tags?": "string[]" } },
+  // ---- social promises + claims (Reaction Library: promises_remembered, lies_caught)
+  "social.promise": { description: "The player promised an NPC something. ref = your id for it (else the server matches the latest open promise to that NPC); due = ms epoch or seconds-from-now.", data: { to: "string", text: "string", "due?": "number", "ref?": "string" } },
+  "social.promise_kept": { description: "The player kept a promise (ref = social.promise ref, else the latest open promise to that NPC).", data: { to: "string", "ref?": "string" } },
+  "social.promise_broken": { description: "The player broke a promise (ref = social.promise ref, else the latest open promise to that NPC).", data: { to: "string", "ref?": "string" } },
+  "social.claim": { description: "The player stated something the game can judge: truth true / false / null (unknown; the server checks it against rumours). npc.reply also creates claims internally.", data: { to: "string", text: "string", truth: "boolean|null", "about?": "string" } },
+  // ---- economy
+  "economy.haggled": { description: "The player haggled with a merchant. delta_pct = price change they got (-20 = 20% off).", data: { npc: "string", delta_pct: "number", outcome: "string", "item?": "string" } },
+  // ---- boss / combat memory (Reaction Library: boss_attempt_memory, dodge_bait, flawless_secret_phase, coward_rumour)
+  "combat.boss_attempt": { description: "One attempt at a boss ended. result died|won|fled; dodge_dirs = dodge counts {left, right, back, fwd} during the attempt.", data: { boss: "string", result: "string", "attempt?": "number", "phase?": "number", "dodge_dirs?": "object" } },
+  "combat.phase_flawless": { description: "The player cleared a boss phase without taking damage.", data: { boss: "string", phase: "number" } },
+  "combat.fled": { description: "The player fled a fight (enemy_count = enemies left behind).", data: { "from?": "string", "enemy_count?": "number", "zone?": "string" } },
+  // ---- companions
+  "companion.died": { description: "A companion / ally of the player died.", data: { companion: "string", "killer?": "string" } },
+  // ---- session
+  "session.started": { description: "A play session started (the SDKs send it on connect). last_seen_ts = when the player last played; omitted = the server works it out from the log.", data: { "last_seen_ts?": "number" } },
+  "movement.visited": { description: "The player visited a place (inn, shop, area ...). Counts visits for regular status and avoided areas.", data: { place: "string", "kind?": "string", "zone?": "string" } },
 } as const satisfies Record<string, SignalDoc>;
 
 export type BuiltinSignalType = keyof typeof BUILTIN_SIGNALS;
 export const BUILTIN_SIGNAL_TYPES = Object.keys(BUILTIN_SIGNALS) as BuiltinSignalType[];
-export const SIGNAL_NAMESPACES = ["combat", "economy", "social", "movement", "gear", "quest", "world"] as const;
+export const SIGNAL_NAMESPACES = ["combat", "economy", "social", "movement", "gear", "quest", "world", "appearance", "companion", "session"] as const;
 
 export const isBuiltinSignal = (type: string): type is BuiltinSignalType => type in BUILTIN_SIGNALS;
 

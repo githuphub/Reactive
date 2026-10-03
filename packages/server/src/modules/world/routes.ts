@@ -8,11 +8,14 @@
 //     POST rumour {world, content, npcs?, heat?, sentiment?, aboutNpc?, aboutPlayer?}   seed a designer rumour
 //     POST relationship {world, a, b, kind?, strength?, delta?, remove?}             change the NPC graph
 //     POST reputation {world, player, faction, delta? | set?, reason?}               adjust reputation
+//     GET  reactions-lib?world=&player=          Reaction Library: enabled recipes, fired reactions, novelty ledger and
+//                                                live fingerprints per NPC (dashboard "Reactions" panel)
 import { Hono, type Context } from "hono";
 import type { LfEnv, ModuleContext, ModuleRoutes } from "../../module.js";
 import { knownRumours, rumourState, seedRumour } from "./rumours.js";
 import { changeReputation, factionState, standingReport } from "./factions.js";
 import { activeReactions } from "./reactions.js";
+import { libraryState } from "./reactions-lib/index.js";
 import { clamp, factionById, numOr, personaById, scopeFor, str } from "./util.js";
 
 type C = Context<LfEnv>;
@@ -50,6 +53,13 @@ export function worldRoutes(contexts: Map<string, ModuleContext>): ModuleRoutes 
   });
 
   const admin = new Hono<LfEnv>();
+  admin.get("/reactions-lib", (c) => {
+    const ctx = ctxOf(c);
+    const world = c.req.query("world");
+    if (!ctx) return err(c, 409, "module_disabled", "world module not initialised for this game");
+    if (!world) return err(c, 400, "bad_request", "?world= is required");
+    return c.json(libraryState(ctx, world, c.req.query("player") || null));
+  });
   admin.get("/state", (c) => {
     const ctx = ctxOf(c);
     const world = c.req.query("world");

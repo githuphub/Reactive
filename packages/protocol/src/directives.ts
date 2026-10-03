@@ -5,13 +5,18 @@ import { Bag, Id, Timestamp, Vec3 } from "./common.js";
 import { Achievement, ForgedItem, Moment, NpcAction, Quest, VoiceStyle } from "./content.js";
 import { Blueprint } from "./blueprint.js";
 import { EngineMoveRef, MoveSpec } from "./moves.js";
+import { ReactionDirectiveArgs, ReactionInfo } from "./reactions.js";
 
 /** Args per built-in directive kind. */
 export const DIRECTIVE_ARGS = {
   /** An NPC performs a manifest action (trade, flee, call_guards, steal ...). */
   "npc.action": z.object({ npc: z.string(), action: NpcAction, line: z.string().max(300).optional() }),
   /** An NPC says a line unprompted. */
-  "npc.bark": z.object({ npc: z.string(), text: z.string().max(300), emote: z.string().max(32).optional(), voice: VoiceStyle.optional() }),
+  "npc.bark": z.object({
+    npc: z.string(), text: z.string().max(300), emote: z.string().max(32).optional(), voice: VoiceStyle.optional(),
+    /** Set when a Reaction Library recipe produced the line (recipe + context fingerprint + facets). */
+    reaction: ReactionInfo.optional(),
+  }),
   /** An NPC heard (and may repeat) a rumour. */
   "rumour.heard": z.object({ npc: z.string(), rumourId: z.string(), content: z.string().max(280), heat: z.number().min(0).max(1).optional() }),
   /** Spawn a wave via a spawner the game owns. */
@@ -71,6 +76,11 @@ export const DIRECTIVE_ARGS = {
   moment: z.object({ moment: Moment }),
   /** A reactive-rule outcome that isn't one of the above (manifest `reactions`). args are free. */
   "world.reaction": z.object({ rule: z.string(), effect: z.string(), data: Bag.optional() }),
+  /**
+   * A Reaction Library recipe's game-specific effect (pickpocket, loan offer, secret boss phase ...):
+   * `{recipe, target, payload: {effect, ...}, line?, reaction?}`. See docs/reactions.md for every effect.
+   */
+  "custom.reaction": ReactionDirectiveArgs,
 } as const;
 
 export type DirectiveKind = keyof typeof DIRECTIVE_ARGS;

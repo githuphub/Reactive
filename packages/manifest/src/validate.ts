@@ -2,7 +2,7 @@
 import { LineCounter, parseDocument, isNode, type Document } from "yaml";
 import type { z } from "zod";
 import {
-  BUILTIN_NPC_ACTIONS, BUILTIN_SIGNALS, DIRECTIVE_KINDS, SignalType, checkDsl,
+  BUILTIN_NPC_ACTIONS, BUILTIN_SIGNALS, COMMON_RECIPE_PARAMS, DIRECTIVE_KINDS, REACTION_RECIPE_IDS, SignalType, checkDsl, recipeDoc,
 } from "@liveforge/protocol";
 import { MODULE_IDS, ManifestSchema, type Manifest, type ModuleId, type PersonaConfig } from "./schema.js";
 
@@ -93,7 +93,14 @@ export function validateManifestObject(
   dupes(m.personas, "personas");
   dupes(m.factions, "factions");
   dupes(m.bosses, "bosses");
-  dupes(m.reactions, "reactions");
+  const rulesBase: PropertyKey[] = Array.isArray((raw as { reactions?: unknown } | null)?.reactions) ? ["reactions"] : ["reactions", "rules"];
+  {
+    const seen = new Set<string>();
+    m.reactions.rules.forEach((r, i) => {
+      if (seen.has(r.id)) err([...rulesBase, i, "id"], `duplicate id "${r.id}"`);
+      seen.add(r.id);
+    });
+  }
   dupes(m.achievements, "achievements");
   dupes(m.zones, "zones");
 
@@ -129,15 +136,38 @@ export function validateManifestObject(
   };
   for (const [k, v] of Object.entries(m.traits)) checkRule(["traits", k], v);
   for (const [k, v] of Object.entries(m.moments)) checkRule(["moments", k], v);
-  m.reactions.forEach((r, i) => {
-    checkRule(["reactions", i, "when"], r.when);
+  // reaction rules live at reactions[i] (list form) or reactions.rules[i] (block form)
+  const rulesPath = (i: number): PropertyKey[] => [...rulesBase, i];
+  m.reactions.rules.forEach((r, i) => {
+    checkRule([...rulesPath(i), "when"], r.when);
     const k = r.then.kind;
     if (!(DIRECTIVE_KINDS as string[]).includes(k) && !k.startsWith("custom.")) {
-      err(["reactions", i, "then", "kind"], `unknown directive kind "${k}" (use one of ${DIRECTIVE_KINDS.join(", ")} or custom.<name>)`);
+      err([...rulesPath(i), "then", "kind"], `unknown directive kind "${k}" (use one of ${DIRECTIVE_KINDS.join(", ")} or custom.<name>)`);
     }
     if (k === "npc.action") {
       const action = (r.then.args as { action?: { action?: string } }).action?.action;
-      if (action && !actionNames.has(action)) err(["reactions", i, "then", "args", "action"], `action "${action}" is not declared under actions`);
+      if (action && !actionNames.has(action)) err([...rulesPath(i), "then", "args", "action"], `action "${action}" is not declared under actions`);
+    }
+  });
+  // ---- reaction library
+  m.reactions.library.forEach((entry, i) => {
+    const rdoc = recipeDoc(entry.recipe);
+    const path: PropertyKey[] = ["reactions", "library", i];
+    if (!rdoc) {
+      const near = REACTION_RECIPE_IDS.find((id) => id.startsWith(entry.recipe.slice(0, 4)) || entry.recipe.startsWith(id.slice(0, 6)));
+      err(path, `unknown reaction recipe "${entry.recipe}"${near ? ` (did you mean "${near}"?)` : ""}. Shipped recipes: ${REACTION_RECIPE_IDS.join(", ")}`);
+      return;
+    }
+    for (const [k, v] of Object.entries(entry.params)) {
+      const spec = rdoc.params[k] ?? COMMON_RECIPE_PARAMS[k];
+      if (!spec) {
+        warn([...path, k], `"${entry.recipe}" has no param "${k}" (known: ${[...Object.keys(rdoc.params), ...Object.keys(COMMON_RECIPE_PARAMS)].join(", ")})`);
+        continue;
+      }
+      if (k === "when" && typeof v === "string") checkRule([...path, k], v);
+      if (spec.type === "npc" && typeof v === "string" && !personaIds.has(v)) warn([...path, k], `persona "${v}" is not declared; the recipe falls back to a nameless NPC`);
+      if (spec.type === "number" && typeof v !== "number") err([...path, k], `expected a number`);
+      if (spec.type === "boolean" && typeof v !== "boolean") err([...path, k], `expected true or false`);
     }
   });
   m.achievements.forEach((a, i) => checkRule(["achievements", i, "condition"], a.condition));
