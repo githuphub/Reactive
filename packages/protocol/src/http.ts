@@ -78,6 +78,8 @@ export const PublicConfig = z.object({
   elements: z.array(z.string()),
   askKinds: z.array(z.string()),
   directiveKinds: z.array(z.string()),
+  /** Built-in + designer moment kinds. */
+  moments: z.array(z.string()).optional(),
 });
 export type PublicConfig = z.infer<typeof PublicConfig>;
 

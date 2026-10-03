@@ -59,7 +59,7 @@ export default defineModule({
 ```
 
 - `instant(ctx, params)` → `{ result, why?, source?: "rules"|"cache"|"bake", final? }`. It must be fast (milliseconds), deterministic where possible, and **never call the LLM**. `params` were already validated with the protocol `ASKS[kind].params` schema, so defaults are applied.
-- `upgrade(ctx, params, instantResult)` → `{ result, why? } | null`. It runs in the background after the instant answer was returned, and only when `ctx.llm` exists, budgets allow, and the client did not send `upgrade:false`. The core validates the result against `ASKS[kind].result`. An invalid result is dropped with a log line and the instant answer stands. The core then pushes `{t:"upgrade"}` over WS and stores the result for long-poll. Return `null` to keep the instant answer.
+- `upgrade(ctx, params, instantResult)` → `{ result, why? } | null`. It runs in the background after the instant answer was returned, and only when `ctx.llm` exists, budgets allow, and the client did not send `upgrade:false`. The core validates the result against `ASKS[kind].result`. An invalid result is dropped with a log line and the instant answer stands. The core then pushes `{t:"upgrade"}` over WS and stores the result for long-poll. Return `null` to keep the instant answer. When no AI result is produced (null, throw, timeout or an invalid result), the core still sends a final `upgrade` message that repeats the instant result with its original `source` (not `"ai"`), so clients can stop waiting.
 - `cacheKey(params, ctx)`: the core caches upgraded results (exact key plus normalised dedupe). When a later identical ask arrives, the cached AI result is returned as the instant answer with `source:"cache"` and no upgrade. The default key is kind + params + player. Return `false` for anything conversational.
 - Errors are handled like this:
   - A throw in `instant` returns the core fallback (§4) and logs the error.
@@ -228,6 +228,7 @@ Connect to `GET /v1/ws?key=<pk or admin>[&game=<id>][&world=&player=]`. Passing 
 - Delivery rules:
   - Upgrades, chunks and jobs go only to sockets subscribed with that world **and** player.
   - A directive with `player:null` goes to every socket subscribed to that world.
+  - Admin sockets subscribed without a player also receive every player's directives and jobs (dashboard).
 - The server pings every 30 s. Clients should reconnect with backoff and re-subscribe.
 
 ## 11. SDK contract (K4)
