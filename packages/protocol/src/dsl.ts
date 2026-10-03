@@ -17,7 +17,10 @@
 //   unary   := "-" unary | atom
 //   atom    := number | duration | string | "true" | "false" | ident | call | "(" expr ")"
 //   call    := ident "(" (expr ("," expr)*)? ")"
-//   ident   := [A-Za-z_][A-Za-z0-9_.*]*      (dotted names = signal types / namespaces; "*" wildcard)
+//   ident   := [A-Za-z_][A-Za-z0-9_.*]* filter?   (dotted names = signal types / namespaces; "*" wildcard)
+//   filter  := "{" cond ("," cond)* "}"     cond := field ("=" | "==" | "!=" | ">" | ">=" | "<" | "<=") value
+//              e.g. count(combat.killed{target_type=goblin, elite=true}, 10m). The filter stays part of the
+//              identifier's name; evaluators split it with parseDslRef and test events with matchDslFilter.
 //   duration:= number ("ms" | "s" | "m" | "h" | "d")   -> milliseconds
 //   string  := "..." | '...'
 //
@@ -97,8 +100,20 @@ function lex(src: string): Tok[] {
     }
     if (/[A-Za-z_]/.test(c)) {
       const m = /^[A-Za-z_][A-Za-z0-9_.*]*/.exec(src.slice(i))!;
-      out.push({ t: "id", v: m[0], p: i });
-      i += m[0].length;
+      let v = m[0];
+      let len = m[0].length;
+      // Optional event filter glued to the name: combat.killed{target_type=goblin}
+      if (src[i + len] === "{") {
+        const end = src.indexOf("}", i + len);
+        if (end < 0) throw new DslError('unterminated filter (missing "}")', i + len);
+        const body = src.slice(i + len, end + 1);
+        const err = checkDslFilter(body);
+        if (err) throw new DslError(err, i + len);
+        v += body;
+        len = end + 1 - i;
+      }
+      out.push({ t: "id", v, p: i });
+      i += len;
       continue;
     }
     const op = OPS.find((o) => src.startsWith(o, i));
@@ -257,6 +272,95 @@ export function compileDsl(src: string): (env: DslEnv) => DslValue {
   return (env) => evalDsl(ast, env);
 }
 
+// ---------------------------------------------------------------- event filters ({field=value, ...})
+
+export type DslFilterOp = "=" | "!=" | ">" | ">=" | "<" | "<=";
+export interface DslFilterCond {
+  field: string;
+  op: DslFilterOp;
+  value: string | number | boolean;
+}
+
+/** A reference to events: signal type (may end in ".*"), optional data field (sum/avg/...), optional filter. */
+export interface DslRef {
+  /** Signal type or namespace pattern ("combat.killed", "combat.*"). */
+  type: string;
+  /** Data field for field functions (sum/avg/max/last/distinct), else null. */
+  field: string | null;
+  filter: DslFilterCond[];
+}
+
+const FILTER_COND = /^\s*([A-Za-z_][A-Za-z0-9_.]*)\s*(==|!=|>=|<=|=|>|<)\s*("[^"]*"|'[^']*'|[^,}]*?)\s*$/;
+
+function parseFilterBody(body: string): DslFilterCond[] {
+  const inner = body.trim().replace(/^\{/, "").replace(/\}$/, "").trim();
+  if (!inner) return [];
+  const parts: string[] = [];
+  let cur = "";
+  let q: string | null = null;
+  for (const ch of inner) {
+    if (q) { cur += ch; if (ch === q) q = null; continue; }
+    if (ch === '"' || ch === "'") { q = ch; cur += ch; continue; }
+    if (ch === ",") { parts.push(cur); cur = ""; continue; }
+    cur += ch;
+  }
+  parts.push(cur);
+  return parts.map((part) => {
+    const m = FILTER_COND.exec(part);
+    if (!m) throw new Error(`bad filter condition "${part.trim()}" (expected field=value)`);
+    const raw = m[3];
+    let value: string | number | boolean;
+    if (/^["']/.test(raw)) value = raw.slice(1, -1);
+    else if (raw === "true" || raw === "false") value = raw === "true";
+    else if (raw !== "" && Number.isFinite(Number(raw))) value = Number(raw);
+    else value = raw;
+    return { field: m[1], op: (m[2] === "==" ? "=" : m[2]) as DslFilterOp, value };
+  });
+}
+
+/** Validate a "{...}" filter body. Returns null when valid, else a message. */
+export function checkDslFilter(body: string): string | null {
+  try {
+    parseFilterBody(body);
+    return null;
+  } catch (e) {
+    return (e as Error).message;
+  }
+}
+
+/**
+ * Split an event reference as passed to window functions: "combat.killed{target_type=goblin}" or, with
+ * `withField`, "economy.bought.price{vendor=kit}" (the last dotted segment is the data field).
+ */
+export function parseDslRef(name: string, withField = false): DslRef {
+  const brace = name.indexOf("{");
+  const base = brace >= 0 ? name.slice(0, brace) : name;
+  const filter = brace >= 0 ? parseFilterBody(name.slice(brace)) : [];
+  if (!withField) return { type: base, field: null, filter };
+  const dot = base.lastIndexOf(".");
+  return dot > 0 ? { type: base.slice(0, dot), field: base.slice(dot + 1), filter } : { type: base, field: null, filter };
+}
+
+/** True when an event's data passes every filter condition (a missing field fails, except for "!="). */
+export function matchDslFilter(filter: readonly DslFilterCond[], data: Record<string, unknown>): boolean {
+  for (const c of filter) {
+    const v = c.field.split(".").reduce<unknown>((o, k) => (o && typeof o === "object" ? (o as Record<string, unknown>)[k] : undefined), data);
+    if (c.op === "=" || c.op === "!=") {
+      const eq = Array.isArray(v) ? v.map(String).includes(String(c.value)) : v !== undefined && String(v) === String(c.value);
+      if ((c.op === "=") !== eq) return false;
+      continue;
+    }
+    const n = typeof v === "number" ? v : Number(v);
+    const t = Number(c.value);
+    if (!Number.isFinite(n) || !Number.isFinite(t)) return false;
+    if (c.op === ">" && !(n > t)) return false;
+    if (c.op === ">=" && !(n >= t)) return false;
+    if (c.op === "<" && !(n < t)) return false;
+    if (c.op === "<=" && !(n <= t)) return false;
+  }
+  return true;
+}
+
 /** Collect signal types referenced as the first argument of window functions (for subscriptions / indexing). */
 export function dslSignalRefs(src: string): string[] {
   const out = new Set<string>();
@@ -264,7 +368,8 @@ export function dslSignalRefs(src: string): string[] {
     if (e.k === "call") {
       const a = e.args[0];
       if (a?.k === "id" && ["count", "sum", "avg", "max", "rate", "last", "since", "distinct"].includes(e.fn)) {
-        out.add(["sum", "avg", "max", "last", "distinct"].includes(e.fn) ? a.name.split(".").slice(0, 2).join(".") : a.name);
+        const base = a.name.split("{")[0];
+        out.add(["sum", "avg", "max", "last", "distinct"].includes(e.fn) ? base.split(".").slice(0, -1).join(".") || base : base);
       }
       e.args.forEach(walk);
     } else if (e.k === "un") walk(e.e);

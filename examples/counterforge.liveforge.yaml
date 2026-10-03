@@ -125,6 +125,7 @@ relationships:
 traits:
   forge_happy: count(forge.created, 5m) >= 4
   show_off: count(gear.equipped, 10m) > 6 & trait(rich)
+  hollow_hunter: count(combat.killed{target_type=hollow}, 10m) >= 5
 
 moments:
   first_titan_phase: count(boss.phase_cleared, 1h) == 1
@@ -174,6 +175,23 @@ reactions:
       args: { npc: pell, text: "Everyone's talking about you, young master!" }
     cooldown: 900
     flavour: true
+  - id: feared_wardens_keep_distance
+    when: trait(feared) > 0.6
+    then:
+      kind: world.reaction
+      target: world
+      args: { rule: feared_wardens_keep_distance, effect: guards_keep_distance, data: { radius: 6 } }
+    cooldown: 300
+    description: The wardens give a feared student a wide berth.
+  - id: famous_challenger
+    when: trait(famous) > 0.6 & stat(zone) == "forge_hall"
+    then:
+      kind: world.reaction
+      target: spawner:forge_hall
+      args: { rule: famous_challenger, effect: challenger, data: { title: "A rival student" } }
+    once: true
+    flavour: true
+    description: Fame draws a rival student to the Forge Hall, once.
 
 items:
   families: [dagger, sword, greatsword, axe, hammer, spear, scythe, whip, fist, bow, crossbow, gun, cannon, thrown, staff, focus, shield_small, shield_large]

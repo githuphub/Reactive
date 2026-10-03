@@ -18,4 +18,5 @@ export const ASK_OWNERS: Record<string, string> = {
   "forge.npc_look": "forge", "forge.prop": "forge", "forge.loot": "forge",
   "quest.offer": "quests", "achievement.check": "quests",
   "world.reactions": "world",
+  "player.model": "observer",
 };

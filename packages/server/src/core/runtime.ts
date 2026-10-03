@@ -505,9 +505,18 @@ export class Liveforge {
     const params = pv.data as never;
     const id = req.data.id ?? `ask_${randomUUID().replace(/-/g, "").slice(0, 16)}`;
 
+    // Moderated player text: when a module answers npc.reply it gets the masked text plus context.moderated and
+    // refuses in character (spec §3.2); no AI upgrade is scheduled. Without a handler the request is rejected.
+    let moderated = false;
     if (kind === "npc.reply") {
-      const v = await this.moderator.check((params as { text: string }).text, { direction: "input", manifest: rt.manifest });
-      if (!v.ok) throw new LfError("moderated", "player text blocked by moderation", { reason: v.reason });
+      const p = params as { text: string; context?: Record<string, unknown> };
+      const v = await this.moderator.check(p.text, { direction: "input", manifest: rt.manifest });
+      if (!v.ok) {
+        if (!rt.askHandlers.has(kind)) throw new LfError("moderated", "player text blocked by moderation", { reason: v.reason });
+        moderated = true;
+        p.text = v.cleaned;
+        p.context = { ...(p.context ?? {}), moderated: v.reason ?? "blocked" };
+      }
     }
 
     const owner = rt.askHandlers.get(kind);
@@ -572,7 +581,7 @@ export class Liveforge {
 
     // 3) schedule upgrade
     const budgetOk = this.budgets.check(game, rt.manifest, player).ok;
-    const willUpgrade = !!handler?.upgrade && !final && req.data.upgrade !== false && !!this.providers.llm && budgetOk;
+    const willUpgrade = !!handler?.upgrade && !final && !moderated && req.data.upgrade !== false && !!this.providers.llm && budgetOk;
     const response: AnyAskResponse = { id, kind, stage: "instant", result, source, why, upgrade: willUpgrade ? "pending" : "none", ms: Date.now() - started, ts: Date.now() };
     this.metrics.log({ id, game, world, player, kind, module, stage: "instant", source, ms: response.ms!, error: instantError });
     if (willUpgrade) {
