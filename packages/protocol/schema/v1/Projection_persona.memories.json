@@ -55,6 +55,10 @@
                     "trade",
                     "other"
                   ]
+                },
+                "ref": {
+                  "type": "string",
+                  "maxLength": 64
                 }
               },
               "required": [

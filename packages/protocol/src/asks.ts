@@ -8,6 +8,7 @@ import { VfxRecipe } from "./vfx.js";
 import { Variant } from "./variant.js";
 import { EngineMoveRef, MoveSpec } from "./moves.js";
 import { DirectiveDraftSchema } from "./directives.js";
+import { PlayerModel } from "./state.js";
 
 /** Free-form habits bag (keys of MoveHabits in moves.ts, or game-specific numbers). Cleaned with cleanHabits. */
 const Habits = z.record(z.string(), z.unknown());
@@ -216,6 +217,19 @@ export const ASKS = {
   "achievement.check": {
     params: z.object({ recent: z.array(z.string()).max(20).optional() }),
     result: z.object({ unlocked: z.array(Achievement) }),
+  },
+  /** The Observer's player model (traits decayed to now, moments, profile, stats) for SDKs and dashboards. */
+  "player.model": {
+    params: z.object({
+      /** true = also generate a fresh LLM profile (arrives as the upgrade; instant carries the current one). */
+      refreshProfile: z.boolean().optional(),
+      /** Max traits in `top` (default 5). */
+      top: z.number().int().min(1).max(30).optional(),
+    }),
+    result: PlayerModel.omit({ acc: true }).extend({
+      /** Strongest traits first (score >= 0.2). */
+      top: z.array(z.object({ trait: z.string(), score: Unit })).default([]),
+    }),
   },
   "world.reactions": {
     params: z.object({ zone: z.string().optional(), npcs: z.array(z.string()).max(32).optional() }),

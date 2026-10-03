@@ -163,6 +163,8 @@ export function fallbackAnswer<K extends AskKind>(kind: K, params: AskParams<K>,
       return r({ unlocked: [] }, "no achievement engine yet");
     case "world.reactions":
       return r({ rumours: [], directives: [], attitudes: {} }, "no world engine yet");
+    case "player.model":
+      return r({ player, traits: {}, moments: [], profile: null, stats: {}, eventCount: 0, top: [] }, "observer disabled: empty model");
   }
   return r({}, "unknown kind");
 }

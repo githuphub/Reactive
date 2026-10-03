@@ -57,10 +57,12 @@ export const BUILTIN_SIGNALS = {
   "social.gave": { description: "The player gave something.", data: { to: "string", "item?": "string", "gold?": "number" } },
   "social.lied": { description: "The player lied (game-detected, e.g. a dialogue choice).", data: { to: "string", "about?": "string" } },
   "social.threatened": { description: "The player threatened someone.", data: { target: "string" } },
+  "social.approach": { description: "The player walked up to an NPC to interact (Persona prefetches a greeting).", data: { npc: "string" } },
   // ---- movement
   "movement.entered_zone": { description: "The player entered a zone.", data: { zone: "string", "kind?": "string" } },
   "movement.explored": { description: "The player discovered something / somewhere new.", data: { "zone?": "string", "discovery?": "string" } },
   "movement.fled": { description: "The player ran from a fight.", data: { "from?": "string", "hp?": "number" } },
+  "movement.near_npc": { description: "The player came within talking range of an NPC (Persona prefetches a greeting).", data: { npc: "string", "distance?": "number" } },
   // ---- gear
   "gear.equipped": { description: "The player equipped an item.", data: { item: "string", slot: "string", "name?": "string", "tags?": "string[]", "value?": "number" } },
   "gear.unequipped": { description: "The player unequipped an item.", data: { item: "string", slot: "string" } },

@@ -530,6 +530,10 @@
             "type": "number",
             "minimum": 0
           },
+          "once": {
+            "default": false,
+            "type": "boolean"
+          },
           "flavour": {
             "default": false,
             "type": "boolean"
