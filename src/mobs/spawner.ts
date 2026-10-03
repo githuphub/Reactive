@@ -82,6 +82,23 @@ export class SpawnDirector {
 
   constructor(private readonly game: Game) {
     game.addSystem({ name: 'mob-spawner', update: (dt) => this.update(dt) });
+    // A few animals around the spawn so the world feels alive right away.
+    game.events.once('ready', () => {
+      if (this.naturalSpawning) this.seedAnimals(6);
+    });
+  }
+
+  /** Tries `attempts` animal packs 12–40 blocks from the player (daylight, grass only). */
+  seedAnimals(attempts: number): void {
+    const [min, max] = [this.minDistance, this.maxDistance];
+    this.minDistance = 12;
+    this.maxDistance = 40;
+    try {
+      for (let i = 0; i < attempts; i++) this.trySpawnAnimals();
+    } finally {
+      this.minDistance = min;
+      this.maxDistance = max;
+    }
   }
 
   // -- API ---------------------------------------------------------------------------------------

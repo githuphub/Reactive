@@ -17,7 +17,7 @@
  * climbs ladders, detects being stuck, and smoothly turns the entity.
  */
 import * as THREE from 'three';
-import { BLOCK_FLAGS, F_SOLID } from '../engine/blocks';
+import { BLOCK_FLAGS, F_SOLID, blockById } from '../engine/blocks';
 import type { Entity } from '../engine/entity';
 import type { StepInput } from '../engine/physics';
 import type { WorldStore } from '../engine/world-store';
@@ -26,7 +26,8 @@ import { getPathfinder, type Path, type PathNode, type PathOptions, type PathReq
 export interface BrainOptions {
   /** Walking speed in blocks/s. Default 2.5. */
   speed?: number;
-  /** Options for every path search (height, climb, doors, dig, ...). */
+  /** Options for every path search (height, climb, doors, dig, ...). With `doors: true` the
+   *  brain also opens closed doors it walks through. */
   path?: PathOptions;
   /** Min seconds between repaths when the goal keeps moving. Default 0.7. */
   repathInterval?: number;
@@ -212,6 +213,7 @@ export class MobBrain {
             return out;
           }
         }
+        if (this.pathOptions.doors) this.openDoor(node.x, node.y, node.z);
         const tx = node.x + 0.5, tz = node.z + 0.5;
         const dx = tx - e.position.x, dz = tz - e.position.z;
         const hd = Math.hypot(dx, dz);
@@ -245,6 +247,21 @@ export class MobBrain {
     this.trackStuck(dt, gd, out);
     this.face(dt, out);
     return out;
+  }
+
+  /** Opens a closed door in the cell (or the cell above) the entity is about to enter. */
+  private openDoor(x: number, y: number, z: number): void {
+    const g = this.entity.game;
+    if (!g) return;
+    for (let dy = 0; dy < 2; dy++) {
+      const id = g.world.getBlock(x, y + dy, z);
+      if (blockById(id).renderType !== 'door') continue;
+      if (!(g.world.getMeta(x, y + dy, z) & 4)) {
+        const below = g.world.getMeta(x, y + dy, z) & 8 ? y + dy - 1 : y + dy;
+        if (!(g.world.getMeta(x, below, z) & 4)) g.toggleDoor(x, y + dy, z, true);
+      }
+      return;
+    }
   }
 
   private setPath(p: Path): void {
