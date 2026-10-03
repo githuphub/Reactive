@@ -307,8 +307,49 @@ export const ModelsSchema = z.object({
   overrides: z.record(z.string(), z.enum(["fast", "rich"])).default({}),
 });
 
+/**
+ * Builder (K6): defaults for builder.plan. `palette` = block ids by role (wall, trim, roof, floor, glass, accent);
+ * `blockIds` = every block id the game knows (plans are mapped onto these; omit to accept any id).
+ */
+export const BuilderSchema = z.object({
+  palette: z.array(z.string().min(1).max(48)).max(8).default([]),
+  blockIds: z.array(z.string().min(1).max(48)).max(512).optional(),
+  /** Extra word -> block id aliases for AI plans ("thatch": "hay"). */
+  aliases: z.record(z.string(), z.string()).default({}),
+  /** Block count limit per plan. */
+  maxBlocks: z.number().int().min(16).max(20_000).default(4000),
+  /** Block for ids that cannot be mapped (default: the palette's first entry). */
+  fallbackBlock: z.string().max(48).optional(),
+  /** Extra designer guidance for AI plans ("villagers build low, wide cottages"). */
+  styleGuide: z.string().max(1000).optional(),
+});
+export type BuilderConfig = z.infer<typeof BuilderSchema>;
+
+/** One agent tool the game implements (allow-list entry; runtime registrations must use these names). */
+export const AgentToolDeclSchema = z.object({
+  name: z.string().regex(/^[a-zA-Z0-9_-]{1,64}$/, "tool names are letters, digits, _ and - (1-64 chars)"),
+  description: z.string().max(1000).default(""),
+  /** JSON Schema (type: object) of the tool input. */
+  schema: z.record(z.string(), z.unknown()).default({ type: "object", properties: {} }),
+});
+
+/** Agents (K6): the tool allow-list and loop limits. */
+export const AgentsSchema = z.object({
+  /** Allow-list of tools. Empty = accept any tool the game registers at runtime. */
+  tools: z.array(AgentToolDeclSchema).default([]),
+  /** Default step budget per goal. */
+  maxSteps: z.number().int().min(1).max(40).default(12),
+  /** How long the server waits for one tool result (progress updates extend it). */
+  toolTimeoutMs: z.number().int().min(1000).max(600_000).default(30_000),
+  /** Max output tokens per model step. */
+  maxTokens: z.number().int().min(256).max(8000).default(1500),
+  /** Extra designer guidance added to every agent system prompt. */
+  guidance: z.string().max(2000).optional(),
+});
+export type AgentsConfig = z.infer<typeof AgentsSchema>;
+
 const ModuleToggle = z.union([z.boolean(), z.object({ enabled: z.boolean().default(true), options: z.record(z.string(), z.unknown()).default({}) })]);
-export const MODULE_IDS = ["observer", "persona", "world", "director", "forge", "quests"] as const;
+export const MODULE_IDS = ["observer", "persona", "world", "director", "forge", "quests", "agents", "builder"] as const;
 export type ModuleId = (typeof MODULE_IDS)[number];
 export const ModulesSchema = z.object({
   observer: ModuleToggle.default(true),
@@ -367,6 +408,10 @@ export const ManifestSchema = z.object({
   budgets: BudgetsSchema.prefault({}),
   models: ModelsSchema.prefault({}),
   modules: ModulesSchema.prefault({}),
+  /** Builder module defaults (palette, known block ids, limits). */
+  builder: BuilderSchema.prefault({}),
+  /** Agents module: tool allow-list and loop limits. */
+  agents: AgentsSchema.prefault({}),
 });
 
 /** Parsed + defaulted manifest (what the server and modules read). */

@@ -16,3 +16,8 @@ export * from "./http.js";
 export * from "./ws.js";
 export * from "./dsl.js";
 export * from "./reactions.js";
+export * from "./voxel.js";
+export * from "./voxel-expand.js";
+export * from "./voxel-templates.js";
+export * from "./brain.js";
+export * from "./agents.js";

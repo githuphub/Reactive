@@ -58,6 +58,8 @@ export interface LlmProvider {
   json<T = unknown>(schema: object, system: string, user: string, opts?: LlmCallOptions & { models?: TierModels }): Promise<LlmJsonResult<T>>;
   /** Plain text, streamed; onSentence receives sentence chunks for TTS. */
   stream(system: string, user: string, opts?: LlmStreamOptions & { models?: TierModels }): Promise<LlmTextResult>;
+  /** Native tool use (optional, see LlmToolsProvider). Agents need it; without it they run their rules plan. */
+  tools?(opts: LlmToolsOptions & { models?: TierModels }): Promise<LlmToolsResult>;
 }
 
 /** Tier -> model mapping (manifest models.fast / models.rich, overridden by env). */
@@ -159,3 +161,66 @@ export class JsonFieldStreamer {
     return out;
   }
 }
+
+// ---------------------------------------------------------------- native tool use (agents)
+
+/** A tool offered to the model: name, description and a JSON Schema (type "object") for its input. */
+export interface LlmToolDef {
+  name: string;
+  description: string;
+  input_schema: object;
+}
+
+/**
+ * A content block exactly as the provider returned it (text, tool_use, thinking ...). Pass assistant blocks back
+ * unchanged on the next call: thinking blocks are bound to the conversation.
+ */
+export interface LlmContentBlock {
+  type: string;
+  /** text blocks */
+  text?: string;
+  /** tool_use blocks */
+  id?: string;
+  name?: string;
+  input?: unknown;
+  /** tool_result blocks you send back */
+  tool_use_id?: string;
+  content?: unknown;
+  is_error?: boolean;
+  [key: string]: unknown;
+}
+
+export interface LlmMessage {
+  role: "user" | "assistant";
+  content: string | LlmContentBlock[];
+}
+
+export interface LlmToolsOptions extends Omit<LlmCallOptions, "stream"> {
+  system: string;
+  /** The conversation so far (append the returned `content` as an assistant turn, then your tool_result blocks). */
+  messages: LlmMessage[];
+  tools: LlmToolDef[];
+}
+
+export interface LlmToolsResult {
+  /** Assistant content blocks (text and tool_use, plus any provider-specific blocks to pass back). */
+  content: LlmContentBlock[];
+  /** "end_turn" | "tool_use" | "max_tokens" | "stop_sequence" | "pause_turn" ... */
+  stopReason: string | null;
+  usage: LlmUsage;
+  model: string;
+  ms: number;
+  /** Set by wrapping providers (e.g. "replay" for a cassette answer); undefined = live. */
+  source?: string;
+}
+
+/** Optional capability: providers with native tool use implement `tools()` (ClaudeProvider does). */
+export interface LlmToolsProvider {
+  /**
+   * One Messages call with native tool use (tool_choice auto). No retries; throws TimeoutError, TruncatedError
+   * ("refusal") or provider errors. The caller runs the loop: execute tool_use blocks, send tool_result blocks back.
+   */
+  tools(opts: LlmToolsOptions & { models?: TierModels }): Promise<LlmToolsResult>;
+}
+
+export const hasTools = (p: unknown): p is LlmToolsProvider => typeof (p as { tools?: unknown } | null)?.tools === "function";

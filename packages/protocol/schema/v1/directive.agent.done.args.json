@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "runId": {
+      "type": "string"
+    },
+    "npc": {
+      "type": "string"
+    },
+    "ok": {
+      "type": "boolean"
+    },
+    "summary": {
+      "type": "string",
+      "maxLength": 300
+    },
+    "state": {
+      "type": "string",
+      "enum": [
+        "done",
+        "failed",
+        "interrupted"
+      ]
+    }
+  },
+  "required": [
+    "runId",
+    "npc",
+    "ok",
+    "summary"
+  ],
+  "$id": "https://liveforge.dev/schema/v1/directive.agent.done.args.json",
+  "title": "directive.agent.done.args"
+}

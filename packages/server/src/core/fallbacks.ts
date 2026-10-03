@@ -1,5 +1,6 @@
 // Core rules stubs: a valid, deterministic instant answer for every ask kind, used when the owning module is
 // disabled, doesn't implement the kind yet, or its instant() threw. Lanes replace these with real fast-paths.
+import { expandVoxelPlan, rulesVoxelPlan } from "@liveforge/protocol";
 import {
   cleanHabits, composeMove, hashString, mulberry32,
   type AskKind, type AskParams, type AskResult, type Blueprint, type BlueprintPart, type ForgedItem, type VfxRecipe,
@@ -165,6 +166,14 @@ export function fallbackAnswer<K extends AskKind>(kind: K, params: AskParams<K>,
       return r({ rumours: [], directives: [], attitudes: {} }, "no world engine yet");
     case "player.model":
       return r({ player, traits: {}, moments: [], profile: null, stats: {}, eventCount: 0, top: [] }, "observer disabled: empty model");
+    case "builder.plan": {
+      const bp = p as unknown as { prompt: string; site: { size: [number, number, number] }; palette?: string[] };
+      const rp = rulesVoxelPlan({ prompt: bp.prompt, size: bp.site.size, palette: bp.palette ?? m.builder.palette });
+      const ex = expandVoxelPlan(rp.plan, { site: bp.site.size, blockIds: m.builder.blockIds, aliases: m.builder.aliases });
+      return r({ plan: rp.plan, summary: rp.summary.slice(0, 300), materials: ex.materials, template: rp.template }, "builder module disabled: template plan");
+    }
+    case "agent.goal":
+      return r({ runId: "", accepted: false, reason: "the agents module is disabled for this game" }, "agents module disabled");
   }
   return r({}, "unknown kind");
 }

@@ -8,6 +8,7 @@ import {
   type TierModels,
 } from "./llm.js";
 import type { Logger } from "../log.js";
+import type { LlmContentBlock, LlmToolsOptions, LlmToolsResult } from "./llm.js";
 
 export const DEFAULT_MODELS: TierModels = { fast: "claude-haiku-4-5", rich: "claude-sonnet-5-5" };
 export const DEFAULT_MAX_TOKENS = 500;
@@ -220,6 +221,49 @@ export class ClaudeProvider implements LlmProvider {
     if (msg.stop_reason === "refusal") throw new TruncatedError("refusal");
     return {
       text: text.trim(),
+      usage: { inputTokens: msg.usage.input_tokens, outputTokens: msg.usage.output_tokens },
+      model: msg.model ?? model,
+      ms: Date.now() - started,
+    };
+  }
+
+  /**
+   * Native tool use (K6 agents): one Messages call with the tools and tool_choice auto (forced tool choice is
+   * rejected by current models). Same knobs as json() (thinking / effort / refusal fallbacks), hard timeout, no
+   * retries. The returned content blocks go back unchanged as the next assistant turn.
+   */
+  async tools(opts: LlmToolsOptions & { models?: TierModels }): Promise<LlmToolsResult> {
+    const model = this.modelFor(opts.tier ?? "fast", opts.model, opts.models);
+    const timeoutMs = opts.timeoutMs ?? this.opts.timeoutMs;
+    const started = Date.now();
+    const t = modelTraits(model);
+    const msg = await this.run<AnyMessage>(model, (allowFallback) => {
+      const params: Record<string, unknown> = {
+        model,
+        max_tokens: Math.max(opts.maxTokens ?? 1024, t.minTokens),
+        system: opts.system,
+        messages: opts.messages,
+        tools: opts.tools.map((x) => ({ name: x.name, description: x.description, input_schema: x.input_schema })),
+        tool_choice: { type: "auto" },
+        // system + tools are stable per NPC and the history only grows: cache the prefix across loop steps
+        cache_control: { type: "ephemeral" },
+      };
+      if (t.thinking) params.thinking = t.thinking;
+      if (t.effort) params.output_config = { effort: this.opts.effort };
+      const fb = allowFallback && this.fallbackOk && t.fallback;
+      if (fb) {
+        params.betas = ["server-side-fallback-2026-07-01"];
+        params.fallbacks = "default";
+      }
+      const api = (fb ? this.client.beta.messages : this.client.messages) as unknown as {
+        create(p: unknown, o: { signal: AbortSignal }): Promise<AnyMessage>;
+      };
+      return { useFallback: fb, exec: (signal) => api.create(params, { signal }) };
+    }, timeoutMs, opts.signal);
+    if (msg.stop_reason === "refusal") throw new TruncatedError("refusal");
+    return {
+      content: msg.content as unknown as LlmContentBlock[],
+      stopReason: msg.stop_reason,
       usage: { inputTokens: msg.usage.input_tokens, outputTokens: msg.usage.output_tokens },
       model: msg.model ?? model,
       ms: Date.now() - started,

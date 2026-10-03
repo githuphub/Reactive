@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "agent": {
+      "type": "string"
+    },
+    "runId": {
+      "type": "string"
+    },
+    "callId": {
+      "type": "string"
+    },
+    "tool": {
+      "type": "string"
+    },
+    "input": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string"
+      },
+      "additionalProperties": {}
+    },
+    "timeoutMs": {
+      "type": "integer",
+      "minimum": -9007199254740991,
+      "maximum": 9007199254740991
+    },
+    "step": {
+      "type": "integer",
+      "minimum": -9007199254740991,
+      "maximum": 9007199254740991
+    }
+  },
+  "required": [
+    "agent",
+    "runId",
+    "callId",
+    "tool",
+    "input"
+  ],
+  "$id": "https://liveforge.dev/schema/v1/directive.agent.tool_call.args.json",
+  "title": "directive.agent.tool_call.args"
+}

@@ -66,6 +66,28 @@ dashboard's **Reactions** panel shows fingerprints and the novelty ledger per NP
 the Godot addon send the clock, weather, appearance, sessions and visited places for you.
 → [docs/reactions.md](docs/reactions.md)
 
+## Agents & Builder
+
+NPCs that plan and act. Register the tools your game already has (walk, mine, place, say ...), give an NPC a goal,
+and the server runs a Claude tool-use loop: every step arrives as an `agent.tool_call` directive, your code runs
+it, and the result goes back to the model. No key, or an error mid-run? A scripted plan drives the same tools.
+
+```ts
+lf.agents.register("bram", [
+  { name: "say", description: "Say a short line out loud.", schema: { type: "object", properties: { text: { type: "string" } }, required: ["text"] },
+    run: ({ text }) => bubble("bram", text) },
+  { name: "build", description: "Build something on Bram's plot from a description.", schema: { type: "object", properties: { prompt: { type: "string" } }, required: ["prompt"] },
+    run: async ({ prompt }, { progress }) => buildOnPlot(prompt, progress) },
+]);
+await lf.agents.goal("bram", "build me a cosy house with a tower");
+lf.brain.subscribe((e) => brainView.add(e));   // goal -> thoughts -> tool calls -> results, with model badges
+```
+
+The **builder** turns a prompt into a Voxel DSL plan (`box`, `hollow_box`, `roof`, `door`, `repeat`, `mirror` ...)
+that `expandVoxelPlan` expands into an ordered block list: a template instantly, a Sonnet-designed plan as the
+upgrade. The **Brain feed** streams every agent step, build plan and AI decision with its model badge.
+→ [docs/agents.md](docs/agents.md) · [docs/builder.md](docs/builder.md)
+
 ## Architecture
 
 ```
@@ -185,6 +207,8 @@ described in the [manifest reference](docs/manifest.md).
 | [Self-hosting](docs/self-hosting.md) | Node, Docker, env vars, providers, costs and budgets |
 | [Dashboard](docs/dashboard.md) | What every panel shows |
 | [Reaction Library](docs/reactions.md) | 20 one-line reactions, the combination engine, signals and payloads |
+| [Agents](docs/agents.md) | Tool-calling NPC agents, the rules fallback and the Brain feed |
+| [Builder](docs/builder.md) | Voxel DSL reference, templates, `builder.plan` |
 | [Recipes](docs/recipes/README.md) | NPC that comments on your armour · boss that punishes dodging · thieves target rich players · voice conversation · forge gear from a prompt · personal achievements · bake packs for consoles / offline |
 | [Contracts](docs/CONTRACTS.md) | Internals: modules, projections, how everything plugs in |
 | [Contributing](CONTRIBUTING.md) | Repo layout, conventions, how to add a module |
