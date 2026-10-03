@@ -12,6 +12,7 @@ import { readPlayer, type PlayerRead } from "./habits.js";
 import { currentAggression } from "./difficulty.js";
 import { directorOptions } from "./options.js";
 import { directorState, recordDecision } from "./state.js";
+import { libraryBossPhase } from "../world/reactions-lib/index.js";
 
 type EngineMoveCfg = Manifest["moves"]["engine"][number];
 type BossCfg = Manifest["bosses"][number];
@@ -193,9 +194,18 @@ export function bossPhaseRules(ctx: AskContext, p: AskParams<"director.boss_phas
   }
   const counters = countersFor(boss, read);
   const lead = invented[0];
-  const taunt = lead ? lead.move.taunt : PHASE_TAUNTS[seed % PHASE_TAUNTS.length];
+  // Reaction Library (R1): boss_attempt_memory taunts by attempt count; flawless_secret_phase adds the secret move
+  const lib = libraryBossPhase(ctx, boss.id);
+  if (lib.secret) {
+    const engine = mapToEngine(m, boss, lib.secret, aggression);
+    moves.push({ grammar: lib.secret, ...(engine ? { engine } : {}), weight: 1 });
+    if (!counters.includes("flawless")) counters.push("flawless");
+  }
+  const taunt = lib.taunt ?? (lead ? lead.move.taunt : PHASE_TAUNTS[seed % PHASE_TAUNTS.length]);
   const result: AskResult<"director.boss_phase"> = { boss: boss.id, phase, moves, aggression, counters, attune, taunt };
   const why = [
+    lib.why ?? "",
+    lib.secret ? `secret move ${lib.secret.name} (flawless_secret_phase)` : "",
     lead ? `invented ${lead.move.name} (${lead.move.shape}/${lead.move.pattern}) vs ${lead.habit}` : "engine moves only",
     counters.length ? `counters ${counters.join(", ")}` : "",
     attune ? `attuned to ${attune}` : "",

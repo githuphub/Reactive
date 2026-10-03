@@ -8,6 +8,7 @@ import { gearNames, gearTags } from "../observer/view.js";
 import { voiceFor, type PersonaCard } from "./cards.js";
 import { gatherContext, personaSystem, playerBlock, type NpcContext } from "./context.js";
 import { seedFor } from "./intent.js";
+import { libraryBark, libraryContext, noteLine } from "../world/reactions-lib/index.js";
 
 type BarkResult = AskResult<"npc.bark">;
 
@@ -164,7 +165,18 @@ export const barkHandler: AskHandler<"npc.bark"> = {
       }
     }
 
-    // 2) Highest-priority bucket with a pooled or template line not said recently.
+    // 2) Reaction Library (R1): the best-scoring recipe line for this NPC and situation (outfit, nickname, weather,
+    //    promises, debts ...), novelty-checked so it never repeats; recorded in the library's ledger.
+    if (player) {
+      const lib = libraryBark(ctx, p.npc, p.trigger);
+      if (lib) {
+        remember(ctx, p.npc, player, lib.text, false);
+        ctx.kv.set(`libbark:${ctx.askId}`, { recipe: lib.info.recipe, why: lib.why });
+        return { result: { npc: p.npc, text: lib.text, ...(lib.emote ? { emote: lib.emote } : {}), voice, actions: [] }, why: lib.why };
+      }
+    }
+
+    // 3) Highest-priority bucket with a pooled or template line not said recently.
     const recent = player ? ctx.kv.get<string[]>(BK.recent(ctx.world, p.npc, player)) ?? [] : [];
     const rng = mulberry32(seedFor(p.npc, player, p.trigger, Math.floor(now / 15_000)));
     const buckets = bucketsFor(c, p.trigger, now, p.trigger === "gear" || p.trigger === "approach" || p.trigger === "idle" ? recentGearOf(ctx, c, p.context) : null);
@@ -192,9 +204,14 @@ export const barkHandler: AskHandler<"npc.bark"> = {
     const c = gatherContext(ctx, p.npc);
     const buckets = bucketsFor(c, p.trigger, ctx.now(), p.trigger === "gear" || p.trigger === "approach" || p.trigger === "idle" ? recentGearOf(ctx, c, p.context) : null);
     const b = buckets[0];
-    const line = await generateBark(ctx, c.card, c, `Say one bark now. Trigger: ${p.trigger}. Focus: ${b.describe}.${p.context ? ` Scene: ${JSON.stringify(p.context).slice(0, 300)}` : ""} Avoid repeating: "${instant.text}".`, ctx.signal);
+    // Reaction Library context: the situation sentence, what the recipes know, and the lines not to repeat.
+    const lib = ctx.kv.get<{ recipe: string; why: string }>(`libbark:${ctx.askId}`);
+    if (lib) ctx.kv.delete(`libbark:${ctx.askId}`);
+    const lc = libraryContext(ctx, p.npc);
+    const focus = lib ? `the ${lib.recipe.replace(/_/g, " ")} reaction (${lib.why.replace(/^reaction \S+: /, "")})` : b.describe;
+    const line = await generateBark(ctx, c.card, c, `Say one bark now. Trigger: ${p.trigger}. Focus: ${focus}.${p.context ? ` Scene: ${JSON.stringify(p.context).slice(0, 300)}` : ""} Avoid repeating: "${instant.text}".${lc?.block ? `\n${lc.block}` : ""}`, ctx.signal);
     if (!line) return null;
-    if (!b.personal) addToPool(ctx, p.npc, b.key, [line.text]);
+    if (!b.personal && !lib) addToPool(ctx, p.npc, b.key, [line.text]);
     if (ctx.player) remember(ctx, p.npc, ctx.player, line.text);
     const result: BarkResult = { npc: p.npc, text: line.text, ...(line.emote ? { emote: line.emote } : {}), voice: instant.voice ?? voiceFor(c.card), actions: [] };
     return { result, why: `fresh bark: ${b.key}` };
@@ -203,11 +220,13 @@ export const barkHandler: AskHandler<"npc.bark"> = {
   cacheKey: () => false,
 };
 
-function remember(ctx: ScopedContext, npc: string, player: string, line: string): void {
+function remember(ctx: ScopedContext, npc: string, player: string, line: string, ledger = true): void {
   const key = BK.recent(ctx.world, npc, player);
   const list = (ctx.kv.get<string[]>(key) ?? []).filter((l) => l !== line);
   list.push(line);
   ctx.kv.set(key, list.slice(-RECENT_MAX));
+  // the Reaction Library's novelty ledger covers Persona's own lines too (library lines are recorded by the library)
+  if (ledger) noteLine(ctx, npc, line);
 }
 
 const BARK_SCHEMA = {

@@ -1,6 +1,6 @@
 // Which library recipes a manifest switched on, and their params (recipe defaults < manifest params).
 import { recipeDoc, type ReactionRecipeId } from "@liveforge/protocol";
-import type { Manifest } from "@liveforge/manifest";
+import { moduleEnabled, type Manifest } from "@liveforge/manifest";
 
 export type Params = Record<string, unknown>;
 
@@ -24,8 +24,8 @@ export function libraryOf(m: Manifest): Map<string, Params> {
   return out;
 }
 
-export const libraryOn = (m: Manifest): boolean => libraryOf(m).size > 0;
-export const recipeOn = (m: Manifest, id: ReactionRecipeId | string): boolean => libraryOf(m).has(id);
+export const libraryOn = (m: Manifest): boolean => libraryOf(m).size > 0 && moduleEnabled(m, "world");
+export const recipeOn = (m: Manifest, id: ReactionRecipeId | string): boolean => libraryOn(m) && libraryOf(m).has(id);
 export const paramsOf = (m: Manifest, id: string): Params => libraryOf(m).get(id) ?? {};
 
 export const pNum = (p: Params, k: string, d: number): number => (typeof p[k] === "number" && Number.isFinite(p[k]) ? (p[k] as number) : d);
