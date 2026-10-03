@@ -418,7 +418,7 @@ func resolve_url(path: String) -> String:
 
 ## Headers for your own HTTPRequests (asset downloads).
 func auth_headers() -> PackedStringArray:
-	return PackedStringArray(["x-liveforge-key: " + game_key, "x-liveforge-protocol: " + PROTOCOL_ID])
+	return PackedStringArray(["x-liveforge-key: " + game_key])
 
 
 ## Dispatches a directive locally as if the server pushed it (testing, scripted events).
@@ -448,7 +448,7 @@ func _request(method: int, path: String, body: Variant, cb: Callable, opts: Dict
 
 
 func _start(r: HTTPRequest, job: Dictionary, dedicated: bool) -> void:
-	var headers := PackedStringArray(["x-liveforge-key: " + game_key, "x-liveforge-protocol: " + PROTOCOL_ID, "accept: application/json"])
+	var headers := PackedStringArray(["x-liveforge-key: " + game_key, "accept: application/json"])
 	var full: String = url + str(job.path)
 	var opts: Dictionary = job.opts
 	r.timeout = float(opts.get("timeout", _timeout))

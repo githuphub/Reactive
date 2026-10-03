@@ -209,7 +209,7 @@ func _http(method: int, path: String, key: String, body: String, content_type: S
 	var req := HTTPRequest.new()
 	req.timeout = 10.0
 	add_child(req)
-	var headers := PackedStringArray(["x-liveforge-key: " + key.strip_edges(), "x-liveforge-protocol: liveforge-protocol/1", "accept: application/json"])
+	var headers := PackedStringArray(["x-liveforge-key: " + key.strip_edges(), "accept: application/json"])
 	if not content_type.is_empty():
 		headers.append("content-type: " + content_type)
 	req.request_completed.connect(_on_http_done.bind(req, cb), CONNECT_ONE_SHOT)

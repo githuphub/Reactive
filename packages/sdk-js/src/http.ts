@@ -1,5 +1,5 @@
 // HTTP transport: JSON requests with auth headers, timeouts and Liveforge error mapping.
-import { HEADERS, PROTOCOL_ID, type ErrorCode } from "@liveforge/protocol";
+import { HEADERS, type ErrorCode } from "@liveforge/protocol";
 import { LiveforgeError } from "./errors.js";
 import { isPlainObject, joinUrl, withQuery } from "./util.js";
 
@@ -40,9 +40,12 @@ export class Http {
     private readonly defaultTimeoutMs: number,
   ) {}
 
-  /** Headers every request carries (exposed for asset loaders such as GLTFLoader.setRequestHeader). */
+  /**
+   * Headers every request carries (exposed for asset loaders such as GLTFLoader.setRequestHeader). Only the key:
+   * the server's CORS policy allows Content-Type, Authorization and the Liveforge key / game headers.
+   */
   authHeaders(): Record<string, string> {
-    return { [HEADERS.key]: this.key, [HEADERS.protocol]: PROTOCOL_ID };
+    return { [HEADERS.key]: this.key };
   }
 
   /** Absolute URL for a server path. */
