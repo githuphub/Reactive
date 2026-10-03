@@ -2,43 +2,25 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "type": "object",
   "properties": {
-    "npc": {
-      "type": "string"
+    "recipe": {
+      "type": "string",
+      "maxLength": 48
     },
-    "text": {
+    "target": {
+      "type": "string",
+      "maxLength": 96
+    },
+    "payload": {
+      "default": {},
+      "type": "object",
+      "propertyNames": {
+        "type": "string"
+      },
+      "additionalProperties": {}
+    },
+    "line": {
       "type": "string",
       "maxLength": 300
-    },
-    "emote": {
-      "type": "string",
-      "maxLength": 32
-    },
-    "voice": {
-      "type": "object",
-      "properties": {
-        "pitch": {
-          "type": "number",
-          "minimum": 0.5,
-          "maximum": 2
-        },
-        "rate": {
-          "type": "number",
-          "minimum": 0.5,
-          "maximum": 2
-        },
-        "accent": {
-          "type": "string",
-          "maxLength": 32
-        },
-        "style": {
-          "type": "string",
-          "maxLength": 64
-        },
-        "voiceId": {
-          "type": "string",
-          "maxLength": 64
-        }
-      }
     },
     "reaction": {
       "type": "object",
@@ -77,9 +59,9 @@
     }
   },
   "required": [
-    "npc",
-    "text"
+    "recipe",
+    "target"
   ],
-  "$id": "https://liveforge.dev/schema/v1/directive.npc.bark.args.json",
-  "title": "directive.npc.bark.args"
+  "$id": "https://liveforge.dev/schema/v1/ReactionDirectiveArgs.json",
+  "title": "ReactionDirectiveArgs"
 }

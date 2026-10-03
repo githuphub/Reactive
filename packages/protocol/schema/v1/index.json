@@ -229,11 +229,124 @@
       }
     },
     "world.time": {
-      "description": "World clock. hour 0-24; phase dawn|day|dusk|night.",
+      "description": "World clock + weather. hour 0-24; day = day counter; phase dawn|day|dusk|night (derived from hour when omitted); weather clear|rain|storm|snow|fog|heat.",
       "data": {
         "hour": "number",
         "day?": "number",
+        "weather?": "string",
         "phase?": "string"
+      }
+    },
+    "world.property_damaged": {
+      "description": "The player damaged someone's property (Reaction Library: property_damage). value = rough worth in gold.",
+      "data": {
+        "object": "string",
+        "owner?": "string",
+        "value?": "number",
+        "zone?": "string"
+      }
+    },
+    "appearance.state": {
+      "description": "How the player looks right now, each 0-1 (send on change; omitted = unchanged).",
+      "data": {
+        "wet?": "number",
+        "bloodied?": "number",
+        "burnt?": "number",
+        "muddy?": "number"
+      }
+    },
+    "appearance.outfit": {
+      "description": "What the player wears. slots = {head|body|back|weapon|...: {id, name, tags[], colors[]}}; style_tags = overall look (\"regal\", \"ragged\").",
+      "data": {
+        "slots": "object",
+        "style_tags?": "string[]"
+      }
+    },
+    "social.promise": {
+      "description": "The player promised an NPC something. ref = your id for it (else the server matches the latest open promise to that NPC); due = ms epoch, seconds-from-now, or a readable in-game time (\"day 2 · 19:00\": the game then owns the timing and sends promise_kept / promise_broken).",
+      "data": {
+        "to": "string",
+        "text": "string",
+        "due?": "number|string",
+        "ref?": "string"
+      }
+    },
+    "social.promise_kept": {
+      "description": "The player kept a promise (ref = social.promise ref, else the latest open promise to that NPC).",
+      "data": {
+        "to": "string",
+        "ref?": "string"
+      }
+    },
+    "social.promise_broken": {
+      "description": "The player broke a promise (ref = social.promise ref, else the latest open promise to that NPC).",
+      "data": {
+        "to": "string",
+        "ref?": "string"
+      }
+    },
+    "social.claim": {
+      "description": "The player stated something the game can judge: truth true / false / null (unknown; the server checks it against rumours). npc.reply also creates claims internally.",
+      "data": {
+        "to": "string",
+        "text": "string",
+        "truth": "boolean|null",
+        "about?": "string"
+      }
+    },
+    "economy.haggled": {
+      "description": "The player haggled with a merchant. delta_pct = price change they got (-20 = 20% off).",
+      "data": {
+        "npc": "string",
+        "delta_pct": "number",
+        "outcome": "string",
+        "item?": "string"
+      }
+    },
+    "combat.boss_attempt": {
+      "description": "One attempt at a boss ended. result died|won|fled; dodge_dirs = dodge counts {left, right, back, fwd} during the attempt.",
+      "data": {
+        "boss": "string",
+        "result": "string",
+        "attempt?": "number",
+        "phase?": "number",
+        "dodge_dirs?": "object"
+      }
+    },
+    "combat.phase_flawless": {
+      "description": "The player cleared a boss phase without taking damage.",
+      "data": {
+        "boss": "string",
+        "phase": "number"
+      }
+    },
+    "combat.fled": {
+      "description": "The player fled a fight (enemy_count = enemies left behind).",
+      "data": {
+        "from?": "string",
+        "enemy_count?": "number",
+        "zone?": "string"
+      }
+    },
+    "companion.died": {
+      "description": "A companion / ally of the player died.",
+      "data": {
+        "companion": "string",
+        "killer?": "string"
+      }
+    },
+    "session.started": {
+      "description": "A play session started (the SDKs send it on connect). last_seen_ts = when the player last played; omitted = the server works it out from the log.",
+      "data": {
+        "last_seen_ts?": "number"
+      }
+    },
+    "movement.visited": {
+      "description": "The player visited a place (inn, shop, area ...). Counts visits for regular status and avoided areas.",
+      "data": {
+        "place": "string",
+        "kind?": "string",
+        "zone?": "string"
       }
     }
   },
@@ -273,7 +386,8 @@
     "loot.drop",
     "difficulty.set",
     "moment",
-    "world.reaction"
+    "world.reaction",
+    "custom.reaction"
   ],
   "npcActions": [
     "emote",
@@ -317,6 +431,739 @@
     "min2": "min2(a, b) - smaller of two numbers",
     "max2": "max2(a, b) - larger of two numbers"
   },
+  "reactionRecipes": [
+    {
+      "id": "outfit_comments",
+      "title": "Outfit comments",
+      "area": "npc",
+      "description": "NPCs notice what you wear (item names, colours, style tags) and comment, differently for every combination.",
+      "signals": [
+        "appearance.outfit",
+        "gear.equipped"
+      ],
+      "directives": [
+        "npc.bark"
+      ],
+      "effects": [],
+      "params": {
+        "maxSpeakers": {
+          "type": "number",
+          "default": 2,
+          "description": "NPCs that comment on one outfit change."
+        }
+      }
+    },
+    {
+      "id": "appearance_state",
+      "title": "Bloodied, wet, burnt, muddy",
+      "area": "npc",
+      "description": "NPCs react to how you look right now: blood, soaking clothes, scorch marks, mud.",
+      "signals": [
+        "appearance.state"
+      ],
+      "directives": [
+        "npc.bark",
+        "custom.reaction"
+      ],
+      "effects": [
+        "concern"
+      ],
+      "params": {
+        "threshold": {
+          "type": "number",
+          "default": 0.5,
+          "description": "0-1 level at which a state is noticed."
+        },
+        "healer": {
+          "type": "npc",
+          "description": "Persona who offers to patch you up when bloodied (custom.reaction effect concern)."
+        }
+      }
+    },
+    {
+      "id": "deed_nicknames",
+      "title": "Deed nicknames",
+      "area": "social",
+      "description": "NPCs coin a nickname from your deeds, reuse it in barks, and the nickname spreads as a rumour.",
+      "signals": [
+        "lf.observer.moment",
+        "combat.killed",
+        "combat.boss_attempt",
+        "combat.phase_flawless",
+        "combat.fled",
+        "economy.stole",
+        "world.property_damaged",
+        "social.gave"
+      ],
+      "directives": [
+        "npc.bark",
+        "rumour.heard",
+        "custom.reaction"
+      ],
+      "effects": [
+        "nickname"
+      ],
+      "params": {
+        "minGapSec": {
+          "type": "number",
+          "default": 300,
+          "description": "Minimum seconds before a new deed can replace the nickname."
+        }
+      }
+    },
+    {
+      "id": "lies_caught",
+      "title": "Lies caught",
+      "area": "social",
+      "description": "False claims (or claims a rumour contradicts) drop trust; the NPC calls you out and word gets around.",
+      "signals": [
+        "social.claim",
+        "social.lied"
+      ],
+      "directives": [
+        "npc.bark",
+        "rumour.heard",
+        "custom.reaction"
+      ],
+      "effects": [
+        "lie_caught"
+      ],
+      "params": {
+        "trustDrop": {
+          "type": "number",
+          "default": 0.2,
+          "description": "Attitude the NPC loses toward you per caught lie."
+        },
+        "reputationDrop": {
+          "type": "number",
+          "default": 0.05,
+          "description": "Reputation lost with the NPC's faction."
+        }
+      }
+    },
+    {
+      "id": "promises_remembered",
+      "title": "Promises remembered",
+      "area": "social",
+      "description": "NPCs remember promises: reminders before they're due, thanks when kept, cold shoulders (and rumours) when broken.",
+      "signals": [
+        "social.promise",
+        "social.promise_kept",
+        "social.promise_broken"
+      ],
+      "directives": [
+        "npc.bark",
+        "custom.reaction"
+      ],
+      "effects": [
+        "promise_made",
+        "promise_reminder",
+        "promise_kept",
+        "promise_broken"
+      ],
+      "params": {
+        "defaultDueSec": {
+          "type": "number",
+          "default": 900,
+          "description": "Promises without a due time get a reminder after this long (they never run out on their own)."
+        },
+        "remindBeforeSec": {
+          "type": "number",
+          "default": 120,
+          "description": "Seconds before the due time when the NPC reminds you."
+        },
+        "attitudeKept": {
+          "type": "number",
+          "default": 0.2,
+          "description": "Attitude gained when a promise is kept."
+        },
+        "attitudeBroken": {
+          "type": "number",
+          "default": 0.3,
+          "description": "Attitude lost when a promise is broken (or runs out)."
+        }
+      }
+    },
+    {
+      "id": "town_mood",
+      "title": "Town mood",
+      "area": "world",
+      "description": "A streak of kind or rude acts shifts the whole town: barks, attitudes and prices follow.",
+      "signals": [
+        "social.gave",
+        "world.helped",
+        "social.promise_kept",
+        "quest.completed",
+        "social.threatened",
+        "economy.stole",
+        "social.lied",
+        "world.property_damaged"
+      ],
+      "directives": [
+        "npc.bark",
+        "custom.reaction"
+      ],
+      "effects": [
+        "town_mood"
+      ],
+      "params": {
+        "streak": {
+          "type": "number",
+          "default": 3,
+          "description": "Kind (or rude) acts in a row that turn the mood."
+        },
+        "priceShift": {
+          "type": "number",
+          "default": 0.1,
+          "description": "Price multiplier shift when the town warms (-) or cools (+)."
+        },
+        "reputationShift": {
+          "type": "number",
+          "default": 0.05,
+          "description": "Reputation change with every faction when the mood turns."
+        }
+      }
+    },
+    {
+      "id": "rich_attention",
+      "title": "Rich attention",
+      "area": "economy",
+      "description": "Flash wealth and the town notices: pickpockets, beggars, price gouging and the tax collector, never the same twice in a row.",
+      "signals": [
+        "economy.gold",
+        "economy.bought",
+        "movement.entered_zone",
+        "movement.visited"
+      ],
+      "directives": [
+        "npc.action",
+        "npc.bark",
+        "custom.reaction"
+      ],
+      "effects": [
+        "pickpocket",
+        "beggar",
+        "price_gouging",
+        "tax"
+      ],
+      "params": {
+        "gold": {
+          "type": "number",
+          "default": 500,
+          "description": "Gold that counts as rich (or the Observer trait rich above `trait`)."
+        },
+        "trait": {
+          "type": "number",
+          "default": 0.6,
+          "description": "Observer trait(rich) threshold."
+        },
+        "pickpocket": {
+          "type": "npc",
+          "description": "Persona who steals (npc.action steal when declared; else custom.reaction pickpocket)."
+        },
+        "beggar": {
+          "type": "npc",
+          "description": "Persona who begs (else a nameless beggar via custom.reaction)."
+        },
+        "merchant": {
+          "type": "npc",
+          "description": "Persona who gouges prices."
+        },
+        "taxCollector": {
+          "type": "npc",
+          "description": "Persona who collects tax."
+        },
+        "stealGold": {
+          "type": "number",
+          "default": 50,
+          "description": "Gold a pickpocket takes."
+        },
+        "taxPct": {
+          "type": "number",
+          "default": 10,
+          "description": "Tax as % of gold."
+        }
+      }
+    },
+    {
+      "id": "broke_support",
+      "title": "Broke support",
+      "area": "economy",
+      "description": "Run out of money and someone helps: charity, or a loan shark's offer with a debt that comes back to bite.",
+      "signals": [
+        "economy.gold",
+        "social.promise",
+        "social.promise_kept",
+        "social.promise_broken"
+      ],
+      "directives": [
+        "npc.bark",
+        "custom.reaction"
+      ],
+      "effects": [
+        "charity",
+        "loan_offer",
+        "debt_due",
+        "debt_paid",
+        "collect_debt"
+      ],
+      "params": {
+        "gold": {
+          "type": "number",
+          "default": 20,
+          "description": "Gold at or below which the player counts as broke."
+        },
+        "charityGold": {
+          "type": "number",
+          "default": 10,
+          "description": "Gold a kind soul gives."
+        },
+        "loanShark": {
+          "type": "npc",
+          "description": "Persona who offers loans (accepting = social.promise {to: them, ref: <offer ref>})."
+        },
+        "loanAmount": {
+          "type": "number",
+          "default": 100,
+          "description": "Loan size."
+        },
+        "interestPct": {
+          "type": "number",
+          "default": 25,
+          "description": "Interest on the loan."
+        },
+        "dueSec": {
+          "type": "number",
+          "default": 900,
+          "description": "Seconds until the debt is due."
+        }
+      }
+    },
+    {
+      "id": "collector_interest",
+      "title": "Collector interest",
+      "area": "economy",
+      "description": "A legendary or rare forged item draws a collector's offer, and if you refuse, a theft attempt.",
+      "signals": [
+        "appearance.outfit",
+        "gear.equipped"
+      ],
+      "directives": [
+        "npc.bark",
+        "custom.reaction"
+      ],
+      "effects": [
+        "collector_offer",
+        "theft"
+      ],
+      "params": {
+        "tags": {
+          "type": "string[]",
+          "default": [
+            "legendary",
+            "rare",
+            "epic",
+            "unique",
+            "artifact"
+          ],
+          "description": "Item tags that count as collectable."
+        },
+        "collector": {
+          "type": "npc",
+          "description": "Persona who makes offers (else a nameless collector)."
+        },
+        "thief": {
+          "type": "npc",
+          "description": "Persona who tries to steal it."
+        },
+        "offerGold": {
+          "type": "number",
+          "default": 400,
+          "description": "Base offer in gold."
+        },
+        "theftAfterSec": {
+          "type": "number",
+          "default": 300,
+          "description": "Seconds after the offer before a theft attempt (if still carried)."
+        }
+      }
+    },
+    {
+      "id": "haggle_memory",
+      "title": "Haggle memory",
+      "area": "economy",
+      "description": "Merchants remember how you haggle: hard bargainers find prices padded, good sports get a wink and a discount.",
+      "signals": [
+        "economy.haggled"
+      ],
+      "directives": [
+        "npc.bark",
+        "custom.reaction"
+      ],
+      "effects": [
+        "price_adjust"
+      ],
+      "params": {
+        "step": {
+          "type": "number",
+          "default": 0.05,
+          "description": "Price multiplier change per remembered haggle."
+        }
+      }
+    },
+    {
+      "id": "boss_attempt_memory",
+      "title": "Boss attempt memory",
+      "area": "boss",
+      "description": "Bosses remember your attempts: gloating after deaths, grudging respect after many tries, a hint when you're stuck.",
+      "signals": [
+        "combat.boss_attempt"
+      ],
+      "directives": [
+        "boss.adapt",
+        "custom.reaction"
+      ],
+      "effects": [
+        "boss_line"
+      ],
+      "params": {
+        "hintAfter": {
+          "type": "number",
+          "default": 3,
+          "description": "Deaths before the boss lets a hint slip."
+        },
+        "respectAfter": {
+          "type": "number",
+          "default": 5,
+          "description": "Attempts before gloating turns to respect."
+        },
+        "hints": {
+          "type": "string[]",
+          "description": "Designer hints (default: generic, by weakness)."
+        }
+      }
+    },
+    {
+      "id": "dodge_bait",
+      "title": "Dodge bait",
+      "area": "boss",
+      "description": "Bosses learn your favourite dodge direction, bias their moves to punish it, and taunt you about it.",
+      "signals": [
+        "combat.boss_attempt",
+        "combat.dodged"
+      ],
+      "directives": [
+        "boss.move_added",
+        "boss.adapt",
+        "custom.reaction"
+      ],
+      "effects": [
+        "dodge_bait"
+      ],
+      "params": {
+        "minShare": {
+          "type": "number",
+          "default": 0.45,
+          "description": "Share of dodges one way that counts as a habit."
+        },
+        "minDodges": {
+          "type": "number",
+          "default": 6,
+          "description": "Dodges needed before the boss reads you."
+        }
+      }
+    },
+    {
+      "id": "flawless_secret_phase",
+      "title": "Flawless secret phase",
+      "area": "boss",
+      "description": "Clear a phase without a scratch and the boss, cornered, unlocks a secret desperate phase with a new move.",
+      "signals": [
+        "combat.phase_flawless"
+      ],
+      "directives": [
+        "boss.move_added",
+        "boss.adapt",
+        "custom.reaction"
+      ],
+      "effects": [
+        "secret_phase"
+      ],
+      "params": {
+        "once": {
+          "type": "boolean",
+          "default": true,
+          "description": "Unlock at most once per boss per player."
+        }
+      }
+    },
+    {
+      "id": "coward_rumour",
+      "title": "Coward rumour",
+      "area": "social",
+      "description": "Flee too often and the town calls you a coward, and a bounty hunter comes to test you.",
+      "signals": [
+        "combat.fled",
+        "movement.fled"
+      ],
+      "directives": [
+        "npc.bark",
+        "rumour.heard",
+        "custom.reaction"
+      ],
+      "effects": [
+        "coward",
+        "challenger"
+      ],
+      "params": {
+        "flees": {
+          "type": "number",
+          "default": 3,
+          "description": "Flights (within windowMin) before the rumour starts."
+        },
+        "windowMin": {
+          "type": "number",
+          "default": 30,
+          "description": "Window for counting flights."
+        },
+        "challenger": {
+          "type": "string",
+          "default": "a bounty hunter",
+          "description": "Who comes to test you."
+        },
+        "challengerUnit": {
+          "type": "string",
+          "default": "bounty_hunter",
+          "description": "Unit type the game spawns for the challenger."
+        }
+      }
+    },
+    {
+      "id": "companion_grief",
+      "title": "Companion grief",
+      "area": "social",
+      "description": "When a companion dies, allies grieve in their own words and someone offers you revenge.",
+      "signals": [
+        "companion.died"
+      ],
+      "directives": [
+        "npc.bark",
+        "quest.offer",
+        "rumour.heard",
+        "custom.reaction"
+      ],
+      "effects": [
+        "grief"
+      ],
+      "params": {
+        "giver": {
+          "type": "npc",
+          "description": "Persona who offers the revenge quest (default: a friend of the companion)."
+        },
+        "revengeQuest": {
+          "type": "boolean",
+          "default": true,
+          "description": "Offer a revenge quest when the killer is known."
+        }
+      }
+    },
+    {
+      "id": "time_weather_barks",
+      "title": "Time and weather",
+      "area": "world",
+      "description": "Day, night and weather colour barks and behaviour: lamps at dusk, shelter from storms, sleepy dawns.",
+      "signals": [
+        "world.time"
+      ],
+      "directives": [
+        "npc.bark",
+        "custom.reaction"
+      ],
+      "effects": [
+        "behaviour"
+      ],
+      "params": {}
+    },
+    {
+      "id": "inn_regular",
+      "title": "Regular",
+      "area": "world",
+      "description": "Visit a place often and you become a regular: familiar greetings, the usual, a small discount.",
+      "signals": [
+        "movement.visited"
+      ],
+      "directives": [
+        "npc.bark",
+        "custom.reaction"
+      ],
+      "effects": [
+        "regular"
+      ],
+      "params": {
+        "visits": {
+          "type": "number",
+          "default": 3,
+          "description": "Visits (on different days or sessions) to become a regular."
+        },
+        "kinds": {
+          "type": "string[]",
+          "default": [
+            "inn",
+            "shop",
+            "tavern"
+          ],
+          "description": "Place kinds that can have regulars."
+        },
+        "owners": {
+          "type": "record",
+          "description": "place id -> persona id who greets regulars (default: a persona whose zone is that place)."
+        },
+        "discount": {
+          "type": "number",
+          "default": 0.1,
+          "description": "Regulars' discount."
+        }
+      }
+    },
+    {
+      "id": "absence_recap",
+      "title": "Absence recap",
+      "area": "world",
+      "description": "Come back after a long absence: your companion recaps, NPCs say you've been gone, and the world has moved on.",
+      "signals": [
+        "session.started"
+      ],
+      "directives": [
+        "npc.bark",
+        "custom.reaction"
+      ],
+      "effects": [
+        "recap"
+      ],
+      "params": {
+        "minHours": {
+          "type": "number",
+          "default": 6,
+          "description": "Hours away that count as a long absence."
+        },
+        "companion": {
+          "type": "npc",
+          "description": "Persona who recaps (default: the first persona)."
+        }
+      }
+    },
+    {
+      "id": "property_damage",
+      "title": "Property damage",
+      "area": "world",
+      "description": "Break something and its owner reacts: a bill, a repair quest, and the guards if you keep at it.",
+      "signals": [
+        "world.property_damaged",
+        "world.destroyed"
+      ],
+      "directives": [
+        "npc.bark",
+        "npc.action",
+        "quest.offer",
+        "custom.reaction"
+      ],
+      "effects": [
+        "compensation",
+        "repair_quest",
+        "guards"
+      ],
+      "params": {
+        "guardsAfter": {
+          "type": "number",
+          "default": 3,
+          "description": "Damaged objects (within 30 minutes) before the guards come."
+        },
+        "repairQuest": {
+          "type": "boolean",
+          "default": true,
+          "description": "Offer a repair quest instead of a bill for big damage."
+        },
+        "repairOver": {
+          "type": "number",
+          "default": 50,
+          "description": "Value above which a repair quest is offered."
+        }
+      }
+    },
+    {
+      "id": "avoided_area",
+      "title": "Avoided area",
+      "area": "world",
+      "description": "Areas you never visit (or fled from) grow rumours, and someone asks you to go and look.",
+      "signals": [
+        "movement.visited",
+        "movement.entered_zone",
+        "combat.fled",
+        "session.started"
+      ],
+      "directives": [
+        "npc.bark",
+        "rumour.heard",
+        "quest.offer",
+        "custom.reaction"
+      ],
+      "effects": [
+        "quest_pull"
+      ],
+      "params": {
+        "afterMin": {
+          "type": "number",
+          "default": 20,
+          "description": "Minutes of play before an unvisited area counts as avoided."
+        },
+        "zones": {
+          "type": "string[]",
+          "description": "Areas to watch (default: every manifest zone)."
+        },
+        "giver": {
+          "type": "npc",
+          "description": "Persona who asks you to go and look."
+        }
+      }
+    }
+  ],
+  "commonRecipeParams": {
+    "enabled": {
+      "type": "boolean",
+      "default": true,
+      "description": "false switches the recipe off without removing the line."
+    },
+    "cooldownSec": {
+      "type": "number",
+      "description": "Seconds before the same speaker reacts with this recipe again (per player). Each recipe has its own default."
+    },
+    "chance": {
+      "type": "number",
+      "default": 1,
+      "description": "0-1 probability that a reaction fires when its conditions hold (seeded, so replays match)."
+    },
+    "when": {
+      "type": "string",
+      "description": "Extra trait-rule DSL gate, e.g. \"stat(zone) == \\\"courtyard\\\"\". The recipe only fires while it is true."
+    },
+    "speakers": {
+      "type": "string[]",
+      "description": "Persona ids allowed to voice this recipe (default: personas in the player's zone, else any)."
+    },
+    "ai": {
+      "type": "boolean",
+      "default": true,
+      "description": "Let the LLM write fresh variants for this recipe in the background (keyed servers only)."
+    }
+  },
+  "weathers": [
+    "clear",
+    "rain",
+    "storm",
+    "snow",
+    "fog",
+    "heat"
+  ],
   "schemas": {
     "Signal": "Signal.json",
     "SignalBatch": "SignalBatch.json",
@@ -347,6 +1194,8 @@
     "BakePack": "BakePack.json",
     "WsClientMessage": "WsClientMessage.json",
     "WsServerMessage": "WsServerMessage.json",
+    "ReactionInfo": "ReactionInfo.json",
+    "ReactionDirectiveArgs": "ReactionDirectiveArgs.json",
     "Projection_observer.player_model": "Projection_observer.player_model.json",
     "Projection_persona.memories": "Projection_persona.memories.json",
     "Projection_world.rumours": "Projection_world.rumours.json",
@@ -355,6 +1204,7 @@
     "Projection_director.state": "Projection_director.state.json",
     "Projection_forge.gallery": "Projection_forge.gallery.json",
     "Projection_core.directives": "Projection_core.directives.json",
+    "Projection_world.reaction_ledger": "Projection_world.reaction_ledger.json",
     "ask.npc.bark.params": "ask.npc.bark.params.json",
     "ask.npc.bark.result": "ask.npc.bark.result.json",
     "ask.npc.reply.params": "ask.npc.reply.params.json",
@@ -406,6 +1256,7 @@
     "directive.loot.drop.args": "directive.loot.drop.args.json",
     "directive.difficulty.set.args": "directive.difficulty.set.args.json",
     "directive.moment.args": "directive.moment.args.json",
-    "directive.world.reaction.args": "directive.world.reaction.args.json"
+    "directive.world.reaction.args": "directive.world.reaction.args.json",
+    "directive.custom.reaction.args": "directive.custom.reaction.args.json"
   }
 }

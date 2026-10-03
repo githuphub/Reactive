@@ -9,7 +9,7 @@ import {
 import type { Manifest } from "@liveforge/manifest";
 import {
   AdminError, type BakeRequest, type BakeResult, type ConnStatus, type DataSource, type EventQuery, type GameInfo, type LiveHandlers, type ManifestDoc,
-  type SimulateResult, type WorldSummary,
+  type ReactionLibraryState, type SimulateResult, type WorldSummary,
 } from "./types";
 
 /** The admin HTTP surface the dashboard relies on (all require the admin key). */
@@ -28,6 +28,7 @@ export const ADMIN_ROUTES = {
   reviewSet: "POST /admin/m/forge/review/:id (fallback POST /admin/review/:id)",
   bakePack: "GET /admin/m/forge/pack (fallback GET /admin/bake)",
   bake: "POST /admin/m/forge/bake",
+  reactionLibrary: "GET /admin/m/world/reactions-lib?world=&player=",
 } as const;
 
 export interface AdminClientOptions {
@@ -314,6 +315,11 @@ export class LiveSource implements DataSource {
       if (!(e instanceof AdminError && (e.status === 404 || e.status === 409))) throw e;
       return this.client.get<BakePack>("/admin/bake");
     }
+  }
+
+  /** Reaction Library (R1): GET /admin/m/world/reactions-lib. */
+  async reactionLibrary(world: string, player?: string | null): Promise<ReactionLibraryState | null> {
+    return this.client.get<ReactionLibraryState>("/admin/m/world/reactions-lib", { world, player: player ?? undefined });
   }
 
   /** Bake mode: POST /admin/m/forge/bake - pre-generate a catalogue into the review queue. */
