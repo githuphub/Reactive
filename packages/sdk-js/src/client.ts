@@ -23,6 +23,7 @@ import type {
 } from "@liveforge/protocol";
 import { AskHandleImpl, type AskHandle } from "./ask.js";
 import { FallbackCache, type FallbackCacheOptions } from "./cache.js";
+import { FactionsApi } from "./factions.js";
 import { Emitter, type Unsubscribe } from "./emitter.js";
 import { LiveforgeError, isLiveforgeError } from "./errors.js";
 import { Http, type FetchLike } from "./http.js";
@@ -138,6 +139,14 @@ interface DirectiveListener {
 export class LiveforgeClient {
   /** Last-good-answer cache + bake packs. */
   readonly cache: FallbackCache;
+  /** Village minds (K7 factions module): `state(id)`, `raidPlan(params)`, `onPosture`, `onGuardPosts`, `reportThreat`. */
+  readonly factions: FactionsApi = new FactionsApi({
+    world: () => this._world,
+    get: async (path, query) => (await this.http.request<never>({ method: "GET", path, query })).data,
+    post: async (path, body) => (await this.http.request<never>({ method: "POST", path, json: body })).data,
+    ask: (params, opts) => this.ask("faction.raid_plan", params, opts),
+    on: (kind, fn) => this.on(kind, fn),
+  });
   private readonly cfg: Required<Pick<LiveforgeConfig, "gameKey" | "flushIntervalMs" | "flushSize" | "maxQueue" | "requestTimeoutMs" | "upgradeTimeoutMs">> & LiveforgeConfig;
   private readonly http: Http;
   private readonly fetchImpl: FetchLike | null;
