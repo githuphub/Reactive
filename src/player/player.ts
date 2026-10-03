@@ -44,6 +44,8 @@ export class Player implements Body {
   viewMode: ViewMode = 'first';
   /** Smoothed eye height (sneak transition). */
   eyeHeight = EYE;
+  /** When false (e.g. hunger too low), sprinting is cancelled. Set by the survival plugin. */
+  canSprint = true;
   /** Free-form per-player data for other systems (health, hunger, reputation, ...). */
   readonly data: Record<string, unknown> = {};
   private lastSpace = -1;
@@ -110,7 +112,7 @@ export class Player implements Body {
     const mz = fwd - (input.isDown(KEYS.back) ? 1 : 0);
     this.sneaking = input.isDown(KEYS.sneak) && !this.flying;
     if (input.isDown(KEYS.sprint) && mz > 0) this.sprinting = true;
-    if (mz <= 0 || this.sneaking || this.collidedHorizontally) this.sprinting = false;
+    if (mz <= 0 || this.sneaking || this.collidedHorizontally || !this.canSprint) this.sprinting = false;
 
     // Wish direction in world space.
     const sin = Math.sin(this.yaw), cos = Math.cos(this.yaw);
