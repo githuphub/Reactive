@@ -59,13 +59,15 @@ export function scenarioButtons(d: ScenarioDeps): DemoButton[] {
         dx /= len;
         dz /= len;
         if (len < 2) [dx, dz] = [1, 0];
-        bram.controller.releaseToSchedule();
+        void lf.client.agents.interrupt('bram', 'demo reset').catch(() => {});
+        await bram.controller.cancel('demo');
         bram.teleport(plot.front.x + 0.5, plot.front.y, plot.front.z + 0.5);
         game.teleportPlayer(plot.front.x + 0.5 + dx * 4.5, null, plot.front.z + 0.5 + dz * 4.5);
         face(game, bram.position.x, bram.position.z);
         await sleep(150);
-        bram.face(game.player.position.x, game.player.position.z);
-        void bram.controller.say('Ah, a visitor! Need something built?', { priority: 'schedule', emote: 'wave' });
+        // an agent-priority action keeps Bram here (his schedule pauses while agents drive him)
+        void bram.controller.lookAt('player');
+        void bram.controller.say('Ah, a visitor! Need something built?', { emote: 'wave' });
         getHub().caption('🏠 Ask Bram for a house: press Enter to send', 8);
         await sleep(600);
         d.talk.open(bram, 'Bram, build me a cosy house with a little tower');

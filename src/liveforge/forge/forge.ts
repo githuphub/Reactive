@@ -131,6 +131,9 @@ export class Forge {
         counter = Math.max(counter, Number(/_(\d+)$/.exec(s.id)?.[1] ?? 0));
         registerForged(s, s.grid ? pixelsFromGrid(s.grid, [...s.palette]) : null);
       }
+      // the inventory loaded before these items existed (unknown stacks were dropped): load it again
+      const inv = game.save.get('inventory') as Parameters<Game['inventory']['deserialize']>[0] | undefined;
+      if (saved?.length && inv) game.inventory.deserialize(inv);
     });
   }
 
@@ -183,6 +186,7 @@ export class Forge {
 
   private give(spec: LcForged, replace: LcForged | null, ms: number): void {
     registerForged(spec, spec.grid ? pixelsFromGrid(spec.grid, [...spec.palette]) : null);
+    this.game.save.markDirty('lf_forge');
     const inv = this.game.inventory;
     const stack = { item: spec.id, count: 1, data: { name: spec.name, tags: ['forged', ...(spec.effect ? [spec.effect] : [])], colors: [spec.palette[0], spec.palette[3]], effect: spec.effect } };
     let slot = replace ? inv.slots.findIndex((s) => s?.item === replace.id) : -1;
