@@ -77,6 +77,14 @@ export function createApp(lf: Liveforge, modules: LiveforgeModule[]): Hono<LfEnv
     return r ? c.json(r) : c.body(null, 204);
   });
 
+  // Brain feed history (live entries arrive over WS {t:"brain"}): ?world= (required), ?after=<entry id>, ?limit=
+  app.get("/v1/brain", (c) => {
+    const world = c.req.query("world");
+    if (!world) throw new LfError("bad_request", "?world= is required");
+    const limit = Math.max(1, Math.min(300, Number(c.req.query("limit") ?? 300) || 300));
+    return c.json(lf.brainBuffer.page(c.get("game"), world, c.req.query("after") ?? null, limit));
+  });
+
   app.get("/v1/ws", (c) => c.json(errBody("bad_request", "WebSocket endpoint: connect with an Upgrade: websocket request"), 426 as 400));
 
   app.post("/v1/stt", async (c) => {
