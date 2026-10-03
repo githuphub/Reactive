@@ -32,7 +32,7 @@ export class ScheduleBrain {
     const night = t >= 0.565 && t < 0.97;
     const evening = t >= 0.455 && t < 0.565;
     if (npc.isGolem) return 'patrol';
-    if (npc.def.guard) return night || evening || this.v.posture === 'hostile' ? 'watch' : 'work';
+    if (npc.def.guard) return night || evening || this.v.posture === 'hostile' ? 'watch' : 'patrol';
     if (this.v.nearestHostile(npc.position, 18) || npc.injured || this.v.posture === 'hostile') return 'flee';
     if (night) return 'home';
     if (this.v.posture === 'festive') return 'party';
