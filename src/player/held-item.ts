@@ -8,6 +8,12 @@ import { blockById } from '../engine/blocks';
 import type { TextureAtlas } from '../engine/atlas';
 import { ATLAS_SIZE, SLOTS_PER_ROW, SLOT_PAD, SLOT_SIZE } from '../engine/constants';
 
+/**
+ * Extra held-model builders, tried in order before the default cube / sprite (V3 forge: extruded voxel items).
+ * Return a fresh mesh (it is disposed when the held item changes) or null to fall through.
+ */
+export const heldMeshFactories: ((itemName: string) => THREE.Mesh | null)[] = [];
+
 export class HeldItem {
   readonly group = new THREE.Group();
   private mesh: THREE.Mesh | null = null;
@@ -59,7 +65,10 @@ export class HeldItem {
     if (!name) return;
     const item = findItem(name);
     if (!item) return;
-    if (item.icon === null && item.block !== null) {
+    const custom = heldMeshFactories.reduce<THREE.Mesh | null>((m, f) => m ?? f(name), null);
+    if (custom) {
+      this.mesh = custom;
+    } else if (item.icon === null && item.block !== null) {
       const def = blockById(item.block);
       const geo = new THREE.BoxGeometry(0.4, 0.4, 0.4);
       const uv = geo.getAttribute('uv') as THREE.BufferAttribute;
