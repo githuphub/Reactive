@@ -3,6 +3,7 @@
  * preconditions (time, place, inventory, seeded play style via signals) and shows a caption.
  */
 import type { Game } from '../game/game';
+import { confirmResetMap } from '../game/reset';
 import { getSpawnDirector } from '../mobs';
 import { giveItem } from '../survival';
 import type { DemoAction, DemoButton, DemoToggle } from '../ui/demo/demo-panel';
@@ -167,6 +168,10 @@ export function utilityButtons(d: ScenarioDeps): (DemoToggle | DemoAction)[] {
         for (const [item, n] of [['iron_pickaxe', 1], ['iron_sword', 1], ['bow', 1], ['arrow', 32], ['oak_planks', 64], ['cobblestone', 64], ['glass', 16], ['torch', 16], ['bread', 8]] as const) giveItem(game, item, n);
         game.ui.toast('Kit added', { kind: 'good' });
       },
+    },
+    {
+      label: '🗺 Reset map',
+      run: () => confirmResetMap(game),
     },
     {
       label: '🧽 Reset memory',

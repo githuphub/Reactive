@@ -2,6 +2,7 @@
  * Loading screen (progress until spawn chunks are meshed) and the pause menu (Esc).
  */
 import type { Game } from '../game/game';
+import { confirmResetMap } from '../game/reset';
 import { el, type Screen } from './ui';
 
 export class LoadingScreen {
@@ -101,6 +102,14 @@ export function createPauseScreen(game: Game): Screen {
     syncMode();
   });
   panel.appendChild(mode);
+
+  const resetRow = el('div', 'lc-row');
+  const resetBtn = el('button', 'lc-btn', '🗺 Reset map');
+  resetBtn.addEventListener('click', () => confirmResetMap(game));
+  const newBtn = el('button', 'lc-btn', '🎲 New world');
+  newBtn.addEventListener('click', () => confirmResetMap(game, { newSeed: true }));
+  resetRow.append(resetBtn, newBtn);
+  panel.appendChild(resetRow);
 
   const seed = el('div', 'lc-muted');
   panel.appendChild(seed);

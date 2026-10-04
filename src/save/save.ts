@@ -29,6 +29,8 @@ export class SaveManager {
   private readonly dirtyKeys = new Set<string>();
   private timer: ReturnType<typeof setTimeout> | null = null;
   private flushing: Promise<void> | null = null;
+  /** Set by wipe(): nothing is written any more (the page is about to reload). */
+  private locked = false;
 
   private constructor(readonly seed: string, private readonly db: IDBDatabase | null) {}
 
@@ -124,6 +126,7 @@ export class SaveManager {
 
   /** Writes everything pending now. */
   async flush(): Promise<void> {
+    if (this.locked) return;
     if (this.timer) {
       clearTimeout(this.timer);
       this.timer = null;
@@ -172,6 +175,15 @@ export class SaveManager {
       this.flushing = null;
     });
     return this.flushing;
+  }
+
+  /** Deletes this seed's save and stops all further writes (use right before reloading the page). */
+  async wipe(): Promise<void> {
+    this.locked = true;
+    if (this.timer) clearTimeout(this.timer);
+    this.timer = null;
+    if (this.flushing) await this.flushing;
+    await this.clear();
   }
 
   /** Deletes all saved data for this seed (memory and disk). */
