@@ -1,5 +1,7 @@
-# Liveforge with Docker Compose.
+# Reactive with Docker Compose.
 #   docker compose up --build        -> http://localhost:8787  (dashboard: /dashboard)
+# The Livecraft demo at / as well (the public Render setup, locally):
+#   LIVEFORGE_STATIC_DIR=/app/examples/livecraft/dist LIVEFORGE_MANIFESTS=examples/livecraft.liveforge.yaml #   LIVEFORGE_SDK_KEYS=livecraft=pk_live_livecraft docker compose up --build
 # Out of the box this runs in DEV MODE (keys pk_dev_<gameId> / dev-admin) for local trials. For anything reachable
 # by other people set LIVEFORGE_DEV=0, LIVEFORGE_ADMIN_KEY and LIVEFORGE_SDK_KEYS (in a .env file next to this one).
 services:
@@ -15,6 +17,8 @@ services:
       LIVEFORGE_SDK_KEYS: ${LIVEFORGE_SDK_KEYS:-}
       LIVEFORGE_CORS_ORIGINS: ${LIVEFORGE_CORS_ORIGINS:-*}
       LIVEFORGE_LOG_LEVEL: ${LIVEFORGE_LOG_LEVEL:-info}
+      LIVEFORGE_STATIC_DIR: ${LIVEFORGE_STATIC_DIR:-}
+      LIVEFORGE_RATE_LIMIT_PER_MIN: ${LIVEFORGE_RATE_LIMIT_PER_MIN:-600}
       # Providers (all optional; without them every ask is answered by rules)
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}

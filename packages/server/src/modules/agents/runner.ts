@@ -213,13 +213,14 @@ export class RunManager {
     for (let step = 0; step < run.maxSteps; step++) {
       if (run.abort.signal.aborted) return this.finish(run, "interrupted", run.stopReason ?? "interrupted");
       const budget = ctx.budgets.check(run.player);
-      if (!budget.ok) return this.finish(run, "failed", `stopped: ${budget.reason}`);
+      // past the game/player budget the scripted rules plan drives the same tools (no more LLM spend)
+      if (!budget.ok) return this.runRules(run, `budget: ${budget.reason}`);
       let res;
       try {
         res = await llm.tools({ system, messages, tools, tier: "rich", maxTokens: lim.maxTokens, timeoutMs: lim.stepTimeoutMs, task: "agents.step", player: run.player, signal: run.abort.signal });
       } catch (e) {
         if (run.abort.signal.aborted) return this.finish(run, "interrupted", run.stopReason ?? "interrupted");
-        if (e instanceof BudgetExceededError) return this.finish(run, "failed", `stopped: ${e.message}`.slice(0, 300));
+        if (e instanceof BudgetExceededError) return this.runRules(run, `budget: ${e.message}`.slice(0, 200));
         ctx.log.warn("agent LLM step failed; switching to the rules plan", { runId: run.runId, error: (e as Error).message });
         this.recordStep(run, { kind: "error", text: `AI step failed (${(e as Error).message.slice(0, 160)}); rules plan takes over`, model: "rules" });
         return this.runRules(run, "the AI step failed");

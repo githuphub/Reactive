@@ -3,11 +3,17 @@
 **/dist
 **/.tsbuild
 **/*.tsbuildinfo
+**/*.log
+**/.claude
+**/.superpowers
 data
 *.sqlite
 *.sqlite-*
 .env
 .env.*
+**/.env
+**/.env.*
 !.env.example
 godot
 docs
+examples/livecraft/docs

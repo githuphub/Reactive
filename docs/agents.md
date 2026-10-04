@@ -99,8 +99,9 @@ signal `agent.interrupt {npc | runId, reason}` or `POST /v1/m/agents/interrupt {
   - Each `tool_use` becomes one `agent.tool_call` directive. The server waits for the result: 30 s by default, and
     every progress update re-arms the timer. A timeout comes back to the model as a failed tool.
   - Text blocks become **thought** entries in the Brain feed.
-  - The run stops on `end_turn`, at `maxSteps`, on an interrupt, or when the player or game budget is exhausted.
-- **Rules** (no LLM, a provider without tool use, or an LLM error mid-run): the goal is keyword-matched to a
+  - The run stops on `end_turn`, at `maxSteps` or on an interrupt. When the player or game budget runs out (at the
+    start or mid-run), the rules plan takes over.
+- **Rules** (no LLM, a provider without tool use, an exhausted budget, or an LLM error mid-run): the goal is keyword-matched to a
   template and its steps call the same directives one by one, so your game code path is identical.
 
 | Template | Matches | Steps |

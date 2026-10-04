@@ -391,9 +391,11 @@ safety:
   refusedTopics: [real-world politics, real people, the player's personal data]
   inWorldOnly: true
 
+# Public demo caps: past either $ cap the game keeps running on rules (asks keep their instant answer, agents run
+# their rules plan); the caps reset at 00:00 UTC.
 budgets:
-  game: { tokensPerMin: 600000, usdPerDay: 40 }
-  player: { tokensPerMin: 80000, usdPerDay: 5 }
+  game: { tokensPerMin: 200000, usdPerDay: 2 }
+  player: { tokensPerMin: 40000, usdPerDay: 0.25 }
 
 models:
   fast: claude-haiku-4-5

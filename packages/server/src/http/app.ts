@@ -4,6 +4,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { Hono, type Context } from "hono";
 import { cors } from "hono/cors";
+import { getConnInfo } from "@hono/node-server/conninfo";
 import { ZodError } from "zod";
 import { HEADERS, PROTOCOL_ID, SimulateRequest, type ErrorCode } from "@liveforge/protocol";
 import { moduleEnabled, parseManifest, validateManifestObject } from "@liveforge/manifest";
@@ -14,6 +15,7 @@ import { adminRoutes } from "./admin.js";
 import { dashboardRoutes } from "../admin/dashboard.js";
 import { dashboardAdminRoutes } from "../admin/routes.js";
 import { cassetteAdminRoutes } from "../admin/cassettes.js";
+import { staticHandler } from "./static.js";
 
 const errBody = (code: ErrorCode, message: string, details?: unknown) => ({ error: { code, message, ...(details !== undefined ? { details } : {}) } });
 
@@ -23,9 +25,23 @@ function keyFrom(c: Context): string | null {
   return c.req.header(HEADERS.key) ?? c.req.query("key") ?? null;
 }
 
+/** The client's IP: the first X-Forwarded-For hop behind a trusted proxy (LIVEFORGE_TRUST_PROXY), else the socket. */
+function clientIp(c: Context, trustProxy: boolean): string {
+  if (trustProxy) {
+    const xff = c.req.header("x-forwarded-for")?.split(",")[0]?.trim();
+    if (xff) return xff;
+  }
+  try {
+    return getConnInfo(c).remote.address ?? "unknown";
+  } catch {
+    return "unknown"; // app.request() in tests: no socket
+  }
+}
+
 export function createApp(lf: Liveforge, modules: LiveforgeModule[]): Hono<LfEnv> {
   const app = new Hono<LfEnv>();
   const origins = lf.config.corsOrigins;
+  const sttDay = { day: "", n: new Map<string, number>() };
 
   app.use("*", cors({
     origin: origins.includes("*") ? "*" : origins,
@@ -50,8 +66,9 @@ export function createApp(lf: Liveforge, modules: LiveforgeModule[]): Hono<LfEnv
 
   app.get("/health", (c) => c.json({ ok: true, protocol: PROTOCOL_ID, games: [...lf.games.keys()], llm: !!lf.providers.llm, stt: lf.providers.stt?.id ?? null }));
 
-  // dashboard static files at /dashboard (K5); no auth - it asks for the admin key itself
-  app.route("/", dashboardRoutes());
+  // dashboard static files at /dashboard (K5); no auth - it asks for the admin key itself. "/" redirects there
+  // unless a game is served at "/" (LIVEFORGE_STATIC_DIR, registered last).
+  app.route("/", dashboardRoutes(undefined, { rootRedirect: !lf.config.staticDir }));
 
   // ---------------------------------------------------------------- auth: /v1/* (SDK or admin key)
   app.use("/v1/*", async (c, next) => {
@@ -59,7 +76,8 @@ export function createApp(lf: Liveforge, modules: LiveforgeModule[]): Hono<LfEnv
     const key = keyFrom(c);
     const who = lf.authenticate(key, c.req.header(HEADERS.game) ?? c.req.query("game") ?? null);
     if (!who) return c.json(errBody("unauthorized", "missing or invalid key (Authorization: Bearer <publishable key>)"), 401);
-    if (!who.admin && !lf.rateLimit(key!)) return c.json(errBody("rate_limited", `over ${lf.config.rateLimitPerMin} requests/min`), 429);
+    // per client: every player shares the game's publishable key, so the bucket is key + client IP
+    if (!who.admin && !lf.rateLimit(`${key}|${clientIp(c, lf.config.trustProxy)}`)) return c.json(errBody("rate_limited", `over ${lf.config.rateLimitPerMin} requests/min`), 429);
     c.set("game", who.game);
     c.set("admin", who.admin);
     c.set("key", key!);
@@ -91,6 +109,21 @@ export function createApp(lf: Liveforge, modules: LiveforgeModule[]): Hono<LfEnv
   app.post("/v1/stt", async (c) => {
     const stt = lf.providers.stt;
     if (!stt) throw new LfError("provider_unavailable", "no STT provider configured (set OPENAI_API_KEY or WHISPER_CPP_BIN + WHISPER_CPP_MODEL)");
+    // STT is paid per call and not covered by the LLM budgets: cap it per client per minute and per game per day.
+    const { perMin, perDay } = lf.config.stt;
+    if (!c.get("admin") && !lf.rateLimit(`stt|${c.get("key")}|${clientIp(c, lf.config.trustProxy)}`, perMin)) {
+      throw new LfError("rate_limited", `over ${perMin} transcriptions/min; type instead or wait a moment`);
+    }
+    if (perDay > 0) {
+      const today = new Date().toISOString().slice(0, 10);
+      if (sttDay.day !== today) {
+        sttDay.day = today;
+        sttDay.n.clear();
+      }
+      const n = sttDay.n.get(c.get("game")) ?? 0;
+      if (n >= perDay) throw new LfError("rate_limited", `over ${perDay} transcriptions today for this game`);
+      sttDay.n.set(c.get("game"), n + 1);
+    }
     const ct = c.req.header("content-type") ?? "";
     let audio: Uint8Array;
     let mime: string;
@@ -164,6 +197,13 @@ export function createApp(lf: Liveforge, modules: LiveforgeModule[]): Hono<LfEnv
   app.route("/admin", dashboardAdminRoutes(lf));
   app.route("/admin", cassetteAdminRoutes());
   for (const m of modules) if (m.routes?.admin) app.route(`/admin/m/${m.id}`, m.routes.admin);
+
+  // ---------------------------------------------------------------- a web game at "/" (LIVEFORGE_STATIC_DIR), last
+  if (lf.config.staticDir) {
+    if (!existsSync(join(lf.config.staticDir, "index.html"))) lf.log.warn("LIVEFORGE_STATIC_DIR has no index.html; / will 404", { dir: lf.config.staticDir });
+    else lf.log.info("serving a web game at /", { dir: lf.config.staticDir });
+    app.get("*", staticHandler(lf.config.staticDir));
+  }
 
   return app;
 }

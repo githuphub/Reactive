@@ -1,4 +1,5 @@
-// Serves the built dashboard (packages/dashboard/dist) at /dashboard, and redirects / there. Static files only: the
+// Serves the built dashboard (packages/dashboard/dist) at /dashboard, and redirects / there (unless a game is served
+// at / via LIVEFORGE_STATIC_DIR, see http/static.ts). Static files only: the
 // dashboard asks for the admin key itself and talks to /admin/* + the admin WebSocket. Added by K5.
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { extname, join, normalize, resolve } from "node:path";
@@ -6,14 +7,26 @@ import { fileURLToPath } from "node:url";
 import { Hono } from "hono";
 import type { LfEnv } from "../module.js";
 
-const TYPES: Record<string, string> = {
+export const TYPES: Record<string, string> = {
   ".html": "text/html; charset=utf-8",
   ".js": "text/javascript; charset=utf-8",
+  ".mjs": "text/javascript; charset=utf-8",
   ".css": "text/css; charset=utf-8",
   ".json": "application/json",
   ".svg": "image/svg+xml",
   ".png": "image/png",
   ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".gif": "image/gif",
+  ".webp": "image/webp",
+  ".txt": "text/plain; charset=utf-8",
+  ".webmanifest": "application/manifest+json",
+  ".wasm": "application/wasm",
+  ".mp3": "audio/mpeg",
+  ".ogg": "audio/ogg",
+  ".wav": "audio/wav",
+  ".woff": "font/woff",
+  ".ttf": "font/ttf",
   ".ico": "image/x-icon",
   ".woff2": "font/woff2",
   ".glb": "model/gltf-binary",
@@ -31,17 +44,20 @@ const NOT_BUILT = `<!doctype html><meta charset="utf-8"><title>Reactive dashboar
 <body style="background:#07080c;color:#e8ebf2;font:15px system-ui;display:grid;place-content:center;height:100vh;margin:0">
 <h2>The dashboard is not built yet</h2><p>Run <code>npm run build</code> (or <code>npm run build -w @liveforge/dashboard</code>) and reload.</p></body>`;
 
-/** Mount with app.route("/", dashboardRoutes()). */
-export function dashboardRoutes(dir = dashboardDir()): Hono<LfEnv> {
+/** A static file response. `cache` defaults to: hashed build output under assets/ immutable, everything else no-cache. */
+export function sendFile(file: string, cache?: string): Response {
+  const body = readFileSync(file);
+  const type = TYPES[extname(file).toLowerCase()] ?? "application/octet-stream";
+  const immutable = /[\\/]assets[\\/]/.test(file);
+  return new Response(body, { headers: { "content-type": type, "cache-control": cache ?? (immutable ? "public, max-age=31536000, immutable" : "no-cache") } });
+}
+
+/** Mount with app.route("/", dashboardRoutes()). `rootRedirect: false` leaves "/" to a game (LIVEFORGE_STATIC_DIR). */
+export function dashboardRoutes(dir = dashboardDir(), opts: { rootRedirect?: boolean } = {}): Hono<LfEnv> {
   const r = new Hono<LfEnv>();
   const root = normalize(dir);
-  const send = (file: string) => {
-    const body = readFileSync(file);
-    const type = TYPES[extname(file).toLowerCase()] ?? "application/octet-stream";
-    const immutable = /[\/]assets[\/]/.test(file);
-    return new Response(body, { headers: { "content-type": type, "cache-control": immutable ? "public, max-age=31536000, immutable" : "no-cache" } });
-  };
-  r.get("/", (c) => c.redirect("/dashboard/"));
+  const send = (file: string) => sendFile(file);
+  if (opts.rootRedirect !== false) r.get("/", (c) => c.redirect("/dashboard/"));
   r.get("/dashboard", (c) => c.redirect("/dashboard/"));
   r.get("/dashboard/*", (c) => {
     const index = join(root, "index.html");

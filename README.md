@@ -11,6 +11,116 @@ Repo: https://github.com/githuphub/Reactive. Reactive was called Liveforge durin
 (`@liveforge/*`), the Godot addon folder (`addons/liveforge`), the `LIVEFORGE_*` env vars and the
 `*.liveforge.yaml` manifests keep that name for now.
 
+## Setup guide
+
+### Deploy to Render (one URL, no setup for players)
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/githuphub/Reactive)
+
+One free Render web service runs everything: the **Livecraft** demo game at `/`, the API at `/v1`, WebSockets at
+`/v1/ws` and the dashboard at `/dashboard`. The button reads [`render.yaml`](render.yaml) and builds the
+[`Dockerfile`](Dockerfile).
+
+1. Click the button and sign in to Render.
+2. Paste `ANTHROPIC_API_KEY` when Render asks (AI villagers, forge and builds). `OPENAI_API_KEY` is optional
+   (Whisper voice for browsers without built-in speech recognition). Keys stay in Render, never in the repo.
+3. Wait for the first build (a few minutes), then open the service URL.
+
+The admin key for the dashboard is generated for you: Render dashboard → your service → **Environment** →
+`LIVEFORGE_ADMIN_KEY`.
+
+### Try it
+
+Open **`https://<your-service>.onrender.com`** and play. There is nothing to install and no sign-up.
+
+- **Cold start.** On the free plan the service sleeps when idle. The first load after a quiet spell takes about
+  30 s.
+- **Fresh memory.** The free plan has no persistent disk, so the village forgets everything on every deploy and
+  wake-up.
+- **No AI key?** The game still runs. Every answer then comes from rules.
+
+### Run locally
+
+You need **Node 22 or newer** and **git**.
+
+```bash
+git clone https://github.com/githuphub/Reactive.git && cd Reactive
+npm install
+cp .env.example .env     # add ANTHROPIC_API_KEY (needed for AI); OPENAI_API_KEY is optional (Whisper voice)
+npm run build            # packages, JSON Schemas and the dashboard
+npm run dev              # the server on http://localhost:8790 (PORT and LIVEFORGE_MANIFESTS come from .env)
+```
+
+`.env.example` already loads the Livecraft manifest (`LIVEFORGE_MANIFESTS=examples/livecraft.liveforge.yaml,...`)
+and runs in dev mode, so the game's dev key `pk_dev_livecraft` and the admin key `dev-admin` just work.
+
+In a second terminal, start the game:
+
+```bash
+cd examples/livecraft
+npm install
+npm run dev              # links the kit from ../.. first, then http://localhost:5180
+```
+
+Open http://localhost:5180. Without the server, the game still runs on local rules (the badge says *Offline*).
+
+### Controls
+
+| Key | |
+|---|---|
+| WASD, Space, Shift, Ctrl | Move, jump, sneak, sprint |
+| Mouse | Look. Left click breaks, right click places or uses, middle click picks a block. |
+| **T** | Chat with the villager you look at. Ask in plain words: "Bram, build me a cosy house with a tower". |
+| **hold V** | Talk with your voice. Chrome and Edge have speech recognition built in. Other browsers need the server's `OPENAI_API_KEY` (Whisper). |
+| **F** | Forge anything from a prompt |
+| **J** | Journal: what the village thinks of you, rumours, achievements, quests |
+| **B** | Brain View: every agent thought, tool call and AI decision, with its model |
+| **E** | Inventory. Looking at a villager, it opens the villager menu. |
+| G / N | Creative or survival / villager name tags |
+| **Esc** | Pause menu, with **Reset map** and **New world** |
+
+The **Demo panel** (top right) runs the showcase moments in one click:
+
+- *Build me a house*, *Night raid*, *Grief Mara's house*, *Make amends*, *Bram, help me repair it*, *Forge
+  anything*, *Forge a building*;
+- day/night, rain, creative, *Give kit*, *Reset map*, *Reset memory*;
+- *Dashboard*, Brain View, captions and voices.
+
+Add `?nodemo` to the URL to hide it.
+
+### The dashboard
+
+Open `/dashboard` (locally http://localhost:8790/dashboard, on Render `https://<your-service>.onrender.com/dashboard`)
+and enter the admin key: `dev-admin` locally, the generated `LIVEFORGE_ADMIN_KEY` on Render. It shows the live
+signal stream, player models, NPC memories, the rumour graph, factions, the Director timeline, agents, the forge
+gallery and cost meters. See [docs/dashboard.md](docs/dashboard.md).
+
+### More
+
+- **Godot 4:** [quickstart](docs/quickstart-godot.md). **Web / Three.js:** [quickstart](docs/quickstart-web.md).
+- **All docs:** [docs/README.md](docs/README.md).
+- **Cost.** Every AI call is checked against the manifest budgets first. The public Livecraft demo is capped at
+  **$2 per day** for the game and **$0.25 per player** (`budgets` in
+  [`examples/livecraft.liveforge.yaml`](examples/livecraft.liveforge.yaml)). Past a cap the game keeps running on
+  rules: asks keep their instant answer and agents follow their scripted plan. Voice transcription is capped
+  separately (`LIVEFORGE_STT_PER_MIN`).
+- **Environment variables** (the full table is in [docs/self-hosting.md](docs/self-hosting.md#environment-variables)):
+
+| Variable | |
+|---|---|
+| `ANTHROPIC_API_KEY` | Claude, for AI upgrades. Without it everything runs on rules. |
+| `OPENAI_API_KEY` | Optional. Whisper speech-to-text. |
+| `LIVEFORGE_MANIFESTS` | Comma-separated manifest files, one game each. |
+| `LIVEFORGE_SDK_KEYS` | Publishable keys per game: `livecraft=pk_live_livecraft`. |
+| `LIVEFORGE_ADMIN_KEY` | Dashboard and `/admin/*`. |
+| `LIVEFORGE_DEV` | `1` accepts `pk_dev_<gameId>` and `dev-admin`. Off when `NODE_ENV=production`. |
+| `LIVEFORGE_STATIC_DIR` | Serve a built web game at `/` (Render: `/app/examples/livecraft/dist`). |
+| `LIVEFORGE_RATE_LIMIT_PER_MIN`, `LIVEFORGE_TRUST_PROXY` | Requests per minute per client; `1` behind a proxy. |
+| `LIVEFORGE_STT_PER_MIN` | Voice transcriptions per minute per client (default 6). |
+| `PORT` | Listen port (Render sets it). |
+
+## What it does
+
 <!-- GIF placeholders: drop recordings into docs/media/ with these names -->
 | | |
 |---|---|
@@ -19,7 +129,7 @@ Repo: https://github.com/githuphub/Reactive. Reactive was called Liveforge durin
 | ![Forge from a prompt](docs/media/forge-prompt.gif) | ![Live dashboard](docs/media/dashboard.gif) |
 | *"A rusty cleaver that drips green fire"* | *The dashboard shows why every decision was made.* |
 
-## Features
+### Features
 
 - **Observer.** A player model built from what players do: 19 built-in traits (dodger, hoarder, pacifist,
   murderer, chatterbox …) with evidence, designer traits written in a one-line rule DSL, notable *moments*, and a
@@ -95,7 +205,7 @@ upgrade. The **Brain feed** streams every agent step, build plan and AI decision
 ## Architecture
 
 ```
-  Your game (Web / Three.js, Godot 4, Unity*, Unreal*)          Liveforge server (Node 22 or Docker, self-hosted)
+  Your game (Web / Three.js, Godot 4, Unity*, Unreal*)          Reactive server (Node 22 or Docker, self-hosted)
  ┌─────────────────────────────────────┐   HTTPS    ┌────────────────────────────────────────────────────────────┐
  │ SDK  @liveforge/sdk · Godot addon   │──signals──▶│ Ingest ─▶ Event log (SQLite; per game / world / player)    │
  │  signal("combat.dodged", {...})     │──asks─────▶│              │                                             │
@@ -117,27 +227,20 @@ upgrade. The **Brain feed** streams every agent step, build plan and AI decision
   can be replayed, rebuilt and snapshotted.
 - **Your keys, your infra.** Model and provider keys live only in server env, never in clients.
 
-## Quickstart
+## Use Reactive in your own game
 
 ### 1. Run the server
 
-```bash
-git clone <this-repo-url> liveforge && cd liveforge
-npm install
-npm run build
-npm run dev          # http://localhost:8787 · dashboard at http://localhost:8787/dashboard
-```
-
-- **Dev mode keys:** the SDK key is `pk_dev_<gameId>` and the admin key is `dev-admin`.
-- **AI upgrades:** add `ANTHROPIC_API_KEY` to `.env`. Copy `.env.example` to get started.
-- **Docker:** `docker compose up` works too. See [self-hosting](docs/self-hosting.md).
+Follow [Run locally](#run-locally). `docker compose up` works too, see [self-hosting](docs/self-hosting.md). In dev
+mode the SDK key is `pk_dev_<gameId>` and the admin key is `dev-admin`. Without a `.env`, the server listens on
+port 8787.
 
 ### 2a. Web / Three.js
 
 ```ts
 import { createClient } from "@liveforge/sdk";
 
-const lf = createClient({ url: "http://localhost:8787", gameKey: "pk_dev_counterforge", player: "p1", world: "w1" });
+const lf = createClient({ url: "http://localhost:8790", gameKey: "pk_dev_counterforge", player: "p1", world: "w1" });
 
 lf.signal("combat.dodged", { source: "forge_titan", direction: "left" });   // fire-and-forget, batched
 
@@ -208,7 +311,7 @@ described in the [manifest reference](docs/manifest.md).
 | [Godot quickstart](docs/quickstart-godot.md) | Godot 4 addon, nodes and editor dock |
 | [Manifest reference](docs/manifest.md) | Every field of `liveforge.yaml` |
 | [Protocol](docs/protocol.md) | REST + WebSocket, for Unity, Unreal or your own engine |
-| [Self-hosting](docs/self-hosting.md) | Node, Docker, env vars, providers, costs and budgets |
+| [Self-hosting](docs/self-hosting.md) | Node, Docker, Render, env vars, providers, costs and budgets |
 | [Dashboard](docs/dashboard.md) | What every panel shows |
 | [Reaction Library](docs/reactions.md) | 20 one-line reactions, the combination engine, signals and payloads |
 | [Agents](docs/agents.md) | Tool-calling NPC agents, the rules fallback and the Brain feed |
@@ -228,7 +331,9 @@ described in the [manifest reference](docs/manifest.md).
 | `packages/sdk-three` | `@liveforge/three`: Blueprint/VFX/Variant builders, TTS + mic, LiveNPC/LiveBoss/LiveEquipSlot/LiveSpawner |
 | `packages/dashboard` | The live dashboard (Vite + TS + Three.js), served at `/dashboard` |
 | `godot/addons/liveforge` | Godot 4 addon |
-| `examples/` | Example manifests (Counterforge, Godot village) |
+| `examples/livecraft` | Livecraft, the voxel demo game (Vite + three.js) that the Render deploy serves at `/` |
+| `examples/` | Example manifests (Livecraft, Counterforge, Godot village) and the Godot village project |
+| `Dockerfile`, `render.yaml` | One image with the server, dashboard and Livecraft; the Render Blueprint |
 
 ## License
 

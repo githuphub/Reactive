@@ -19,8 +19,12 @@ export interface ServerConfig {
   /** Dev mode: accept `pk_dev_<gameId>` SDK keys and `dev-admin` as admin key when none are configured. */
   dev: boolean;
   corsOrigins: string[];
-  /** Requests per minute per SDK key. */
+  /** Requests per minute per client (SDK key + client IP). */
   rateLimitPerMin: number;
+  /** Behind a reverse proxy (Render, Fly, nginx): take the client IP from the first X-Forwarded-For entry. */
+  trustProxy: boolean;
+  /** Serve this directory (a built web game) at "/" after every API/admin/dashboard route, with an SPA fallback. */
+  staticDir: string | null;
   logLevel: LogLevel;
   llm: {
     provider: "claude" | "none";
@@ -47,6 +51,10 @@ export interface ServerConfig {
     whisperCppThreads: number;
     ffmpegBin: string | null;
     maxBytes: number;
+    /** Transcriptions per minute per client (SDK key + client IP). 0 = no limit. */
+    perMin: number;
+    /** Transcriptions per day per game (in memory; resets on restart). 0 = no limit. */
+    perDay: number;
   };
   mesh3d: {
     provider: "hyper3d" | "none";
@@ -112,6 +120,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): ServerConfig {
     dev,
     corsOrigins: (env.LIVEFORGE_CORS_ORIGINS ?? "*").split(",").map((s) => s.trim()).filter(Boolean),
     rateLimitPerMin: num(env.LIVEFORGE_RATE_LIMIT_PER_MIN, 600),
+    trustProxy: bool(env.LIVEFORGE_TRUST_PROXY, false),
+    staticDir: str(env.LIVEFORGE_STATIC_DIR) ? resolve(str(env.LIVEFORGE_STATIC_DIR)!) : null,
     logLevel: (env.LIVEFORGE_LOG_LEVEL as LogLevel) ?? "info",
     llm: {
       provider: env.LIVEFORGE_LLM_PROVIDER === "none" ? "none" : "claude",
@@ -134,6 +144,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): ServerConfig {
       whisperCppThreads: num(env.WHISPER_CPP_THREADS, 4),
       ffmpegBin: str(env.FFMPEG_BIN),
       maxBytes: num(env.LIVEFORGE_STT_MAX_BYTES, 10 * 1024 * 1024),
+      perMin: num(env.LIVEFORGE_STT_PER_MIN, 6),
+      perDay: num(env.LIVEFORGE_STT_PER_DAY, 0),
     },
     mesh3d: {
       provider: str(env.HYPER3D_API_KEY) ? "hyper3d" : "none",

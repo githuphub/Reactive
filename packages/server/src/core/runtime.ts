@@ -235,16 +235,21 @@ export class Liveforge {
     return null;
   }
 
-  /** Fixed-window rate limit per key. */
-  rateLimit(key: string): boolean {
+  /**
+   * Fixed one-minute window per bucket. The HTTP layer passes "<key>|<client ip>" so every player behind a shared
+   * publishable key gets their own allowance. `limit` defaults to LIVEFORGE_RATE_LIMIT_PER_MIN (<= 0: unlimited).
+   */
+  rateLimit(bucket: string, limit = this.config.rateLimitPerMin): boolean {
+    if (limit <= 0) return true;
     const now = Date.now();
-    const r = this.rate.get(key);
+    if (this.rate.size > 20_000) for (const [k, v] of this.rate) if (now - v.start >= 60_000) this.rate.delete(k);
+    const r = this.rate.get(bucket);
     if (!r || now - r.start >= 60_000) {
-      this.rate.set(key, { start: now, n: 1 });
+      this.rate.set(bucket, { start: now, n: 1 });
       return true;
     }
     r.n++;
-    return r.n <= this.config.rateLimitPerMin;
+    return r.n <= limit;
   }
 
   // ------------------------------------------------------------------ events
