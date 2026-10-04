@@ -10,7 +10,7 @@
  * | `?lfname=Alex` | | `Traveller` | Display name used in prompts and the statue. |
  * | `?lfdash=http://...` | `VITE_LIVEFORGE_DASHBOARD` | `<server>/dashboard` | Dashboard URL (Demo panel). |
  * | `?cassette=replay` | `VITE_LIVEFORGE_CASSETTE` | detected | Cassette mode label (live / record / replay). |
- * | `?demo` | | off | Demo panel, Brain View open, captions. |
+ * | `?nodemo` | | demo on | Demo panel, Brain View open, captions (on by default; `?nodemo` hides them). |
  *
  * Only the publishable key lives in the client; provider keys stay on the Liveforge server.
  */
@@ -25,7 +25,7 @@ export interface LiveforgeSettings {
   dashboard: string | null;
   /** Cassette mode label forced by the URL/env, else null (detected from Brain badges). */
   cassette: string | null;
-  /** `?demo`: Demo panel + Brain View open by default + captions. */
+  /** Demo panel + Brain View open + captions (default on; `?nodemo` turns it off). */
   demo: boolean;
 }
 
@@ -76,6 +76,6 @@ export function readSettings(seed: string, search = typeof location !== 'undefin
     playerName: (q.get('lfname') ?? 'Traveller').slice(0, 24),
     dashboard: q.get('lfdash') ?? env('VITE_LIVEFORGE_DASHBOARD') ?? (valid ? `${valid}/dashboard` : null),
     cassette: q.get('cassette') ?? env('VITE_LIVEFORGE_CASSETTE') ?? null,
-    demo: q.has('demo'),
+    demo: !q.has('nodemo'),
   };
 }
