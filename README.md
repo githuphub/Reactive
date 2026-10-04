@@ -31,7 +31,7 @@ The admin key for the dashboard is generated for you: Render dashboard → your 
 
 ### Try it
 
-Open **`https://<your-service>.onrender.com`** and play. There is nothing to install and no sign-up.
+Open **`https://reactive-h1a5.onrender.com`** and play. There is nothing to install and no sign-up.
 
 - **Cold start.** On the free plan the service sleeps when idle. The first load after a quiet spell takes about
   30 s.
@@ -90,7 +90,7 @@ Add `?nodemo` to the URL to hide it.
 
 ### The dashboard
 
-Open `/dashboard` (locally http://localhost:8790/dashboard, on Render `https://<your-service>.onrender.com/dashboard`)
+Open `/dashboard` (locally http://localhost:8790/dashboard, on Render `https://reactive-h1a5.onrender.com/dashboard`)
 and enter the admin key: `dev-admin` locally, the generated `LIVEFORGE_ADMIN_KEY` on Render. It shows the live
 signal stream, player models, NPC memories, the rumour graph, factions, the Director timeline, agents, the forge
 gallery and cost meters. See [docs/dashboard.md](docs/dashboard.md).

@@ -2,7 +2,7 @@
 
 **Track:** Game Tech · Cambridge × Arcade AI Hackathon
 **Repo:** https://github.com/githuphub/Reactive
-**Play it:** https://<your-service>.onrender.com (the first load after idle takes about 30 s on the free tier)
+**Play it:** https://reactive-h1a5.onrender.com (the first load after idle takes about 30 s on the free tier)
 
 ---
 
