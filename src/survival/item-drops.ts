@@ -26,6 +26,12 @@ export interface DropOptions {
 }
 
 /** One item lying in the world. */
+/**
+ * Extra dropped-item model builders, tried before the cube / sprite (WC forge: voxel models). Return a fresh mesh
+ * (feet at y = 0, about 0.4 blocks big; disposed with the drop) or null to fall through.
+ */
+export const dropMeshFactories: ((itemName: string) => THREE.Mesh | null)[] = [];
+
 export class ItemDrop implements Body {
   readonly position = new THREE.Vector3();
   readonly velocity = new THREE.Vector3();
@@ -111,6 +117,10 @@ export class ItemDrops {
   private buildMesh(name: string): THREE.Mesh | null {
     const item = findItem(name);
     if (!item) return null;
+    for (const f of dropMeshFactories) {
+      const m = f(name);
+      if (m) return m;
+    }
     if (this.atlasVersion !== this.game.atlas.version) {
       this.atlasVersion = this.game.atlas.version;
       this.atlasTex.needsUpdate = true;

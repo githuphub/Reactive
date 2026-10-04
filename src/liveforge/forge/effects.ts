@@ -5,7 +5,9 @@
  * - fire_trail: while held, your steps leave flames that set nearby hostiles alight;
  * - knockback_burst: a melee hit blasts every hostile within 4 blocks away;
  * - heal_aura: while held, you slowly heal;
- * - frost_slow: a hit slows the target for 4 s.
+ * - frost_slow: a hit slows the target for 4 s;
+ * - explode_on_hit: a melee hit sets off a small blast (no block damage) that hurts and throws nearby hostiles.
+ * Passive effects of things (speed, jump, glow, night vision) are in buffs.ts.
  */
 import * as THREE from 'three';
 import type { Game } from '../../game/game';
@@ -14,6 +16,15 @@ import type { Entity } from '../../engine/entity';
 import type { Mob } from '../../mobs';
 import { getHealth, getParticles } from '../../survival';
 import { forgedSpec } from './registry';
+import { thingEffect } from './things';
+
+/** Effect + colour of a held forged item (forge.item items or forge.thing things). */
+function fxOf(item: string | null | undefined): { effect: string; color: string; main: string } | null {
+  const spec = forgedSpec(item);
+  if (spec?.effect) return { effect: spec.effect, color: spec.palette[3], main: spec.palette[0] };
+  const t = thingEffect(item);
+  return t ? { effect: t.effect, color: t.color, main: t.color } : null;
+}
 
 const NEIGH = [[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1]];
 
@@ -24,7 +35,7 @@ export function wireEffects(game: Game): void {
 
   game.events.on('blockBroken', (e) => {
     if (chaining || e.source !== 'player' || !e.tool) return;
-    const spec = forgedSpec(e.tool.item);
+    const spec = fxOf(e.tool.item);
     if (!spec || (spec.effect !== 'chain_lightning' && spec.effect !== 'vein_mine')) return;
     const max = spec.effect === 'chain_lightning' ? 6 : 12;
     const targets = connected(game, e.x, e.y, e.z, e.id, max);
@@ -37,20 +48,20 @@ export function wireEffects(game: Game): void {
       prev = to;
       setTimeout(() => {
         if (game.world.getBlock(t.x, t.y, t.z) !== e.id) return;
-        if (lightning) arc(game, from, to, spec.palette[3]);
+        if (lightning) arc(game, from, to, spec.color);
         chaining = true;
         try {
           game.breakBlock(t.x, t.y, t.z, { source: 'player', tool: e.tool });
         } finally {
           chaining = false;
         }
-        getParticles(game).burst({ x: to.x, y: to.y, z: to.z, count: lightning ? 10 : 6, color: lightning ? [spec.palette[3], '#ffffff'] : [spec.palette[0]], speed: 3, up: 1.5 });
+        getParticles(game).burst({ x: to.x, y: to.y, z: to.z, count: lightning ? 10 : 6, color: lightning ? [spec.color, '#ffffff'] : [spec.main], speed: 3, up: 1.5 });
       }, 70 * (i + 1));
     });
   });
 
   game.events.on('playerAttack', (e) => {
-    const spec = forgedSpec(e.item?.item);
+    const spec = fxOf(e.item?.item);
     if (!spec) return;
     const p = game.player.position;
     if (spec.effect === 'knockback_burst') {
@@ -62,7 +73,7 @@ export function wireEffects(game: Game): void {
         m.velocity.y += 6;
         m.hurt(2, { kind: 'magic', player: true, item: e.item });
       }
-      for (let a = 0; a < 16; a++) getParticles(game).burst({ x: p.x + Math.cos(a) * 1.5, y: p.y + 0.6, z: p.z + Math.sin(a) * 1.5, count: 3, color: spec.palette[3], speed: 4, up: 0.5 });
+      for (let a = 0; a < 16; a++) getParticles(game).burst({ x: p.x + Math.cos(a) * 1.5, y: p.y + 0.6, z: p.z + Math.sin(a) * 1.5, count: 3, color: spec.color, speed: 4, up: 0.5 });
     }
     if (spec.effect === 'frost_slow' && isHostile(e.entity)) {
       const m = e.entity as Mob;
@@ -71,6 +82,7 @@ export function wireEffects(game: Game): void {
       setTimeout(() => (m.speedMul = 1), 4000);
     }
     if (spec.effect === 'fire_trail' && isHostile(e.entity)) (e.entity as Mob).burning = Math.max((e.entity as Mob).burning, 4);
+    if (spec.effect === 'explode_on_hit') blast(game, e.entity.position.x, e.entity.position.y + 0.5, e.entity.position.z, spec.color, e.item);
   });
 
   let acc = 0;
@@ -79,7 +91,7 @@ export function wireEffects(game: Game): void {
   game.addSystem({
     name: 'forge-effects',
     update: (dt) => {
-      const spec = forgedSpec(game.inventory.selectedStack?.item);
+      const spec = fxOf(game.inventory.selectedStack?.item);
       if (!spec) return;
       const p = game.player.position;
       if (spec.effect === 'fire_trail') {
@@ -101,6 +113,21 @@ export function wireEffects(game: Game): void {
       }
     },
   });
+}
+
+/** A small blast without block damage: hurts and throws hostiles within 3 blocks. */
+export function blast(game: Game, x: number, y: number, z: number, color: string, item?: unknown): void {
+  const parts = getParticles(game);
+  parts.burst({ x, y, z, count: 26, color: ['#fff2a8', '#ff9a2a', color, '#5a5a5a'], speed: 6, up: 1.5, size: 0.14, life: 0.6, spread: 0.4 });
+  parts.burst({ x, y, z, count: 12, color: ['#8a8a8a', '#5a5a5a'], speed: 2, up: 1.5, gravity: -1, size: 0.3, life: 1.1, spread: 0.6 });
+  for (const m of game.entities.query({ x, y, z }, 3, isHostile)) {
+    const dx = m.position.x - x, dz = m.position.z - z;
+    const d = Math.hypot(dx, dz) || 1;
+    m.hurt(4, { kind: 'explosion', player: true, item: (item ?? null) as never });
+    m.velocity.x += (dx / d) * 10;
+    m.velocity.z += (dz / d) * 10;
+    m.velocity.y += 6;
+  }
 }
 
 /** Connected blocks of the same id (BFS), excluding the start. */
