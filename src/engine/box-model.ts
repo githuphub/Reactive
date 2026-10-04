@@ -58,7 +58,7 @@ function faceSize(face: FaceName, [w, h, d]: [number, number, number]): [number,
 }
 
 /** Builds a texture strip (6 faces side by side) for a part. */
-function partTexture(size: [number, number, number], skin: string | SkinPainter): { tex: THREE.Texture; cellW: number; cellH: number } {
+export function partTexture(size: [number, number, number], skin: string | SkinPainter): { tex: THREE.Texture; cellW: number; cellH: number } {
   const cellW = Math.max(size[0], size[2], 1);
   const cellH = Math.max(size[1], size[2], 1);
   const canvas = document.createElement('canvas');

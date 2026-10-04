@@ -7,7 +7,7 @@
  * The golem is a tall iron guardian with long arms, vines, and red eyes that light up when angry.
  */
 import * as THREE from 'three';
-import { createBoxModel, shadeNoise, type BoxModel, type BoxPartSpec, type FaceName, type SkinPainter } from '../../engine/box-model';
+import { createBoxModel, partTexture, shadeNoise, type BoxModel, type BoxPartSpec, type FaceName, type SkinPainter } from '../../engine/box-model';
 
 export type Profession = 'builder' | 'farmer' | 'smith' | 'librarian' | 'guard' | 'villager' | 'golem';
 export type Expression = 'calm' | 'wary' | 'hostile' | 'festive' | 'sad';
@@ -37,6 +37,16 @@ export interface NpcModel {
   setPartyHat(on: boolean): void;
   /** Golem only: shows a held flower. */
   setFlower(on: boolean): void;
+  /**
+   * Attaches an extra object (an accessory) to a part: 'head', 'body', 'rightArm', 'leftLeg' ... Units are blocks,
+   * the origin is the part's pivot (head: neck centre, the head spans y 0..0.625 and faces -z; body: neck centre, the
+   * robe spans y -0.875..0). Returns a function that detaches it again (the caller disposes the object).
+   */
+  attach(part: string, obj: THREE.Object3D): () => void;
+  /** Repaints the skin with new robe / trim / hair / skin colours (CSS hex). Villagers only; no-op on the golem. */
+  recolor(colors: Partial<Pick<LookSpec, 'robe' | 'trim' | 'hair' | 'skin'>>): void;
+  /** Force-hides a named part (e.g. the profession hat under a forged helmet); `true` restores it. */
+  setPartVisible(part: string, visible: boolean): void;
   readonly isGolem: boolean;
   dispose(): void;
 }
@@ -208,7 +218,32 @@ const helmetPainter: SkinPainter = (face, ctx, w, h) => {
 
 /** Creates a villager model. `id` keys the texture cache (one per look). */
 export function createVillagerModel(id: string, prof: Profession, look: LookSpec): NpcModel {
-  const parts: BoxPartSpec[] = [
+  const model = createBoxModel({ id: `villager_${id}`, parts: villagerParts(id, prof, look) });
+  // recolor(): repaint the look-dependent parts into fresh (uncached) textures
+  let current = { ...look };
+  const owned: THREE.Texture[] = [];
+  const reskin = (colors: Partial<LookSpec>) => {
+    current = { ...current, ...colors };
+    for (const spec of villagerParts(id, prof, current)) {
+      if (!RESKIN_PARTS.has(spec.name)) continue;
+      const mesh = model.parts[spec.name]?.children[0] as THREE.Mesh | undefined;
+      const mat = mesh?.material as THREE.MeshLambertMaterial | undefined;
+      if (!mat) continue;
+      const tex = partTexture(spec.size, spec.skin).tex;
+      owned.push(tex);
+      mat.map = tex;
+      mat.needsUpdate = true;
+    }
+    while (owned.length > RESKIN_PARTS.size * 2) owned.shift()?.dispose();
+  };
+  return wrap(model, false, reskin, () => owned.forEach((t) => t.dispose()));
+}
+
+/** Parts whose skin depends on the look colours (repainted by recolor). */
+const RESKIN_PARTS = new Set(['body', 'arms', 'leftArm', 'rightArm', 'head', 'browL', 'browR', 'nose']);
+
+function villagerParts(id: string, prof: Profession, look: LookSpec): BoxPartSpec[] {
+  return [
     { name: 'leftLeg', size: [3, 6, 3], pivot: [-2, 6, 0], skin: legPainter(look) },
     { name: 'rightLeg', size: [3, 6, 3], pivot: [2, 6, 0], skin: legPainter(look) },
     { name: 'body', size: [8, 14, 6], pivot: [0, 20, 0], skin: robePainter(look, prof) },
@@ -222,8 +257,6 @@ export function createVillagerModel(id: string, prof: Profession, look: LookSpec
     { name: 'partyHat', parent: 'head', size: [4, 6, 4], pivot: [1, 10, 0], offset: [-2, 0, -2], skin: partyPainter },
     ...hatParts(prof, id),
   ];
-  const model = createBoxModel({ id: `villager_${id}`, parts });
-  return wrap(model, false);
 }
 
 const partyPainter: SkinPainter = (_face, ctx, w, h) => {
@@ -303,7 +336,7 @@ function shadeHex(hex: string, f: number): string {
   return `rgb(${r},${g},${b})`;
 }
 
-function wrap(model: BoxModel, isGolem: boolean): NpcModel {
+function wrap(model: BoxModel, isGolem: boolean, reskin?: (c: Partial<LookSpec>) => void, disposeExtra?: () => void): NpcModel {
   const wrapper = new THREE.Group();
   wrapper.add(model.root);
   wrapper.userData.boxModel = model;
@@ -331,6 +364,7 @@ function wrap(model: BoxModel, isGolem: boolean): NpcModel {
   if (p.partyHat) p.partyHat.visible = false;
   if (p.eyesAngry) p.eyesAngry.visible = false;
   if (p.flower) p.flower.visible = false;
+  const forcedHidden = new Set<string>();
   let armsFree = isGolem;
   const applyArms = () => {
     if (p.arms) p.arms.visible = !armsFree;
@@ -378,7 +412,25 @@ function wrap(model: BoxModel, isGolem: boolean): NpcModel {
     },
     setPartyHat(on) {
       if (p.partyHat) p.partyHat.visible = on;
-      for (const n of ['hat', 'hatBrim', 'hatTop', 'hatBand', 'plume']) if (p[n]) p[n].visible = !on;
+      for (const n of ['hat', 'hatBrim', 'hatTop', 'hatBand', 'plume']) if (p[n]) p[n].visible = !on && !forcedHidden.has(n);
+      if (p.partyHat && forcedHidden.has('partyHat')) p.partyHat.visible = false;
+    },
+    attach(part, obj) {
+      const parent = p[part] ?? model.root;
+      parent.add(obj);
+      return () => {
+        obj.parent?.remove(obj);
+      };
+    },
+    recolor(colors) {
+      reskin?.(colors);
+    },
+    setPartVisible(part, visible) {
+      if (visible) forcedHidden.delete(part);
+      else forcedHidden.add(part);
+      if (!p[part]) return;
+      if (!visible) p[part].visible = false;
+      else if (part !== 'partyHat') p[part].visible = true;
     },
     setFlower(on) {
       if (p.flower) p.flower.visible = on;
@@ -390,6 +442,7 @@ function wrap(model: BoxModel, isGolem: boolean): NpcModel {
       swordGeo.dispose();
       swordMat.dispose();
       hiltGeo.dispose();
+      disposeExtra?.();
     },
   };
 }
