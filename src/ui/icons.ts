@@ -8,8 +8,16 @@ import type { TextureAtlas } from '../engine/atlas';
 
 const SIZE = 32;
 
+/**
+ * Extra icon painters tried before the atlas (WC forge: isometric voxel snapshots). Return a 32×32 canvas or null to
+ * fall through. Call {@link IconRenderer.invalidate} when an item's look changes.
+ */
+export const iconProviders: ((item: string) => HTMLCanvasElement | null)[] = [];
+
 export class IconRenderer {
   private readonly cache = new Map<string, HTMLCanvasElement>();
+  /** Canvases last drawn by drawInto, so invalidate() can repaint them in place. */
+  private readonly drawn = new Map<HTMLCanvasElement, string>();
 
   constructor(private readonly atlas: TextureAtlas) {}
 
@@ -22,7 +30,9 @@ export class IconRenderer {
     const ctx = c.getContext('2d')!;
     ctx.imageSmoothingEnabled = false;
     const def = findItem(item);
-    if (def) {
+    const custom = iconProviders.reduce<HTMLCanvasElement | null>((m, f) => m ?? f(item), null);
+    if (custom) ctx.drawImage(custom, 0, 0, SIZE, SIZE);
+    else if (def) {
       if (def.icon === null && def.block !== null) this.drawCube(ctx, def.block);
       else ctx.drawImage(this.atlas.tileCanvas(def.icon ?? item), 0, 0, SIZE, SIZE);
     }
@@ -36,6 +46,14 @@ export class IconRenderer {
     ctx.imageSmoothingEnabled = false;
     ctx.clearRect(0, 0, target.width, target.height);
     if (item) ctx.drawImage(this.icon(item), 0, 0, target.width, target.height);
+    if (item) this.drawn.set(target, item);
+    else this.drawn.delete(target);
+  }
+
+  /** Forgets the cached icon of `item` and repaints every slot canvas currently showing it. */
+  invalidate(item: string): void {
+    this.cache.delete(item);
+    for (const [c, it] of this.drawn) if (it === item) this.drawInto(c, item);
   }
 
   private drawCube(ctx: CanvasRenderingContext2D, blockId: number): void {
