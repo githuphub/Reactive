@@ -33,7 +33,7 @@ export interface Vec3Like {
 /** Where a wave appears around its centre. */
 export type SpawnPlacement = 'near' | 'far' | 'ring' | 'random' | 'north' | 'south' | 'east' | 'west' | Vec3Like;
 
-/** A raid wave, shaped like a Liveforge `faction.raid_plan` wave. */
+/** A raid wave, shaped like a Reactive `faction.raid_plan` wave. */
 export interface WaveSpec {
   mob: string;
   /** Default 1. */

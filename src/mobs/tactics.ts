@@ -2,7 +2,7 @@
  * Raid tactics as behaviour modifiers. A mob with `mob.tactic = 'flank'` asks its tactic for a
  * different approach goal, path options, speed and extra per-frame actions (digging, building up).
  *
- * V3 picks tactics from Liveforge raid plans; new ones can be added with {@link registerTactic}.
+ * V3 picks tactics from Reactive raid plans; new ones can be added with {@link registerTactic}.
  */
 import * as THREE from 'three';
 import { BLOCK, BLOCK_FLAGS, F_SOLID } from '../engine/blocks';

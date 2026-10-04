@@ -1,5 +1,5 @@
 /**
- * Play-style detectors (for V3 → Liveforge signals `build.pillared`, `combat.hid`):
+ * Play-style detectors (for V3 → Reactive signals `build.pillared`, `combat.hid`):
  * - `pillared {height}`: the player stands on a 1×1 column they built themselves, ≥ 4 high.
  * - `hid {depth}`: the player is enclosed underground at night.
  */

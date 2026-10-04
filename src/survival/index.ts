@@ -1,5 +1,5 @@
 /**
- * Public survival API for V2 (trading, villager gifts) and V3 (forge, quests, Liveforge signals).
+ * Public survival API for V2 (trading, villager gifts) and V3 (forge, quests, Reactive signals).
  *
  * ```ts
  * import { registerRecipe, giveItem, takeItem, hasItem, countItem, hurtPlayer, getHealth } from '../survival';

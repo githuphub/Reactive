@@ -1,7 +1,7 @@
 /**
  * Trade screen: a villager's offers priced in coins at the current multiplier, live price updates
  * when the village posture changes prices, and a Haggle button that calls the village's haggle
- * hook (V3 wires it to Liveforge; the default is a rules-based haggle).
+ * hook (V3 wires it to Reactive; the default is a rules-based haggle).
  */
 import { findItem } from '../../engine/items';
 import type { Game } from '../../game/game';

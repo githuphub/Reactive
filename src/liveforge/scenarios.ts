@@ -14,6 +14,7 @@ import type { RaidRunner } from './raid';
 import type { LiveforgeService } from './service';
 import type { Talk } from './talk';
 import { voices } from './voice';
+import { worldDemoButtons } from './world/demo'; // lane WB
 
 export interface ScenarioDeps {
   game: Game;
@@ -153,6 +154,9 @@ export function scenarioButtons(d: ScenarioDeps): DemoButton[] {
         d.openForge('a wizard tower with a spiral staircase', 'building');
       },
     },
+    // ---- lane WB: rumours, quest chains, makeovers, Hyper3D (src/liveforge/world/demo.ts) ----
+    ...worldDemoButtons(game),
+    // ---- end lane WB ----
   ];
 }
 
@@ -188,14 +192,14 @@ export function utilityButtons(d: ScenarioDeps): (DemoToggle | DemoAction)[] {
         village.setPriceMult(1);
         getHub().nickname = null;
         d.brain.clear();
-        game.ui.toast(`Village memory reset (new Liveforge world ${next})`, { kind: 'good', seconds: 4 });
+        game.ui.toast(`Village memory reset (new Reactive world ${next})`, { kind: 'good', seconds: 4 });
       },
     },
     {
       label: '📊 Dashboard',
       run: () => {
         const url = lf.settings.dashboard;
-        if (!url) return void game.ui.toast('No dashboard URL (Liveforge is off)');
+        if (!url) return void game.ui.toast('No dashboard URL (Reactive is off)');
         const w = Math.floor(screen.availWidth / 2);
         window.open(url, 'liveforge-dashboard', `left=${w},top=0,width=${w},height=${screen.availHeight}`);
       },
@@ -203,6 +207,6 @@ export function utilityButtons(d: ScenarioDeps): (DemoToggle | DemoAction)[] {
     { label: '🧠 Brain View', get: () => d.brain.isVisible, set: () => d.brain.toggle() },
     { label: 'Captions', get: () => d.captions.enabled, set: (on) => d.captions.setEnabled(on) },
     { label: '🔊 Voices', get: () => voices.enabled, set: (on) => (voices.enabled = on) },
-    { label: `📼 ${lf.cassette}`, run: () => game.ui.toast(`Liveforge ${lf.status} · cassette ${lf.cassette}`) },
+    { label: `📼 ${lf.cassette}`, run: () => game.ui.toast(`Reactive ${lf.status} · cassette ${lf.cassette}`) },
   ];
 }

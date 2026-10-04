@@ -2,7 +2,7 @@
  * Survival + mob events, merged into the core `GameEvents` map with TypeScript declaration
  * merging, so `game.events.on('mobKilled', …)` is fully typed without editing game/events.ts.
  *
- * V3 forwards these to Liveforge as signals (combat, items, play style).
+ * V3 forwards these to Reactive as signals (combat, items, play style).
  */
 import type { DamageSource, Entity } from '../engine/entity';
 import type { ItemStack } from '../engine/items';

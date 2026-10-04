@@ -1,7 +1,8 @@
 /**
- * Shared state of the Liveforge integration (set up once by the plugin): the game, the service, the habit tally,
+ * Shared state of the Reactive integration (set up once by the plugin): the game, the service, the habit tally,
  * the player's nickname and the UI hooks other modules call (captions, Brain View, chat log).
  */
+import type { Directive } from '@liveforge/sdk';
 import type { Game } from '../game/game';
 import type { LiveforgeService } from './service';
 import type { HabitTally } from './signals';
@@ -16,6 +17,11 @@ export interface LfHub {
   caption(text: string, seconds?: number): void;
   /** Appends a line to the open chat log (npc lines from directives). */
   chatLine(npc: string, text: string): void;
+  /**
+   * Lane WB: the gossip visualiser takes over `rumour.heard` directives (walk over, bubbles, 💬 particles). Return
+   * true when handled so the plain "Have you heard?" line is skipped.
+   */
+  onRumourHeard?: (d: Directive) => boolean;
 }
 
 let hub: LfHub | null = null;
@@ -27,7 +33,7 @@ export function setHub(h: LfHub): void {
 
 /** The integration state (throws before the plugin ran). */
 export function getHub(): LfHub {
-  if (!hub) throw new Error('Liveforge hub not ready');
+  if (!hub) throw new Error('Reactive hub not ready');
   return hub;
 }
 

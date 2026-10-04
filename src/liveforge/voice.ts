@@ -35,7 +35,7 @@ export function speakAs(lf: LiveforgeService, npc: string, text: string): void {
 let mic: Mic | null = null;
 let micKey = '';
 
-const FIX = 'Use Chrome or Edge (free, built in), or add OPENAI_API_KEY to the Liveforge .env and restart the server (Whisper). Press T to type meanwhile.';
+const FIX = 'Use Chrome or Edge (free, built in), or add OPENAI_API_KEY to the Reactive .env and restart the server (Whisper). Press T to type meanwhile.';
 
 /** Brave exposes speech recognition but blocks Google's speech service, so it always fails there. */
 function isBrave(): boolean {
@@ -51,8 +51,8 @@ export function voiceBlocker(lf: LiveforgeService): string | null {
   if (s.browser && !isBrave()) return null;
   const who = isBrave() ? 'Brave blocks the browser speech service' : 'This browser has no built-in speech recognition';
   if (!s.record) return `${who} and can't record audio. ${FIX}`;
-  if (lf.status === 'off') return `${who}, and Liveforge is offline (its server does the speech-to-text here). ${FIX}`;
-  if (lf.serverStt === null) return `${who}, and the Liveforge server has no speech-to-text configured. ${FIX}`;
+  if (lf.status === 'off') return `${who}, and Reactive is offline (its server does the speech-to-text here). ${FIX}`;
+  if (lf.serverStt === null) return `${who}, and the Reactive server has no speech-to-text configured. ${FIX}`;
   return null;
 }
 

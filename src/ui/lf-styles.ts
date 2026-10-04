@@ -1,5 +1,5 @@
 /**
- * Styles for the Liveforge UI (Brain View, Demo panel, captions, chat, quests, forge, badge). Injected once.
+ * Styles for the Reactive UI (Brain View, Demo panel, captions, chat, quests, forge, badge). Injected once.
  * Everything lives in an overlay above the screen stack so it stays clickable while the game is paused.
  */
 const CSS = `
@@ -128,7 +128,7 @@ const CSS = `
 
 let injected = false;
 
-/** Injects the Liveforge UI styles (idempotent). */
+/** Injects the Reactive UI styles (idempotent). */
 export function injectLfStyles(): void {
   if (injected) return;
   injected = true;
@@ -140,7 +140,7 @@ export function injectLfStyles(): void {
 
 let overlay: HTMLElement | null = null;
 
-/** The overlay layer (above the screen stack, below nothing) that every Liveforge widget mounts into. */
+/** The overlay layer (above the screen stack, below nothing) that every Reactive widget mounts into. */
 export function lfOverlay(): HTMLElement {
   if (overlay) return overlay;
   injectLfStyles();

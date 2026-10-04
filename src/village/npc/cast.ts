@@ -1,5 +1,5 @@
 /**
- * The Oakhollow cast. Ids match the Liveforge manifest personas (`examples/livecraft.liveforge.yaml`);
+ * The Oakhollow cast. Ids match the Reactive manifest personas (`examples/livecraft.liveforge.yaml`);
  * aliases cover the manifest's longer ids (e.g. `captain_rowan`). Generic villagers are rolled per
  * seed in `layout.ts` and added with {@link genericCast}.
  */

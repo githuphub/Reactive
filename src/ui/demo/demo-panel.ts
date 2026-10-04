@@ -112,7 +112,7 @@ export class StatusBadge {
   constructor() {
     this.el = document.createElement('div');
     this.el.className = 'lcx-lfbadge';
-    this.el.title = 'Liveforge connection · cassette mode';
+    this.el.title = 'Reactive connection · cassette mode';
     this.dot = document.createElement('span');
     this.dot.className = 'lcx-dot';
     this.text = document.createElement('span');
@@ -124,7 +124,7 @@ export class StatusBadge {
 
   set(status: string, cassette: string): void {
     this.dot.className = `lcx-dot lcx-${status === 'off' ? 'offline' : status}`;
-    this.text.textContent = status === 'online' ? 'Liveforge online' : status === 'connecting' ? 'Liveforge…' : status === 'off' ? 'Liveforge off (local rules)' : 'Offline · local rules';
+    this.text.textContent = status === 'online' ? 'Reactive online' : status === 'connecting' ? 'Reactive…' : status === 'off' ? 'Reactive off (local rules)' : 'Offline · local rules';
     this.cas.textContent = cassette;
     this.cas.className = `lcx-cas lcx-${cassette}`;
   }
