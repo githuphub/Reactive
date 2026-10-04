@@ -1,5 +1,5 @@
 /**
- * Game events → Liveforge signals. Everything the village mind, the Observer and the Reaction Library read comes
+ * Game events → Reactive signals. Everything the village mind, the Observer and the Reaction Library read comes
  * from here. Play-style detectors are throttled; a local habit tally feeds the offline raid counter-table.
  */
 import type { Game } from '../game/game';
@@ -54,7 +54,7 @@ export function zoneAt(game: Game, x: number, y: number, z: number): string | nu
   return null;
 }
 
-/** The player's outfit as Liveforge slots (held item + clothes), also used for statue colours. */
+/** The player's outfit as Reactive slots (held item + clothes), also used for statue colours. */
 export function outfitOf(game: Game): Record<string, { id: string; name: string; tags: string[]; colors: string[] }> {
   const held = game.inventory.selectedStack;
   const slots: Record<string, { id: string; name: string; tags: string[]; colors: string[] }> = {

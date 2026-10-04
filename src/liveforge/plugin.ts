@@ -1,5 +1,5 @@
 /**
- * Liveforge integration plugin (lane V3): connects Livecraft to the Liveforge server through `@liveforge/sdk`.
+ * Reactive integration plugin (lane V3): connects Livecraft to the Reactive server through `@liveforge/sdk`.
  *
  * - Service + config (`?lf=`, `VITE_LIVEFORGE_URL`, default http://localhost:8790; game `livecraft`), offline-safe.
  * - Signals from game events (signals.ts), agent tools for every named villager (tools.ts, build.ts),

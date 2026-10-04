@@ -1,6 +1,6 @@
 /**
  * Map reset: wipes this seed's save (blocks, player, inventory, forged things, placed stuff), starts a fresh
- * Liveforge world so villagers forget too, then reloads. `newSeed` also rolls a random seed.
+ * Reactive world so villagers forget too, then reloads. `newSeed` also rolls a random seed.
  */
 import type { Game } from './game';
 
@@ -21,7 +21,7 @@ export async function resetMap(game: Game, opts: ResetOptions = {}): Promise<voi
     url.searchParams.set('seed', seed);
   }
   try {
-    // a fresh Liveforge world id, so memories, rumours and quests start over with the map
+    // a fresh Reactive world id, so memories, rumours and quests start over with the map
     const base = `lc-${seed.toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 40) || 'world'}`;
     localStorage.setItem(`lc.lf.world.${seed}`, `${base}-r${Date.now().toString(36).slice(-5)}`);
   } catch {

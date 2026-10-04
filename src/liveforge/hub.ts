@@ -1,5 +1,5 @@
 /**
- * Shared state of the Liveforge integration (set up once by the plugin): the game, the service, the habit tally,
+ * Shared state of the Reactive integration (set up once by the plugin): the game, the service, the habit tally,
  * the player's nickname and the UI hooks other modules call (captions, Brain View, chat log).
  */
 import type { Directive } from '@liveforge/sdk';
@@ -33,7 +33,7 @@ export function setHub(h: LfHub): void {
 
 /** The integration state (throws before the plugin ran). */
 export function getHub(): LfHub {
-  if (!hub) throw new Error('Liveforge hub not ready');
+  if (!hub) throw new Error('Reactive hub not ready');
   return hub;
 }
 

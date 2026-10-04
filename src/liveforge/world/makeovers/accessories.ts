@@ -1,5 +1,5 @@
 /**
- * Local accessory blueprints for villager makeovers (the instant-rules looks table), authored as Liveforge Blueprint
+ * Local accessory blueprints for villager makeovers (the instant-rules looks table), authored as Reactive Blueprint
  * v1 in villager units (1 = one block; the head spans y 0..0.625 above its pivot and faces -z; the robe hangs
  * y -0.875..0 below the body pivot). Built with `@liveforge/three` `buildBlueprint`, like the server's accessories.
  */

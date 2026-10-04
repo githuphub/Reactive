@@ -1,6 +1,6 @@
 /**
- * The game's Liveforge service: one `@liveforge/sdk` client per session, connection status, the cassette-mode
- * label, persona voices, and safe wrappers so no gameplay path ever throws because Liveforge is down.
+ * The game's Reactive service: one `@liveforge/sdk` client per session, connection status, the cassette-mode
+ * label, persona voices, and safe wrappers so no gameplay path ever throws because Reactive is down.
  *
  * Offline (no server, or `?lf=off`) every ask answers from the local rules (`client.setFallback`, see rules.ts),
  * agent goals run on the SDK's local template runner, builder plans come from the SDK's template planner, and
@@ -189,9 +189,9 @@ export function setLiveforge(s: LiveforgeService): void {
   current = s;
 }
 
-/** The running Liveforge service (throws before the plugin initialised it). */
+/** The running Reactive service (throws before the plugin initialised it). */
 export function getLiveforge(): LiveforgeService {
-  if (!current) throw new Error('Liveforge is not initialised yet (liveforge/plugin.ts runs at plugin init)');
+  if (!current) throw new Error('Reactive is not initialised yet (liveforge/plugin.ts runs at plugin init)');
   return current;
 }
 

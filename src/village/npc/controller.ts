@@ -1,5 +1,5 @@
 /**
- * VillagerController: the async action API for one villager (or the golem). Liveforge agent tools
+ * VillagerController: the async action API for one villager (or the golem). Reactive agent tools
  * (V3) map onto these methods one-to-one.
  *
  * Every method:
@@ -53,7 +53,7 @@ export interface ActionOptions {
  */
 export type Target = string | Vec3Like | { position: Vec3Like };
 
-/** One block of an expanded voxel plan (Liveforge `expandVoxelPlan` output). */
+/** One block of an expanded voxel plan (Reactive `expandVoxelPlan` output). */
 export interface PlanBlock {
   x: number;
   y: number;

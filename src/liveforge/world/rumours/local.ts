@@ -4,7 +4,7 @@
  * exaggerate numbers, escalate verbs, add hedges and each villager's way of telling things).
  *
  * Online, the server's world module forms and spreads rumours itself, so the engine only starts rumours while
- * Liveforge is offline (or when asked to by `start()`); it always keeps spreading its own local rumours.
+ * Reactive is offline (or when asked to by `start()`); it always keeps spreading its own local rumours.
  */
 import type { Game } from '../../../game/game';
 import { village } from '../../../village';

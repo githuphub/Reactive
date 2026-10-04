@@ -1,22 +1,22 @@
 /**
- * Liveforge connection settings. URL params win over Vite env vars, which win over the defaults:
+ * Reactive connection settings. URL params win over Vite env vars, which win over the defaults:
  *
  * | Param | Env | Default | |
  * |---|---|---|---|
  * | `?lf=http://host:8790` | `VITE_LIVEFORGE_URL` | `http://localhost:8790` | Server URL. `?lf=off` = offline (local rules only). |
  * | `?lfkey=pk_...` | `VITE_LIVEFORGE_KEY` | `pk_dev_livecraft` | Publishable SDK key (dev-mode key by default). |
- * | `?lfworld=w` | `VITE_LIVEFORGE_WORLD` | `lc-<seed>` | Liveforge world id (one per Livecraft seed). |
+ * | `?lfworld=w` | `VITE_LIVEFORGE_WORLD` | `lc-<seed>` | Reactive world id (one per Livecraft seed). |
  * | `?lfplayer=p` | | stable random id | Player id. |
  * | `?lfname=Alex` | | `Traveller` | Display name used in prompts and the statue. |
  * | `?lfdash=http://...` | `VITE_LIVEFORGE_DASHBOARD` | `<server>/dashboard` | Dashboard URL (Demo panel). |
  * | `?cassette=replay` | `VITE_LIVEFORGE_CASSETTE` | detected | Cassette mode label (live / record / replay). |
  * | `?nodemo` | | demo on | Demo panel, Brain View open, captions (on by default; `?nodemo` hides them). |
  *
- * Only the publishable key lives in the client; provider keys stay on the Liveforge server.
+ * Only the publishable key lives in the client; provider keys stay on the Reactive server.
  */
 
 export interface LiveforgeSettings {
-  /** Server base URL, or null when Liveforge is switched off (`?lf=off`): everything runs on local rules. */
+  /** Server base URL, or null when Reactive is switched off (`?lf=off`): everything runs on local rules. */
   url: string | null;
   key: string;
   world: string;
@@ -49,7 +49,7 @@ function stablePlayerId(): string {
   }
 }
 
-/** A world id saved by the Demo panel's "Reset memory" (a fresh Liveforge world for this seed). */
+/** A world id saved by the Demo panel's "Reset memory" (a fresh Reactive world for this seed). */
 function savedWorld(seed: string): string | undefined {
   try {
     return localStorage.getItem(`lc.lf.world.${seed}`) ?? undefined;

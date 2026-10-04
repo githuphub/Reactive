@@ -52,7 +52,7 @@ export class MeshJobs {
   async upgradeLast(): Promise<void> {
     const last = this.lastForged;
     if (!last) return void this.game.ui.toast('Forge something first (F), then upgrade it to 3D', { kind: 'warn' });
-    if (!this.lf.online) return void this.game.ui.toast('🧊 3D models need the Liveforge server (Hyper3D runs there)', { kind: 'warn', seconds: 4 });
+    if (!this.lf.online) return void this.game.ui.toast('🧊 3D models need the Reactive server (Hyper3D runs there)', { kind: 'warn', seconds: 4 });
     try {
       const r = await this.lf.ask('forge.item', { prompt: last.prompt.slice(0, 400), mesh: true }, { upgrade: false }).instant;
       const job = r.result.item.mesh;

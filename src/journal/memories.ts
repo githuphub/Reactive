@@ -1,7 +1,7 @@
 /**
  * What each villager remembers about the player, for the journal's "What they think of you" page.
  *
- * Liveforge has no public route for `persona.memories`, so the memories are built locally from what the game saw:
+ * Reactive has no public route for `persona.memories`, so the memories are built locally from what the game saw:
  * conversations (`npcReplied`), trades and haggles, griefing (owner + witnesses), hits, finished quests, rumours a
  * villager heard, makeovers, and the lines villagers said in directives. Each entry carries a sentiment; the local
  * attitude is their running sum. Online, the server's attitudes (`world.reactions` / `GET /v1/m/world/standing`),

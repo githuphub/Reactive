@@ -1,5 +1,5 @@
 /**
- * Id mapping between the game and the Liveforge manifest. All Liveforge traffic uses the manifest ids
+ * Id mapping between the game and the Reactive manifest. All Reactive traffic uses the manifest ids
  * (`captain_rowan`, `iron_golem`, post `square` ...); the village resolves both forms.
  */
 import { village } from '../village';

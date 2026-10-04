@@ -367,7 +367,7 @@ export class Journal {
   private renderAchievements(): void {
     const un = this.world.achievements.list();
     this.left.appendChild(el('h2', undefined, `Achievements (${un.length})`));
-    if (!un.length) this.left.appendChild(el('p', 'wbj-muted', 'None yet. Some are generated just for you by Liveforge.'));
+    if (!un.length) this.left.appendChild(el('p', 'wbj-muted', 'None yet. Some are generated just for you by Reactive.'));
     for (const a of un) {
       const d = el('div', 'wbj-ach');
       d.style.setProperty('--rar', RARITY_COLOR[a.rarity] ?? RARITY_COLOR.common);

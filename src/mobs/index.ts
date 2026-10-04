@@ -1,5 +1,5 @@
 /**
- * Public mob API for V2 (villagers, golem) and V3 (raids, Liveforge directives).
+ * Public mob API for V2 (villagers, golem) and V3 (raids, Reactive directives).
  *
  * ```ts
  * import { spawnMob, spawnWave, pathfind, MobBrain } from '../mobs';

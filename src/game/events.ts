@@ -1,5 +1,5 @@
 /**
- * Typed game events. Every system (V1 survival, V2 villages, V3 Liveforge) subscribes through
+ * Typed game events. Every system (V1 survival, V2 villages, V3 Reactive) subscribes through
  * `game.events.on(name, handler)` instead of patching the core.
  */
 import type { ItemStack } from '../engine/items';
