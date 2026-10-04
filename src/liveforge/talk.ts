@@ -283,8 +283,16 @@ export class Talk {
       this.game.ui.toast(`You said "${said}", but nobody is close enough`);
       return;
     }
-    this.open(n);
-    void this.send(said);
+    void this.voiceSend(n, said);
+  }
+
+  /** Voice talk stays in the world: no chat popup, the reply shows in the villager's speech bubble. */
+  private async voiceSend(n: Npc, said: string): Promise<void> {
+    this.npc = n;
+    n.lookAtTarget(this.game.player, 8);
+    this.game.events.emit('villagerTalk', { npc: n.def.id });
+    getHub().caption(`You → ${n.def.name}: "${said}"`, 5);
+    await this.send(said);
   }
 
   private build(): Screen {
@@ -345,8 +353,10 @@ export class Talk {
       b.textContent = `${who}:`;
       d.append(b, document.createTextNode(` ${line}`));
     } else d.textContent = line;
-    this.log.appendChild(d);
-    this.log.scrollTop = this.log.scrollHeight;
+    if (this.screen) {
+      this.log.appendChild(d);
+      this.log.scrollTop = this.log.scrollHeight;
+    }
     return d;
   }
 }
