@@ -24,6 +24,7 @@ described, inside the rules you set. It runs on your own server, works with any 
   and `custom.reaction` payloads
 - [Agents](agents.md): tool-calling NPC agents (`agent.goal`, tool registry, rules fallback) and the Brain feed
 - [Builder](builder.md): the Voxel DSL, templates and `builder.plan`
+- [Forge anything](forge.md): `forge.thing`, which turns any prompt into a creature, food, tool, wearable … with a voxel model
 
 ## Recipes
 

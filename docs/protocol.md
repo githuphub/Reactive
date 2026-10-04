@@ -147,11 +147,12 @@ Send `"upgrade": false` to get the instant answer only.
 | `forge.npc_look` | `npc, prompt, asset?` | `{npc, variant?, accessories[]}` |
 | `forge.prop` | `prompt, mesh?` | `{prop}` |
 | `forge.loot` | `count, enemy?, zone?, moment?` | `{items[]}` |
+| `forge.thing` | `prompt, context?, categories?, maxModelSize?` | `ForgedThing` (category, voxel `model`, stats, effect, creature / wearable / recipe); see [forge.md](forge.md) |
 | `quest.offer` | `giver?, zone?, context?` | `{quest \| null}` |
 | `achievement.check` | `recent?` | `{unlocked[]}` |
 | `world.reactions` | `zone?, npcs?` | `{rumours[], directives[], attitudes{}}` |
 
-All forge kinds accept an integer `seed` for reproducible results. The exact schemas are
+All forge kinds except `forge.thing` (deterministic per prompt) accept an integer `seed` for reproducible results. The exact schemas are
 `schema/v1/ask.<kind>.params.json` and `ask.<kind>.result.json`.
 
 ## WebSocket

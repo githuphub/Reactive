@@ -72,6 +72,7 @@ a.upgraded.connect(func(r): $Hand/LiveEquipSlot.equip(r.item))
 | `forge.vfx {prompt, attach?}` | A VFX recipe: emitters, trails, auras, lights. |
 | `forge.creature`, `forge.prop`, `forge.npc_look` | Blueprints with stats and behaviour, or accessories. |
 | `forge.loot {enemy, zone}` | Loot themed on the fight that just happened. |
+| `forge.thing {prompt}` | Anything at all: decides whether it is a creature, food, tool, weapon, wearable, decoration, material or block, with a voxel model. See [Forge anything](../forge.md). |
 
 ## In the dashboard
 

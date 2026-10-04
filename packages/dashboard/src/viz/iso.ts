@@ -21,6 +21,7 @@ function hash(s: string): number {
 
 /** Base colour for a block id. */
 export function blockColor(block: string): string {
+  if (/^#[0-9a-f]{6}$/i.test(block)) return block; // forge.thing voxel models carry colours
   if (KNOWN[block]) return KNOWN[block];
   const h = hash(block);
   return `hsl(${h % 360}, ${40 + (h >> 9) % 25}%, ${48 + (h >> 17) % 14}%)`;

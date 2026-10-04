@@ -1,10 +1,11 @@
 // Gallery: everything the Forge made (Blueprint v1 models rendered live in Three.js, with their VFX), VFX recipes
 // on their own, reactive quests and personal achievements.
-import type { Achievement, Blueprint, ForgeGallery, GalleryEntry, Quest, QuestLog, Variant, VfxRecipe } from "@liveforge/protocol";
+import { expandVoxelModel, type Achievement, type Blueprint, type ForgeGallery, type GalleryEntry, type Quest, type QuestLog, type Variant, type VfxRecipe, type VoxelBlock, type VoxelModel } from "@liveforge/protocol";
 import { app } from "../app";
 import { BlueprintViewer, thumbnail } from "../viz/three-view";
 import { meter } from "../viz/charts";
 import { vfxFor } from "../viz/samples";
+import { drawIso } from "../viz/iso";
 import { SOURCE_COLORS, h, jsonView, label, render, timeAgo } from "../ui/dom";
 import { card, empty, errorBox, pill, useLive, type PanelDef } from "./panel";
 
@@ -12,7 +13,7 @@ type Tab = "forge" | "vfx" | "quests" | "achievements";
 const isObj = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
 
 /** Pull renderable parts out of any forge result shape (ForgedItem, Creature, Prop, Variant, bare Blueprint ...). */
-export function extract(result: unknown): { name: string; blueprint: Blueprint | null; vfx: VfxRecipe[]; variant: Variant | null; meta: Record<string, unknown> } {
+export function extract(result: unknown): { name: string; blueprint: Blueprint | null; vfx: VfxRecipe[]; variant: Variant | null; model: VoxelModel | null; meta: Record<string, unknown> } {
   const r = isObj(result) ? result : {};
   const items = Array.isArray(r.items) ? r.items : Array.isArray(r.pieces) ? r.pieces : null;
   const first = items && isObj(items[0]) ? (items[0] as Record<string, unknown>) : r;
@@ -21,7 +22,40 @@ export function extract(result: unknown): { name: string; blueprint: Blueprint |
   if (isObj(first.vfx)) vfx.push(first.vfx as VfxRecipe);
   if (first.v === 1 && Array.isArray(first.emitters)) vfx.push(first as unknown as VfxRecipe);
   const variant = isObj(first.variant) ? (first.variant as Variant) : typeof first.baseAsset === "string" ? (first as unknown as Variant) : null;
-  return { name: String(first.name ?? bp?.name ?? "Untitled"), blueprint: bp, vfx, variant, meta: first };
+  // forge.thing: a coloured voxel model (rendered isometric like the Builds panel)
+  const m = first.model;
+  const model = isObj(m) && Array.isArray(m.ops) && Array.isArray(m.size) && isObj(m.palette) ? (m as unknown as VoxelModel) : null;
+  return { name: String(first.name ?? bp?.name ?? "Untitled"), blueprint: bp, vfx, variant, model, meta: first };
+}
+
+/** A voxel model's coloured voxels as iso blocks (block = "#rrggbb"). */
+function modelBlocks(model: VoxelModel): VoxelBlock[] {
+  try {
+    return expandVoxelModel(model).voxels.map((v) => ({ x: v.x, y: v.y, z: v.z, block: v.color }));
+  } catch {
+    return [];
+  }
+}
+
+const isoThumbs = new Map<string, string>();
+/** Isometric thumbnail (data URL) of a voxel model, cached by entry id. */
+function isoThumb(id: string, model: VoxelModel): string {
+  const hit = isoThumbs.get(id);
+  if (hit) return hit;
+  const c = document.createElement("canvas");
+  c.style.width = "160px";
+  c.style.height = "120px";
+  c.width = 160;
+  c.height = 120;
+  // drawIso reads clientWidth / clientHeight: attach off-screen while drawing
+  c.style.position = "fixed";
+  c.style.left = "-10000px";
+  document.body.appendChild(c);
+  drawIso(c, modelBlocks(model));
+  const url = c.toDataURL("image/png");
+  c.remove();
+  isoThumbs.set(id, url);
+  return url;
 }
 
 export const galleryPanel: PanelDef = {
@@ -40,6 +74,10 @@ export const galleryPanel: PanelDef = {
     const viewerHost = h("div", { class: "viewer" });
     const info = h("div", { class: "viewer-info" });
     const viewer = new BlueprintViewer(viewerHost);
+    const isoCanvas = h("canvas", { class: "iso-canvas hidden" }) as HTMLCanvasElement;
+    let isoShown: VoxelModel | null = null;
+    const ro = new ResizeObserver(() => { if (isoShown) drawIso(isoCanvas, modelBlocks(isoShown)); });
+    ro.observe(isoCanvas);
     render(root, tabsEl, body);
 
     const drawTabs = () => {
@@ -76,8 +114,13 @@ export const galleryPanel: PanelDef = {
       if (key !== lastKey) {
         viewer.show(x.blueprint, x.blueprint ? [] : x.vfx);
         lastKey = key;
+        isoShown = x.model && !x.blueprint ? x.model : null;
+        viewerHost.classList.toggle("hidden", !!isoShown);
+        isoCanvas.classList.toggle("hidden", !isoShown);
+        if (isoShown) drawIso(isoCanvas, modelBlocks(isoShown));
       }
-      const stats = isObj(x.meta.stats) ? (x.meta.stats as Record<string, number>) : {};
+      const stats = isObj(x.meta.stats) ? Object.fromEntries(Object.entries(x.meta.stats as Record<string, number>).filter(([, v]) => v !== 0)) : {};
+      const cr = isObj(x.meta.creature) ? (x.meta.creature as { behaviour?: string; health?: number; sounds?: string[]; lays?: string; tameWith?: string }) : null;
       const statMax = Math.max(100, ...Object.values(stats));
       const raw = h("div", { class: "raw hidden" }, jsonView(e.result));
       render(info,
@@ -85,10 +128,13 @@ export const galleryPanel: PanelDef = {
         typeof x.meta.flavor === "string" ? h("div", { class: "flavor" }, x.meta.flavor) : null,
         typeof (e as GalleryEntry & { key?: string }).key === "string" ? h("div", { class: "small" }, h("span", { class: "muted" }, "prompt  "), `"${(e as GalleryEntry & { key?: string }).key}"`) : null,
         h("div", { class: "vi-tags" },
-          ...[x.meta.rarity, x.meta.element, x.meta.family, x.meta.slot, x.meta.role].filter((v): v is string => typeof v === "string").map((v) => pill(v)),
+          ...[x.meta.category, x.meta.rarity, x.meta.element, x.meta.family, x.meta.slot, x.meta.role, x.meta.effect !== "none" ? x.meta.effect : null].filter((v): v is string => typeof v === "string").map((v) => pill(v)),
           ...(Array.isArray(x.meta.tags) ? (x.meta.tags as string[]) : []).map((t) => pill(t, "#9085e9"))),
         Object.keys(stats).length ? h("div", { class: "vi-stats" }, ...Object.entries(stats).map(([k, v]) => h("div", { class: "stand-row" }, h("span", null, k), meter(v / statMax, "#ff7a2f", { height: 6 }), h("b", null, String(v))))) : null,
         x.blueprint ? h("div", { class: "small muted" }, `Blueprint v1 · ${x.blueprint.kind} · ${x.blueprint.parts.length} parts · ${x.blueprint.attachments.length} attachment points${x.blueprint.source ? ` · ${x.blueprint.source}` : ""}`) : null,
+        cr ? h("div", { class: "small" }, pill(String(cr.behaviour ?? "creature"), "#199e70"), ` ${cr.health ?? "?"} hp${cr.sounds?.length ? ` · "${cr.sounds[0]}"` : ""}${cr.lays ? ` · lays ${cr.lays}` : ""}${cr.tameWith ? ` · tame with ${cr.tameWith}` : ""}`) : null,
+        typeof x.meta.description === "string" ? h("div", { class: "small" }, x.meta.description) : null,
+        x.model ? h("div", { class: "small muted" }, `Voxel model · ${x.model.size.join("×")} · ${Object.keys(x.model.palette).length} colours · ${x.model.ops.length} ops`) : null,
         x.variant ? h("div", { class: "small" }, pill("variant", "#199e70"), ` restyles asset "${x.variant.baseAsset}" · ${x.variant.materialSwaps.length} material swaps${x.variant.decals?.length ? ` · ${x.variant.decals.length} decals` : ""}`) : null,
         typeof x.meta.creativity === "number" ? h("div", { class: "small muted" }, `creativity ${(x.meta.creativity as number).toFixed(2)}`) : null,
         h("div", { class: "small muted" }, `${e.player ? `for ${label(e.player)} · ` : ""}${timeAgo(e.ts)}`),
@@ -107,13 +153,13 @@ export const galleryPanel: PanelDef = {
         if (!selected || !entries.some((e) => e.id === selected)) selected = entries[0].id;
         const grid = h("div", { class: "thumbs" }, ...entries.map((e) => {
           const x = extract(e.result);
-          const src = x.blueprint ? thumbnail(`${e.id}`, x.blueprint) : "";
+          const src = x.blueprint ? thumbnail(`${e.id}`, x.blueprint) : x.model ? isoThumb(`${e.id}:${e.source}`, x.model) : "";
           return h("button", { class: `thumb ${e.id === selected ? "on" : ""}`, onclick: () => { selected = e.id; draw(); } },
             src ? h("img", { src, alt: x.name }) : h("div", { class: "thumb-ph" }, x.variant ? "variant" : "vfx"),
             h("div", { class: "thumb-name" }, x.name),
             h("div", { class: "thumb-sub" }, h("i", { class: "dot", style: { background: SOURCE_COLORS[e.source] } }), e.askKind.replace("forge.", "")));
         }));
-        render(body, h("div", { class: "grid g-2-3" }, card("Forged", { hint: `${entries.length} results · newest first` }, grid), card(null, { class: "viewer-card" }, viewerHost, info)));
+        render(body, h("div", { class: "grid g-2-3" }, card("Forged", { hint: `${entries.length} results · newest first` }, grid), card(null, { class: "viewer-card" }, viewerHost, isoCanvas, info)));
         showEntry(entries.find((e) => e.id === selected)!);
       } else if (tab === "vfx") {
         const list = vfxList();
@@ -169,6 +215,7 @@ export const galleryPanel: PanelDef = {
     }, { interval: 6000, throttleMs: 2500, onEvent: false, onDirective: true });
     return () => {
       stop();
+      ro.disconnect();
       viewer.dispose();
     };
   },
