@@ -11,7 +11,7 @@ import { shiftVoxelOps } from "./voxel-templates.js";
 import {
   THING_CATEGORIES, THING_COLOR_WORDS, THING_RARITIES, VOXEL_MODEL_LIMITS, clampThingStats, clampVoxelModel, expandVoxelModel, thingId,
   type ForgedThing, type ThingBehaviour, type ThingCategory, type ThingCreature, type ThingEffect, type ThingPart, type ThingRarity,
-  type ThingRecipe, type ThingSlot, type ThingStats, type VoxelModel,
+  type ThingRecipe, type ThingSlot, type ThingStats, type ThingVehicle, type VoxelModel,
 } from "./forge-thing.js";
 
 // ================================================================ model builder
@@ -980,7 +980,7 @@ tpl("bush", "decoration", "bush,shrub,hedge,topiary,grass,moss,vine", [8, 6, 8],
   m.setPivot([3.5, 0, 3.5]);
 });
 // ---- vehicles (decorations / toys; facing +Z, standing on y = 0)
-tpl("train", "decoration", "train,locomotive,steam train,steam engine,engine,choo choo,tram,trolley,railcar,subway", [7, 11, 16], (m) => {
+tpl("train", "vehicle", "train,locomotive,steam train,steam engine,engine,choo choo,tram,trolley,railcar,subway", [7, 11, 16], (m) => {
   held(m, "main", "trim", { main: "#2e4a7a", trim: GOLD, base: "#2a2a2e", wheel: "#1a1a1c", window: "#9fd4ff", roof: "#8a2a2a", lamp: "#ffe27a", smoke: "#d8d8d8" });
   m.box([1, 1, 0], [5, 2, 15], "base");
   for (const z of [2, 7, 12]) m.box([0, 0, z], [0, 1, z + 1], "wheel").box([6, 0, z], [6, 1, z + 1], "wheel");
@@ -990,7 +990,7 @@ tpl("train", "decoration", "train,locomotive,steam train,steam engine,engine,cho
   m.box([1, 0, 15], [5, 0, 15], "trim");
   m.setPivot([3, 0, 8]);
 });
-tpl("car", "decoration", "car,truck,bus,van,jeep,taxi,race car,racecar,sports car,lorry,tractor,ambulance,fire truck,firetruck", [7, 7, 12], (m) => {
+tpl("car", "vehicle", "car,truck,bus,van,jeep,taxi,race car,racecar,sports car,lorry,tractor,ambulance,fire truck,firetruck", [7, 7, 12], (m) => {
   held(m, "main", "trim", { main: "#d93b2b", trim: "#e6e6e6", wheel: "#1a1a1c", window: "#9fd4ff", lamp: "#ffe27a" });
   for (const z of [2, 9]) m.box([0, 0, z], [0, 1, z + 1], "wheel").box([6, 0, z], [6, 1, z + 1], "wheel");
   m.box([1, 1, 0], [5, 3, 11], "main").box([1, 4, 3], [5, 5, 8], "main").box([1, 4, 8], [5, 4, 8], "window").box([1, 4, 3], [5, 4, 3], "window");
@@ -998,26 +998,26 @@ tpl("car", "decoration", "car,truck,bus,van,jeep,taxi,race car,racecar,sports ca
   m.dot([1, 2, 11], "lamp").dot([5, 2, 11], "lamp").box([1, 1, 0], [5, 1, 0], "trim");
   m.setPivot([3, 0, 6]);
 });
-tpl("boat", "decoration", "boat,ship,sailboat,sailing ship,pirate ship,galleon,canoe,kayak,raft,yacht,submarine,ferry", [7, 12, 14], (m) => {
+tpl("boat", "vehicle", "boat,ship,sailboat,sailing ship,pirate ship,galleon,canoe,kayak,raft,yacht,submarine,ferry", [7, 12, 14], (m) => {
   held(m, "main", "sail", { main: WOOD, trim: DARK_WOOD, sail: "#f3efe2", flag: "#d93b2b" });
   m.box([2, 0, 2], [4, 0, 11], "trim").box([1, 1, 1], [5, 2, 12], "main").box([0, 3, 0], [6, 3, 13], "trim").box([2, 1, 13], [4, 2, 13], "main");
   m.line([3, 4, 6], [3, 11, 6], "trim").box([1, 5, 7], [5, 10, 7], "sail").dot([3, 11, 7], "flag");
   m.setPivot([3, 0, 7]);
 });
-tpl("cart", "decoration", "cart,wagon,minecart,mine cart,wheelbarrow,carriage,chariot,sled,sleigh", [7, 6, 9], (m) => {
+tpl("cart", "vehicle", "cart,wagon,minecart,mine cart,wheelbarrow,carriage,chariot,sled,sleigh", [7, 6, 9], (m) => {
   held(m, "main", "trim", { main: WOOD, trim: IRON, wheel: "#3a2a1e" });
   for (const z of [1, 6]) m.box([0, 0, z], [0, 2, z + 1], "wheel").box([6, 0, z], [6, 2, z + 1], "wheel");
   m.box([1, 1, 0], [5, 1, 8], "main").box([1, 2, 0], [5, 4, 0], "main").box([1, 2, 8], [5, 4, 8], "main").box([1, 2, 1], [1, 4, 7], "main").box([5, 2, 1], [5, 4, 7], "main");
   m.line([1, 5, 0], [5, 5, 0], "trim").line([1, 5, 8], [5, 5, 8], "trim");
   m.setPivot([3, 0, 4]);
 });
-tpl("plane", "decoration", "plane,airplane,aeroplane,jet,biplane,aircraft,helicopter,glider,airship,blimp,zeppelin", [13, 6, 12], (m) => {
+tpl("plane", "vehicle", "plane,airplane,aeroplane,jet,biplane,aircraft,helicopter,glider,airship,blimp,zeppelin", [13, 6, 12], (m) => {
   held(m, "main", "trim", { main: "#e6e6e6", trim: "#2e6ad9", window: "#9fd4ff", prop: "#3a3a3e" });
   m.box([5, 1, 0], [7, 3, 11], "main").box([0, 2, 6], [12, 2, 8], "trim").box([3, 3, 0], [9, 3, 1], "trim").box([6, 4, 0], [6, 5, 1], "trim");
   m.box([5, 3, 8], [7, 3, 9], "window").box([5, 0, 11], [7, 4, 11], "prop").dot([6, 2, 11], "trim");
   m.setPivot([6, 0, 6]);
 });
-tpl("rocket", "decoration", "rocket,spaceship,space ship,spacecraft,ufo,space shuttle,shuttle,missile", [7, 16, 7], (m) => {
+tpl("rocket", "vehicle", "rocket,spaceship,space ship,spacecraft,ufo,space shuttle,shuttle,missile", [7, 16, 7], (m) => {
   held(m, "main", "trim", { main: "#e6e6e6", trim: "#d93b2b", window: "#9fd4ff", flame: "#ff9a2a" });
   m.cyl([3, 2, 3], 2, 11, "main").box([2, 13, 2], [4, 14, 4], "trim").dot([3, 15, 3], "trim").box([3, 8, 5], [3, 9, 5], "window");
   m.box([0, 1, 3], [0, 4, 3], "trim").box([6, 1, 3], [6, 4, 3], "trim").box([3, 1, 0], [3, 4, 0], "trim").box([3, 1, 6], [3, 4, 6], "trim").box([2, 0, 2], [4, 1, 4], "flame");
@@ -1475,6 +1475,7 @@ const FLAVORS: Record<ThingCategory, string[]> = {
   decoration: ["It really ties the room together.", "Guests always ask about it.", "Made with more love than skill."],
   material: ["The crafters will want this.", "Raw, but full of promise.", "Worth more than it looks."],
   block: ["Solid. Dependable. Square.", "Stack it, place it, build a dream.", "A fine block for a fine wall."],
+  vehicle: ["Hop on. Hold tight.", "Goes faster than it has any right to.", "The village kids want a ride."],
 };
 
 function describe(cat: ThingCategory, name: string, a: ThingAnalysis, stats: ThingStats, creature: ThingCreature | null, slot: ThingSlot | null): string {
@@ -1497,6 +1498,8 @@ function describe(cat: ThingCategory, name: string, a: ThingAnalysis, stats: Thi
       return `A crafting material: ${n}.`;
     case "block":
       return `A placeable block of ${(a.subjectNoun ?? a.subject ?? a.colorWords[0] ?? a.noun).replace(/_/g, " ")}.`;
+    case "vehicle":
+      return `A rideable ${n}${eff ? ` that ${eff}` : ""}: right-click to hop on.`;
   }
 }
 
@@ -1521,8 +1524,18 @@ const NOUN_COLORS: Record<string, string> = {
   pine: "#2a6a3a", palm: "#4caf50", birch: "#6ab04a", "christmas tree": "#2a6a3a",
 };
 
+/** How each vehicle template rides. */
+const VEHICLE_OF: Record<string, ThingVehicle> = {
+  train: { mode: "rail", speed: 14, seats: 2 },
+  car: { mode: "ground", speed: 16, seats: 2 },
+  boat: { mode: "water", speed: 9, seats: 2 },
+  cart: { mode: "ground", speed: 7, seats: 1 },
+  plane: { mode: "air", speed: 20, seats: 1 },
+  rocket: { mode: "air", speed: 26, seats: 1 },
+};
+
 const DEFAULT_FALLBACK_KIND: Record<ThingCategory, string> = {
-  weapon: "sword", tool: "pickaxe", food: "fruit", creature: "monster", wearable: "hat", decoration: "curio", material: "gem", block: "block",
+  weapon: "sword", tool: "pickaxe", food: "fruit", creature: "monster", wearable: "hat", decoration: "curio", material: "gem", block: "block", vehicle: "cart",
 };
 
 /** Shift a built model up and put a pedestal under it (statues). */
@@ -1630,6 +1643,7 @@ export function rulesForgedThing(params: RulesThingParams): ForgedThing {
     };
   }
   const slot: ThingSlot | null = category === "wearable" ? SLOT_OF[kind] ?? "head" : null;
+  const vehicle: ThingVehicle | null = category === "vehicle" ? VEHICLE_OF[kind] ?? { mode: "ground", speed: 10, seats: 1 } : null;
   const tags = [...new Set([category, kind.replace(/_/g, "-"), ...(a.effect !== "none" ? [a.effect] : []), ...a.colorWords, ...(creature ? [creature.behaviour] : []), ...a.mods])].slice(0, 12);
   const flavors = FLAVORS[category];
   const h = hashString(prompt.toLowerCase());
@@ -1646,6 +1660,7 @@ export function rulesForgedThing(params: RulesThingParams): ForgedThing {
     effect: a.effect,
     creature,
     wearable: slot ? { slot } : null,
+    vehicle,
     recipe: category === "creature" || category === "material" ? null : recipeFor(category, kind, lower, a),
     tags,
   };

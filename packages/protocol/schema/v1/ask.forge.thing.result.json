@@ -41,7 +41,8 @@
         "wearable",
         "decoration",
         "material",
-        "block"
+        "block",
+        "vehicle"
       ]
     },
     "model": {
@@ -346,6 +347,40 @@
           },
           "required": [
             "slot"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "vehicle": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "mode": {
+              "type": "string",
+              "enum": [
+                "ground",
+                "rail",
+                "water",
+                "air"
+              ]
+            },
+            "speed": {
+              "type": "number"
+            },
+            "seats": {
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            }
+          },
+          "required": [
+            "mode",
+            "speed",
+            "seats"
           ]
         },
         {

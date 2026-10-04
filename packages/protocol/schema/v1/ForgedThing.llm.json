@@ -12,7 +12,8 @@
         "wearable",
         "decoration",
         "material",
-        "block"
+        "block",
+        "vehicle"
       ]
     },
     "name": {
@@ -206,6 +207,39 @@
           },
           "required": [
             "slot"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "vehicle": {
+      "anyOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "mode": {
+              "type": "string",
+              "enum": [
+                "ground",
+                "rail",
+                "water",
+                "air"
+              ]
+            },
+            "speed": {
+              "type": "number"
+            },
+            "seats": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "mode",
+            "speed",
+            "seats"
           ]
         },
         {
@@ -731,6 +765,7 @@
     "stats",
     "creature",
     "wearable",
+    "vehicle",
     "recipe",
     "tags",
     "model"

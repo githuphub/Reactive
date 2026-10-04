@@ -16,7 +16,7 @@
     },
     "categories": {
       "minItems": 1,
-      "maxItems": 8,
+      "maxItems": 9,
       "type": "array",
       "items": {
         "type": "string",
@@ -28,7 +28,8 @@
           "wearable",
           "decoration",
           "material",
-          "block"
+          "block",
+          "vehicle"
         ]
       }
     },

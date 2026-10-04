@@ -18,7 +18,7 @@ import { Bag, Hex, Id, clampNum, cleanText, hashString, isObj, oneOf } from "./c
 import { VoxelOp, clampVoxelPlan, voxelPlanJsonSchema, type VoxelVec } from "./voxel.js";
 import { expandVoxelPlan, normalizeBlockId } from "./voxel-expand.js";
 
-export const THING_CATEGORIES = ["weapon", "tool", "food", "creature", "wearable", "decoration", "material", "block"] as const;
+export const THING_CATEGORIES = ["weapon", "tool", "food", "creature", "wearable", "decoration", "material", "block", "vehicle"] as const;
 export type ThingCategory = (typeof THING_CATEGORIES)[number];
 export const THING_RARITIES = ["common", "uncommon", "rare", "epic", "legendary"] as const;
 export type ThingRarity = (typeof THING_RARITIES)[number];
@@ -31,6 +31,12 @@ export const THING_BEHAVIOURS = ["passive", "pet", "hostile", "neutral", "flying
 export type ThingBehaviour = (typeof THING_BEHAVIOURS)[number];
 export const THING_SLOTS = ["head", "chest", "legs", "feet", "back"] as const;
 export type ThingSlot = (typeof THING_SLOTS)[number];
+/** How a vehicle moves: ground (wheels, follows terrain), rail (ground, trains), water (floats), air (flies). */
+export const THING_VEHICLE_MODES = ["ground", "rail", "water", "air"] as const;
+export type ThingVehicleMode = (typeof THING_VEHICLE_MODES)[number];
+/** Vehicle speed range in blocks per second, seats 1-4. */
+export const THING_VEHICLE_LIMITS = { speed: [2, 30], seats: [1, 4] } as const;
+
 export const THING_STAT_NAMES = ["damage", "attackSpeed", "miningSpeed", "durability", "food", "saturation", "armor", "light", "stackSize"] as const;
 export type ThingStatName = (typeof THING_STAT_NAMES)[number];
 
@@ -114,6 +120,24 @@ export const ThingRecipe = z.object({
 });
 export type ThingRecipe = z.infer<typeof ThingRecipe>;
 
+/** A rideable thing: how it moves, how fast (blocks/s), how many riders. */
+export const ThingVehicle = z.object({
+  mode: z.enum(THING_VEHICLE_MODES),
+  speed: z.number(),
+  seats: z.number().int(),
+});
+export type ThingVehicle = z.infer<typeof ThingVehicle>;
+
+/** Clamp an untrusted vehicle bag (defaults: ground, 10 blocks/s, 1 seat). */
+export function clampThingVehicle(raw: unknown, fallback?: ThingVehicle | null): ThingVehicle {
+  const r = isObj(raw) ? raw : {};
+  return {
+    mode: oneOf(THING_VEHICLE_MODES, typeof r.mode === "string" ? r.mode.toLowerCase() : r.mode) ?? fallback?.mode ?? "ground",
+    speed: clampNum(r.speed, THING_VEHICLE_LIMITS.speed[0], THING_VEHICLE_LIMITS.speed[1], fallback?.speed ?? 10),
+    seats: Math.round(clampNum(r.seats, THING_VEHICLE_LIMITS.seats[0], THING_VEHICLE_LIMITS.seats[1], fallback?.seats ?? 1)),
+  };
+}
+
 /** The forge.thing result: whatever the player asked for, with its model, stats and (for creatures) behaviour. */
 export const ForgedThing = z.object({
   /** Deterministic: slug of the name + a short hash. */
@@ -133,6 +157,8 @@ export const ForgedThing = z.object({
   creature: ThingCreature.nullable(),
   /** Only for category "wearable". */
   wearable: z.object({ slot: z.enum(THING_SLOTS) }).nullable(),
+  /** Only for category "vehicle": rideable (mode, speed in blocks/s, seats). Absent on older answers. */
+  vehicle: ThingVehicle.nullable().optional(),
   recipe: ThingRecipe.nullable(),
   tags: z.array(z.string().max(32)).max(12),
 });
@@ -321,6 +347,7 @@ export function forgedThingJsonSchema(categories: readonly ThingCategory[] = THI
       tameWith: str,
     })),
     wearable: nul(obj({ slot: { type: "string", enum: [...THING_SLOTS] } })),
+    vehicle: nul(obj({ mode: { type: "string", enum: [...THING_VEHICLE_MODES] }, speed: num, seats: num })),
     recipe: nul(obj({ shape: { type: "array", items: str }, key: { type: "array", items: obj({ char: str, item: str }) } })),
     tags: { type: "array", items: str },
     model: voxelModelJsonSchema(),
@@ -338,7 +365,7 @@ export function thingId(name: string, salt = ""): string {
 /** Item names: lowercase snake_case ("raw_chicken"). */
 export const thingItemName = (v: unknown): string => normalizeBlockId(v).replace(/^_+|_+$/g, "").slice(0, 48);
 
-const DEFAULT_STACK: Record<ThingCategory, number> = { weapon: 1, tool: 1, food: 64, creature: 1, wearable: 1, decoration: 16, material: 64, block: 64 };
+const DEFAULT_STACK: Record<ThingCategory, number> = { weapon: 1, tool: 1, food: 64, creature: 1, wearable: 1, decoration: 16, material: 64, block: 64, vehicle: 1 };
 
 /** Clamp a stats bag to THING_STAT_LIMITS (missing = 0; stackSize defaults per category; saturation <= food). */
 export function clampThingStats(raw: unknown, category: ThingCategory, fallback?: Partial<ThingStats>): ThingStats {
@@ -455,6 +482,7 @@ export function clampForgedThing(raw: unknown, opts: ForgedThingClampOptions): F
     effect,
     creature: category === "creature" ? clampThingCreature(raw.creature, model.size, fb?.creature) : null,
     wearable: category === "wearable" ? { slot: oneOf(THING_SLOTS, wearRaw?.slot) ?? fb?.wearable?.slot ?? "head" } : null,
+    vehicle: category === "vehicle" ? clampThingVehicle(raw.vehicle, fb?.vehicle) : null,
     recipe: clampThingRecipe(raw.recipe),
     tags,
   };

@@ -32,12 +32,13 @@ POST /v1/ask/forge.thing   { "world": "w1", "player": "p1", "params": { "prompt"
 | `id` | Deterministic: a slug of the name plus a short hash (`chicken_1x9k2a`). |
 | `name`, `description`, `flavor` | `description` is one sentence; `flavor` is a short in-world line. |
 | `rarity` | `common` \| `uncommon` \| `rare` \| `epic` \| `legendary` |
-| `category` | `weapon` \| `tool` \| `food` \| `creature` \| `wearable` \| `decoration` \| `material` \| `block` |
+| `category` | `weapon` \| `tool` \| `food` \| `creature` \| `wearable` \| `decoration` \| `material` \| `block` | `vehicle` |
 | `model` | `VoxelModel` (below). |
 | `stats` | `{damage, attackSpeed, miningSpeed, durability, food, saturation, armor, light, stackSize}`. Every field is a number, 0 when it does not apply. `stackSize` is at least 1. All are clamped to `THING_STAT_LIMITS`. |
 | `effect` | `none`, `chain_lightning`, `fire_trail`, `vein_mine`, `knockback_burst`, `heal_aura`, `frost_slow`, `glow`, `speed`, `jump`, `night_vision`, `explode_on_hit` |
 | `creature` | Set only when the category is `creature`, else `null`: `{behaviour, health, speed, size, parts?, sounds[], drops[], lays?, tameWith?}` (details below). |
 | `wearable` | `{slot: head \| chest \| legs \| feet \| back}`, or `null`. |
+| `vehicle` | `{mode: ground | rail | water | air, speed (blocks/s, 2–30), seats (1–4)}` for rideable things (trains, cars, boats, planes, rockets), or `null`. Optional on older answers. |
 | `recipe` | `{shape: ["XXX", " S ", " S "], key: {X: "iron_ingot", S: "stick"}}`, or `null`. |
 | `tags` | Short lowercase words: the category, the template, the effect and the colours. |
 
