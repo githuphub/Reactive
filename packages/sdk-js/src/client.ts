@@ -33,6 +33,7 @@ import { ID_RE, SIGNAL_TYPE_RE, backoffMs, isPlainObject, randomId, sleep } from
 import { AgentsApi } from "./agents.js";
 import { BrainFeed } from "./brain.js";
 import { BuilderApi } from "./builder.js";
+import { ForgeApi } from "./forge.js";
 
 /** Client configuration. Only `url`, `gameKey` and `player` are required. */
 export interface LiveforgeConfig {
@@ -154,6 +155,8 @@ export class LiveforgeClient {
   readonly agents: AgentsApi;
   /** Voxel build plans (two-stage) + expansion helpers (K6). */
   readonly builder: BuilderApi;
+  /** Forge anything: `thing(prompt, opts)` (forge.thing, two-stage, local rules offline) + `expand(model)`. */
+  readonly forge: ForgeApi;
   /** The Brain feed: agent steps, build plans, AI decisions with model badges (K6). */
   readonly brain: BrainFeed;
   private readonly cfg: Required<Pick<LiveforgeConfig, "gameKey" | "flushIntervalMs" | "flushSize" | "maxQueue" | "requestTimeoutMs" | "upgradeTimeoutMs">> & LiveforgeConfig;
@@ -235,6 +238,10 @@ export class LiveforgeClient {
     this.builder = new BuilderApi({
       ask: (params, opts) => this.ask("builder.plan", params, opts),
       setFallback: (fn) => this.setFallback("builder.plan", fn),
+    });
+    this.forge = new ForgeApi({
+      ask: (params, opts) => this.ask("forge.thing", params, opts),
+      setFallback: (fn) => this.setFallback("forge.thing", fn),
     });
     this.agents = new AgentsApi({
       request,

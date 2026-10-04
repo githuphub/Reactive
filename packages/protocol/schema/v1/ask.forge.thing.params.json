@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "prompt": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 400
+    },
+    "context": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string"
+      },
+      "additionalProperties": {}
+    },
+    "categories": {
+      "minItems": 1,
+      "maxItems": 8,
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "weapon",
+          "tool",
+          "food",
+          "creature",
+          "wearable",
+          "decoration",
+          "material",
+          "block"
+        ]
+      }
+    },
+    "maxModelSize": {
+      "default": 16,
+      "type": "integer",
+      "minimum": 4,
+      "maximum": 32
+    }
+  },
+  "required": [
+    "prompt"
+  ],
+  "$id": "https://liveforge.dev/schema/v1/ask.forge.thing.params.json",
+  "title": "ask.forge.thing.params"
+}

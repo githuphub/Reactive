@@ -20,5 +20,7 @@ export * from "./factions.js";
 export * from "./voxel.js";
 export * from "./voxel-expand.js";
 export * from "./voxel-templates.js";
+export * from "./forge-thing.js";
+export * from "./forge-thing-rules.js";
 export * from "./brain.js";
 export * from "./agents.js";

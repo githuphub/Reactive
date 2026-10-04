@@ -11,6 +11,7 @@ import { DirectiveDraftSchema } from "./directives.js";
 import { PlayerModel } from "./state.js";
 import { RaidPlanParams, RaidPlanResult } from "./factions.js";
 import { VoxelPlan } from "./voxel.js";
+import { ForgeThingParams, ForgedThing } from "./forge-thing.js";
 
 /** Free-form habits bag (keys of MoveHabits in moves.ts, or game-specific numbers). Cleaned with cleanHabits. */
 const Habits = z.record(z.string(), z.unknown());
@@ -211,6 +212,12 @@ export const ASKS = {
     }),
     result: z.object({ items: z.array(ForgedItem) }),
   },
+  /**
+   * Forge anything (forge.thing): the forge decides what the prompt *is* (creature, food, tool, weapon, wearable,
+   * decoration, material, block) and returns it with a coloured voxel model (VoxelModel, Voxel DSL ops), stats,
+   * effect, creature behaviour / wearable slot / recipe. Instant: keyword rules + template models; upgrade: Sonnet.
+   */
+  "forge.thing": { params: ForgeThingParams, result: ForgedThing },
   "quest.offer": {
     params: z.object({ giver: z.string().optional(), zone: z.string().optional(), context: Bag.optional(), seed: Seed }),
     /** null = nothing worth offering right now. */

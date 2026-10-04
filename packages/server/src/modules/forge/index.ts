@@ -1,7 +1,7 @@
 // Module "forge" - OWNER: K3. Only edit files inside packages/server/src/modules/forge/.
 // Forge: Blueprint v1 / Variant / VFX recipes / stats from prompts or context, Hyper3D upgrade jobs, bake + review.
 // Contract: docs/CONTRACTS.md. Asks owned here: forge.item, forge.armour_set, forge.look, forge.vfx, forge.creature,
-// forge.npc_look, forge.prop, forge.loot. Projections owned here: forge.gallery (world; ForgeGallery).
+// forge.npc_look, forge.prop, forge.loot, forge.thing ("forge anything": thing.ts). Projections owned here: forge.gallery (world; ForgeGallery).
 //
 // How it works (spec §3.5):
 //  - instant = rules: keyword + procedural (Counterforge's keyless forge, generalised to the manifest's families,
@@ -15,6 +15,7 @@
 // creature behaviour models), library/armour.ts (slot templates). Options: env.ts ForgeOptions.
 import { defineModule } from "../../module.js";
 import { forgeAsks } from "./asks.js";
+import { forgeThing } from "./thing.js";
 import { galleryProjection } from "./gallery.js";
 import { forgeAdmin, forgeContexts, forgePublic } from "./routes.js";
 
@@ -23,7 +24,7 @@ export default defineModule({
   description: "Forge: Blueprint v1 / Variant / VFX recipes / stats from prompts or context, Hyper3D upgrade jobs, bake + review.",
   projections: [galleryProjection],
   signalHandlers: [],
-  asks: forgeAsks,
+  asks: { ...forgeAsks, "forge.thing": forgeThing },
   ticks: [],
   routes: { admin: forgeAdmin, public: forgePublic },
   init(ctx) {
@@ -34,3 +35,4 @@ export default defineModule({
 export { produceRules, produceAi, FORGE_KINDS, type ForgeKind } from "./service.js";
 export { forgeEnv, type ForgeEnv, type ForgeOptions } from "./env.js";
 export { forgeLootRules, forgeItemRules, type LootContext } from "./items.js";
+export { forgeThing, thingSystem, thingUser } from "./thing.js";

@@ -19,7 +19,7 @@ export const ASK_OWNERS: Record<string, string> = {
   "npc.bark": "persona", "npc.reply": "persona",
   "director.boss_phase": "director", "director.boss_move": "director", "director.encounter": "director", "director.pacing": "director",
   "forge.item": "forge", "forge.armour_set": "forge", "forge.look": "forge", "forge.vfx": "forge", "forge.creature": "forge",
-  "forge.npc_look": "forge", "forge.prop": "forge", "forge.loot": "forge",
+  "forge.npc_look": "forge", "forge.prop": "forge", "forge.loot": "forge", "forge.thing": "forge",
   "quest.offer": "quests", "achievement.check": "quests",
   "world.reactions": "world",
   "player.model": "observer",

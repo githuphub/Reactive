@@ -41,7 +41,7 @@ async function attachMesh(ctx: AskContext, env: ForgeEnv, kind: ForgeKind, param
 }
 
 /** Per-player forge rate (manifest clamps.forge.maxPerMinPerPlayer). true = over the limit. */
-function overRate(ctx: AskContext, env: ForgeEnv): boolean {
+export function overRate(ctx: AskContext, env: ForgeEnv): boolean {
   if (!ctx.player) return false;
   const key = `rate:${ctx.world}:${ctx.player}`;
   const now = ctx.now();

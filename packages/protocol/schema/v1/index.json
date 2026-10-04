@@ -390,6 +390,7 @@
     "forge.npc_look",
     "forge.prop",
     "forge.loot",
+    "forge.thing",
     "quest.offer",
     "achievement.check",
     "player.model",
@@ -1219,6 +1220,30 @@
     "farm",
     "well"
   ],
+  "thingCategories": [
+    "weapon",
+    "tool",
+    "food",
+    "creature",
+    "wearable",
+    "decoration",
+    "material",
+    "block"
+  ],
+  "thingEffects": [
+    "none",
+    "chain_lightning",
+    "fire_trail",
+    "vein_mine",
+    "knockback_burst",
+    "heal_aura",
+    "frost_slow",
+    "glow",
+    "speed",
+    "jump",
+    "night_vision",
+    "explode_on_hit"
+  ],
   "brainKinds": [
     "goal",
     "thought",
@@ -1283,6 +1308,8 @@
     "VoxelOp": "VoxelOp.json",
     "VoxelBlock": "VoxelBlock.json",
     "ExpandedPlan": "ExpandedPlan.json",
+    "VoxelModel": "VoxelModel.json",
+    "ForgedThing": "ForgedThing.json",
     "BrainEntry": "BrainEntry.json",
     "BrainPage": "BrainPage.json",
     "AgentToolSpec": "AgentToolSpec.json",
@@ -1326,6 +1353,8 @@
     "ask.forge.prop.result": "ask.forge.prop.result.json",
     "ask.forge.loot.params": "ask.forge.loot.params.json",
     "ask.forge.loot.result": "ask.forge.loot.result.json",
+    "ask.forge.thing.params": "ask.forge.thing.params.json",
+    "ask.forge.thing.result": "ask.forge.thing.result.json",
     "ask.quest.offer.params": "ask.quest.offer.params.json",
     "ask.quest.offer.result": "ask.quest.offer.result.json",
     "ask.achievement.check.params": "ask.achievement.check.params.json",
@@ -1359,6 +1388,8 @@
     "directive.custom.reaction.args": "directive.custom.reaction.args.json",
     "directive.agent.tool_call.args": "directive.agent.tool_call.args.json",
     "directive.agent.done.args": "directive.agent.done.args.json",
-    "VoxelPlan.llm": "VoxelPlan.llm.json"
+    "VoxelPlan.llm": "VoxelPlan.llm.json",
+    "VoxelModel.llm": "VoxelModel.llm.json",
+    "ForgedThing.llm": "ForgedThing.llm.json"
   }
 }

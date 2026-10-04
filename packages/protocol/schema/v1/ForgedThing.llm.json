@@ -1,0 +1,740 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "category": {
+      "type": "string",
+      "enum": [
+        "weapon",
+        "tool",
+        "food",
+        "creature",
+        "wearable",
+        "decoration",
+        "material",
+        "block"
+      ]
+    },
+    "name": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "flavor": {
+      "type": "string"
+    },
+    "rarity": {
+      "type": "string",
+      "enum": [
+        "common",
+        "uncommon",
+        "rare",
+        "epic",
+        "legendary"
+      ]
+    },
+    "effect": {
+      "type": "string",
+      "enum": [
+        "none",
+        "chain_lightning",
+        "fire_trail",
+        "vein_mine",
+        "knockback_burst",
+        "heal_aura",
+        "frost_slow",
+        "glow",
+        "speed",
+        "jump",
+        "night_vision",
+        "explode_on_hit"
+      ]
+    },
+    "stats": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "damage": {
+          "type": "number"
+        },
+        "attackSpeed": {
+          "type": "number"
+        },
+        "miningSpeed": {
+          "type": "number"
+        },
+        "durability": {
+          "type": "number"
+        },
+        "food": {
+          "type": "number"
+        },
+        "saturation": {
+          "type": "number"
+        },
+        "armor": {
+          "type": "number"
+        },
+        "light": {
+          "type": "number"
+        },
+        "stackSize": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "damage",
+        "attackSpeed",
+        "miningSpeed",
+        "durability",
+        "food",
+        "saturation",
+        "armor",
+        "light",
+        "stackSize"
+      ]
+    },
+    "creature": {
+      "anyOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "behaviour": {
+              "type": "string",
+              "enum": [
+                "passive",
+                "pet",
+                "hostile",
+                "neutral",
+                "flying",
+                "swimming",
+                "guard"
+              ]
+            },
+            "health": {
+              "type": "number"
+            },
+            "speed": {
+              "type": "number"
+            },
+            "size": {
+              "type": "number"
+            },
+            "parts": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "from": {
+                    "type": "array",
+                    "items": {
+                      "type": "integer"
+                    }
+                  },
+                  "to": {
+                    "type": "array",
+                    "items": {
+                      "type": "integer"
+                    }
+                  }
+                },
+                "required": [
+                  "name",
+                  "from",
+                  "to"
+                ]
+              }
+            },
+            "sounds": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "drops": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "lays": {
+              "type": "string"
+            },
+            "tameWith": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "behaviour",
+            "health",
+            "speed",
+            "size",
+            "parts",
+            "sounds",
+            "drops",
+            "lays",
+            "tameWith"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "wearable": {
+      "anyOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "slot": {
+              "type": "string",
+              "enum": [
+                "head",
+                "chest",
+                "legs",
+                "feet",
+                "back"
+              ]
+            }
+          },
+          "required": [
+            "slot"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "recipe": {
+      "anyOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "shape": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "key": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "char": {
+                    "type": "string"
+                  },
+                  "item": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "char",
+                  "item"
+                ]
+              }
+            }
+          },
+          "required": [
+            "shape",
+            "key"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "model": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "size": {
+          "type": "array",
+          "items": {
+            "type": "integer"
+          }
+        },
+        "palette": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "key": {
+                "type": "string"
+              },
+              "color": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "key",
+              "color"
+            ]
+          }
+        },
+        "ops": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "op": {
+                "type": "string",
+                "enum": [
+                  "box",
+                  "hollow_box",
+                  "edges",
+                  "line",
+                  "cylinder",
+                  "sphere",
+                  "roof",
+                  "door",
+                  "window",
+                  "stairs",
+                  "fill_air",
+                  "block",
+                  "repeat",
+                  "mirror"
+                ]
+              },
+              "from": {
+                "anyOf": [
+                  {
+                    "type": "array",
+                    "items": {
+                      "type": "number"
+                    }
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "to": {
+                "anyOf": [
+                  {
+                    "type": "array",
+                    "items": {
+                      "type": "number"
+                    }
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "at": {
+                "anyOf": [
+                  {
+                    "type": "array",
+                    "items": {
+                      "type": "number"
+                    }
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "center": {
+                "anyOf": [
+                  {
+                    "type": "array",
+                    "items": {
+                      "type": "number"
+                    }
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "radius": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "height": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "hollow": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "style": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "enum": [
+                      "gable",
+                      "hip",
+                      "flat"
+                    ]
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "axis": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "enum": [
+                      "x",
+                      "z"
+                    ]
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "facing": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "enum": [
+                      "north",
+                      "south",
+                      "east",
+                      "west"
+                    ]
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "count": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "step": {
+                "anyOf": [
+                  {
+                    "type": "array",
+                    "items": {
+                      "type": "number"
+                    }
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "block": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "ops": {
+                "anyOf": [
+                  {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "op": {
+                          "type": "string",
+                          "enum": [
+                            "box",
+                            "hollow_box",
+                            "edges",
+                            "line",
+                            "cylinder",
+                            "sphere",
+                            "roof",
+                            "door",
+                            "window",
+                            "stairs",
+                            "fill_air",
+                            "block",
+                            "repeat",
+                            "mirror"
+                          ]
+                        },
+                        "from": {
+                          "anyOf": [
+                            {
+                              "type": "array",
+                              "items": {
+                                "type": "number"
+                              }
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "to": {
+                          "anyOf": [
+                            {
+                              "type": "array",
+                              "items": {
+                                "type": "number"
+                              }
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "at": {
+                          "anyOf": [
+                            {
+                              "type": "array",
+                              "items": {
+                                "type": "number"
+                              }
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "center": {
+                          "anyOf": [
+                            {
+                              "type": "array",
+                              "items": {
+                                "type": "number"
+                              }
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "radius": {
+                          "anyOf": [
+                            {
+                              "type": "integer"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "height": {
+                          "anyOf": [
+                            {
+                              "type": "integer"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "hollow": {
+                          "anyOf": [
+                            {
+                              "type": "boolean"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "style": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "enum": [
+                                "gable",
+                                "hip",
+                                "flat"
+                              ]
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "axis": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "enum": [
+                                "x",
+                                "z"
+                              ]
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "facing": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "enum": [
+                                "north",
+                                "south",
+                                "east",
+                                "west"
+                              ]
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "count": {
+                          "anyOf": [
+                            {
+                              "type": "integer"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "step": {
+                          "anyOf": [
+                            {
+                              "type": "array",
+                              "items": {
+                                "type": "number"
+                              }
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "block": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "op",
+                        "from",
+                        "to",
+                        "at",
+                        "center",
+                        "radius",
+                        "height",
+                        "hollow",
+                        "style",
+                        "axis",
+                        "facing",
+                        "count",
+                        "step",
+                        "block"
+                      ]
+                    }
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "op",
+              "from",
+              "to",
+              "at",
+              "center",
+              "radius",
+              "height",
+              "hollow",
+              "style",
+              "axis",
+              "facing",
+              "count",
+              "step",
+              "block",
+              "ops"
+            ]
+          }
+        },
+        "pivot": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        }
+      },
+      "required": [
+        "size",
+        "palette",
+        "ops",
+        "pivot"
+      ]
+    }
+  },
+  "required": [
+    "category",
+    "name",
+    "description",
+    "flavor",
+    "rarity",
+    "effect",
+    "stats",
+    "creature",
+    "wearable",
+    "recipe",
+    "tags",
+    "model"
+  ],
+  "$id": "https://liveforge.dev/schema/v1/ForgedThing.llm.json",
+  "title": "ForgedThing.llm"
+}

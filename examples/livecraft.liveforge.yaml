@@ -199,8 +199,8 @@ signals:
     description: The player crafted an item.
     data: { item: string, "count?": number }
   item.forged:
-    description: The player forged an item with forge.item (the voxel item is in the hotbar).
-    data: { item: string, "name?": string, "effect?": string }
+    description: The player forged something with forge.item / forge.thing (the voxel item is in the hotbar, or the creature spawned).
+    data: { item: string, "name?": string, "effect?": string, "category?": string }
   item.used:
     description: The player used an item (lava bucket, flint and steel, potion ...).
     data: { item: string, "target?": string }
@@ -349,6 +349,8 @@ reactions:
   engine: { ledgerSize: 16, traitThreshold: 0.5 }
 
 # ---------------------------------------------------------------- forge anything
+# forge.thing {prompt} decides what the prompt is (creature, food, tool, weapon, wearable, decoration, material, block)
+# and returns a ForgedThing with a coloured voxel model; forge.item stays the weapon / armour forge below.
 items:
   families: [pickaxe, sword, axe, shovel, hoe, bow, crossbow, spear, hammer, staff, shield, helmet, chestplate, boots]
   slots: [weapon, offhand, head, chest, feet, tool]
@@ -410,6 +412,7 @@ models:
     forge.npc_look: rich
     forge.prop: rich
     forge.loot: rich
+    forge.thing: rich        # forge anything: creature / food / tool / ... with a voxel model
 
 # ---------------------------------------------------------------- agents + builder (K6 modules)
 agents:

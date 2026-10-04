@@ -21,6 +21,7 @@ const top: Record<string, z.ZodType> = {
   ReactionInfo: P.ReactionInfo, ReactionDirectiveArgs: P.ReactionDirectiveArgs,
   FactionMind: P.FactionMind, FactionPostureArgs: P.FactionPostureArgs, GuardPostsArgs: P.GuardPostsArgs,
   VoxelPlan: P.VoxelPlan, VoxelOp: P.VoxelOp, VoxelBlock: P.VoxelBlock, ExpandedPlan: P.ExpandedPlan,
+  VoxelModel: P.VoxelModel, ForgedThing: P.ForgedThing,
   BrainEntry: P.BrainEntry, BrainPage: P.BrainPage, AgentToolSpec: P.AgentToolSpec, AgentRun: P.AgentRun,
 };
 for (const [name, s] of Object.entries(P.PROJECTIONS)) top[`Projection_${name}`] = s.schema;
@@ -48,6 +49,14 @@ for (const [kind, s] of Object.entries(P.DIRECTIVE_ARGS)) write(`directive.${kin
   index["VoxelPlan.llm"] = "VoxelPlan.llm.json";
 }
 
+// The structured-output forms of a voxel model and a whole forge.thing answer (clampVoxelModel / clampForgedThing).
+for (const [name, json] of [["VoxelModel.llm", P.voxelModelJsonSchema()], ["ForgedThing.llm", P.forgedThingJsonSchema()]] as const) {
+  json.$id = `https://liveforge.dev/schema/v1/${name}.json`;
+  json.title = name;
+  writeFileSync(join(outDir, `${name}.json`), JSON.stringify(json, null, 2) + "\n");
+  index[name] = `${name}.json`;
+}
+
 writeFileSync(
   join(outDir, "index.json"),
   JSON.stringify({
@@ -64,6 +73,8 @@ writeFileSync(
     weathers: P.WEATHERS,
     voxelOps: P.VOXEL_OPS,
     voxelTemplates: P.VOXEL_TEMPLATE_NAMES,
+    thingCategories: P.THING_CATEGORIES,
+    thingEffects: P.THING_EFFECTS,
     brainKinds: P.BRAIN_KINDS,
     brainModels: P.BRAIN_MODELS,
     agentGoalTemplates: P.AGENT_GOAL_TEMPLATES,

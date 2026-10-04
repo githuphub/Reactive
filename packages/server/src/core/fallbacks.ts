@@ -1,6 +1,6 @@
 // Core rules stubs: a valid, deterministic instant answer for every ask kind, used when the owning module is
 // disabled, doesn't implement the kind yet, or its instant() threw. Lanes replace these with real fast-paths.
-import { expandVoxelPlan, rulesVoxelPlan } from "@liveforge/protocol";
+import { expandVoxelPlan, rulesForgedThing, rulesVoxelPlan } from "@liveforge/protocol";
 import {
   cleanHabits, composeMove, defaultRaidPlan, hashString, mulberry32, DEFAULT_RAID_MOBS,
   type AskKind, type AskParams, type AskResult, type Blueprint, type BlueprintPart, type ForgedItem, type VfxRecipe,
@@ -157,6 +157,10 @@ export function fallbackAnswer<K extends AskKind>(kind: K, params: AskParams<K>,
     case "forge.loot": {
       const n = Number(p.count ?? 1);
       return r({ items: Array.from({ length: n }, (_, i) => stubItem(m, seed + i, {})) }, "procedural loot");
+    }
+    case "forge.thing": {
+      const ft = p as unknown as AskParams<"forge.thing">;
+      return r(rulesForgedThing({ prompt: String(ft.prompt ?? "thing"), categories: ft.categories, maxModelSize: ft.maxModelSize }), "forge module disabled: keyword thing");
     }
     case "quest.offer":
       return r({ quest: null }, "no quest engine yet");
