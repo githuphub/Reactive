@@ -25,10 +25,10 @@ function keyFrom(c: Context): string | null {
   return c.req.header(HEADERS.key) ?? c.req.query("key") ?? null;
 }
 
-/** The client's IP: the first X-Forwarded-For hop behind a trusted proxy (LIVEFORGE_TRUST_PROXY), else the socket. */
+/** The client's IP: the last X-Forwarded-For hop (added by the proxy) behind a trusted proxy (LIVEFORGE_TRUST_PROXY), else the socket. */
 function clientIp(c: Context, trustProxy: boolean): string {
   if (trustProxy) {
-    const xff = c.req.header("x-forwarded-for")?.split(",")[0]?.trim();
+    const xff = c.req.header("x-forwarded-for")?.split(",").pop()?.trim(); // the last hop is the one our proxy appended (earlier entries are client-controlled)
     if (xff) return xff;
   }
   try {
