@@ -1,6 +1,6 @@
 # Dashboard
 
-The dashboard shows what Liveforge is learning and deciding, live. It runs on the server at
+The dashboard shows what Reactive is learning and deciding, live. It runs on the server at
 `http://<server>/dashboard`, or standalone with `npm run dev -w @liveforge/dashboard`, which proxies to
 `LIVEFORGE_URL` (default `http://localhost:8787`).
 

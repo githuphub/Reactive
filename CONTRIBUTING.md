@@ -1,6 +1,6 @@
-# Contributing to Liveforge
+# Contributing to Reactive
 
-Thanks for helping games notice their players. Liveforge is MIT licensed, and contributions are accepted under
+Thanks for helping games notice their players. Reactive is MIT licensed, and contributions are accepted under
 the same license.
 
 ## Setup

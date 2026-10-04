@@ -1,4 +1,4 @@
-// The dashboard reads everything through one DataSource. LiveSource talks to a Liveforge server's /admin API and
+// The dashboard reads everything through one DataSource. LiveSource talks to a Reactive server's /admin API and
 // admin WebSocket; DemoSource runs an in-browser simulation of the Counterforge example manifest so the dashboard
 // works (and can be filmed) with no server at all. Both return the protocol shapes from @liveforge/protocol.
 import type {

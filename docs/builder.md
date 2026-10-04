@@ -90,7 +90,7 @@ in any order. `block` is a palette key or a block id.
 | `window` | `at`, `block?` (default `glass`) | One window block |
 | `stairs` | `from`, `to`, `block` | One step per layer along the longer horizontal axis; the other axis is the width |
 | `fill_air` | `from`, `to` | Clears a box (interiors, doorways, terrain) |
-| `block` | `at`, `block` | One block (torch, chest ...); a Liveforge addition to the spec |
+| `block` | `at`, `block` | One block (torch, chest ...); a Reactive addition to the spec |
 | `repeat` | `count`, `step`, `ops` | `ops` `count` times, each copy offset by `step * i` |
 | `mirror` | `axis` (`x`, `z`), `at`, `ops` | `ops` plus a copy mirrored across the plane `axis = at` (`x' = 2*at - x`; `.5` planes for even widths) |
 

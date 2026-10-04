@@ -1,6 +1,6 @@
-# Thornbury: the Liveforge Godot 4 sample
+# Thornbury: the Reactive Godot 4 sample
 
-A small village scene for the Liveforge Godot addon. It contains:
+A small village scene for the Reactive Godot addon. It contains:
 
 - **Three LiveNPCs.** Bess the innkeeper, Aldric the bridge guard and Wick the thief come from `examples/godot-village.liveforge.yaml`. They bark when you walk up, answer typed or spoken questions with streamed replies, and speak through `DisplayServer.tts_speak` in their persona voice. Their structured actions (trade, steal, quest offers and so on) appear in the chat.
 - **A LiveEquipSlot in your right hand.** Type a description, press **Forge**, and the forged item's blueprint (LiveBlueprint) and VFX (LiveVFX) are attached. When the AI upgrade arrives, it replaces the instant item.
@@ -12,7 +12,7 @@ You need Godot 4.3 or newer (4.2 should also work) and Node 22 or newer for the 
 
 ## Run it
 
-1. **Start a Liveforge server** with this game's manifest. Run these from the repo root:
+1. **Start a Reactive server** with this game's manifest. Run these from the repo root:
 
    ```bash
    npm install
@@ -58,7 +58,7 @@ You need Godot 4.3 or newer (4.2 should also work) and Node 22 or newer for the 
 
 ## Editor dock
 
-The **Liveforge** dock appears on the right of the editor. With it you can:
+The **Reactive** dock appears on the right of the editor. With it you can:
 
 - Test the connection. It shows the game, its personas and its bosses.
 - Save the URL, key, world and player to Project Settings.

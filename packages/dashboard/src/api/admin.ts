@@ -163,7 +163,7 @@ function gameInfoFromManifest(m: Manifest, extra: Partial<GameInfo> = {}): GameI
   };
 }
 
-/** DataSource backed by a running Liveforge server. */
+/** DataSource backed by a running Reactive server. */
 export class LiveSource implements DataSource {
   readonly mode = "live" as const;
   readonly label: string;

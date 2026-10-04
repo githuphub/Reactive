@@ -1,6 +1,6 @@
 # Manifest reference (`liveforge.yaml`)
 
-The manifest is the designer's contract with Liveforge. Every AI path reads it, and every output is clamped to it.
+The manifest is the designer's contract with Reactive. Every AI path reads it, and every output is clamped to it.
 
 - **Minimal manifest:** `liveforge: 1` plus `game` and `lore.bible`. Every other section has defaults.
 - **Validation:** with clear errors (`file:line:col path: message`), via any of:

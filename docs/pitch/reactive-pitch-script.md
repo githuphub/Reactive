@@ -4,7 +4,7 @@
 **Repo:** https://github.com/githuphub/Reactive
 
 **Before you go on stage:**
-- Liveforge server running with AI on, Livecraft open with the Demo panel.
+- Reactive server running with AI on, Livecraft open with the Demo panel.
 - Bram's plot is clear, and Brain View is visible.
 - Second screen: the dashboard. Recorded cassettes are the fallback if the network wobbles.
 

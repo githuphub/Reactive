@@ -27,7 +27,7 @@ export function dashboardDir(env: NodeJS.ProcessEnv = process.env): string {
   return fileURLToPath(new URL("../../../dashboard/dist", import.meta.url));
 }
 
-const NOT_BUILT = `<!doctype html><meta charset="utf-8"><title>Liveforge dashboard</title>
+const NOT_BUILT = `<!doctype html><meta charset="utf-8"><title>Reactive dashboard</title>
 <body style="background:#07080c;color:#e8ebf2;font:15px system-ui;display:grid;place-content:center;height:100vh;margin:0">
 <h2>The dashboard is not built yet</h2><p>Run <code>npm run build</code> (or <code>npm run build -w @liveforge/dashboard</code>) and reload.</p></body>`;
 

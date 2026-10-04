@@ -1,4 +1,4 @@
-# Liveforge contracts (v1)
+# Reactive contracts (v1)
 
 How every lane plugs into the core. Binding for K1–K5 and D1. The design spec is `docs/specs/2026-10-03-liveforge-design.md`; this file is the implementation contract.
 If something you need is missing, add it **inside your own folder** and note it in your report. Do not change a shared contract silently. Additive, optional fields are fine. Renames and removals need the controller's OK.

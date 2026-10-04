@@ -1,4 +1,4 @@
-/* Liveforge dashboard - dark forge theme. Ember orange is the single action colour; data colours follow a fixed
+/* Reactive dashboard - dark forge theme. Ember orange is the single action colour; data colours follow a fixed
    categorical order (see ui/dom.ts NS_COLORS) and text always stays in ink colours. */
 :root {
   color-scheme: dark;

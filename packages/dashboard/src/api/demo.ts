@@ -1,4 +1,4 @@
-// DemoSource: an in-browser stand-in for a Liveforge server, driven by the Counterforge example manifest. It keeps an
+// DemoSource: an in-browser stand-in for a Reactive server, driven by the Counterforge example manifest. It keeps an
 // event log and folds it into the same projection shapes the real modules produce (player model, NPC memories,
 // rumours, factions, Director, forge gallery, quests), emits directives with a `why`, and keeps cost / latency
 // meters. Nothing here calls a network: it exists so the dashboard can be explored and filmed without a server.

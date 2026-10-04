@@ -19,9 +19,9 @@ The example manifest `examples/godot-village.liveforge.yaml` sets up the village
 ## 2. Install the addon
 
 1. Copy `godot/addons/liveforge` into your project's `addons/` folder.
-2. **Project → Project Settings → Plugins:** enable **Liveforge**. This registers the `Liveforge` autoload and
+2. **Project → Project Settings → Plugins:** enable **Reactive**. This registers the `Liveforge` autoload and
    the editor dock.
-3. **Project Settings → General → Liveforge:**
+3. **Project Settings → General → Reactive:**
 
 | Setting | Value |
 |---|---|
@@ -110,7 +110,7 @@ Godot help panel shows.
 
 ## 7. Editor dock
 
-The **Liveforge** dock (bottom panel) can:
+The **Reactive** dock (bottom panel) can:
 
 - connect to the server and show its status;
 - validate your `liveforge.yaml` (errors come back with line numbers);

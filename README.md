@@ -1,11 +1,15 @@
-# Liveforge
+# Reactive
 
 > **Your game, but it notices.**
 
-Liveforge is an MIT-licensed, self-hostable, engine-agnostic kit that makes games adapt to the player.
+Reactive is an MIT-licensed, self-hostable, engine-agnostic kit that makes games adapt to the player.
 NPCs talk (out loud) and remember what you did. The world gossips about it. Bosses learn how you fight and
 invent counters. Gear, looks, effects and quests are forged from a prompt or from what just happened. Everything
 stays inside the rules the designer wrote.
+
+Repo: https://github.com/githuphub/Reactive. Reactive was called Liveforge during development, so the packages
+(`@liveforge/*`), the Godot addon folder (`addons/liveforge`), the `LIVEFORGE_*` env vars and the
+`*.liveforge.yaml` manifests keep that name for now.
 
 <!-- GIF placeholders: drop recordings into docs/media/ with these names -->
 | | |
@@ -228,4 +232,4 @@ described in the [manifest reference](docs/manifest.md).
 
 ## License
 
-MIT © 2026 the Liveforge authors. Built for the Cambridge × Arcade AI Hackathon (Game Tech track), October 2026.
+MIT © 2026 the Reactive authors. Built for the Cambridge × Arcade AI Hackathon (Game Tech track), October 2026.

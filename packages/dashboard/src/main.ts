@@ -1,4 +1,4 @@
-// Liveforge dashboard entry: admin-key login (or demo data), the app shell (nav, world / player pickers, live
+// Reactive dashboard entry: admin-key login (or demo data), the app shell (nav, world / player pickers, live
 // connection status) and a hash router over the panels.
 import "./styles.css";
 import { AdminError, type ConnStatus, type DataSource, type WorldSummary } from "./api/types";
@@ -120,7 +120,7 @@ function clearAuth() {
 function logo(size = 28): HTMLElement {
   return h("div", { class: "logo" },
     h("div", { class: "logo-mark", style: { width: `${size}px`, height: `${size}px` } }),
-    h("span", null, "Liveforge"));
+    h("span", null, "Reactive"));
 }
 
 function showLogin(error?: string) {

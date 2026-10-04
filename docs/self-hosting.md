@@ -1,6 +1,6 @@
 # Self-hosting
 
-Liveforge is one Node process. It holds the HTTP API, the WebSocket hub, the SQLite event log and the dashboard.
+Reactive is one Node process. It holds the HTTP API, the WebSocket hub, the SQLite event log and the dashboard.
 Run it next to your game servers, on a small VPS, or on your laptop at a game jam.
 
 ## Requirements
@@ -112,7 +112,7 @@ Model and provider keys exist **only** in server env. Clients only ever hold the
 
 ## Costs and budgets
 
-Liveforge is built so that the bill stays boring:
+Reactive is built so that the bill stays boring:
 
 - **Instant first.** Every ask is answered by rules or cache, and the AI is an upgrade. When a budget runs out,
   the game keeps working and only the upgrades pause.
