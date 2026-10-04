@@ -11,7 +11,7 @@ export type { ApplyVariantOptions, VariantHandle } from "./variant.js";
 export { disposeObject } from "./dispose.js";
 export { speak, stopSpeaking, speechSupported, pickVoice, accentToLang } from "./tts.js";
 export type { SpeakOptions } from "./tts.js";
-export { Mic, createMic, micSupport } from "./mic.js";
+export { Mic, MicError, createMic, micSupport } from "./mic.js";
 export type { MicOptions, MicMode } from "./mic.js";
 export { LiveNPC } from "./npc.js";
 export type { LiveNPCOptions, NpcLine } from "./npc.js";

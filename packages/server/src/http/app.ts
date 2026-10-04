@@ -48,7 +48,7 @@ export function createApp(lf: Liveforge, modules: LiveforgeModule[]): Hono<LfEnv
   });
   app.notFound((c) => c.json(errBody("not_found", `no route ${c.req.method} ${c.req.path}`), 404));
 
-  app.get("/health", (c) => c.json({ ok: true, protocol: PROTOCOL_ID, games: [...lf.games.keys()], llm: !!lf.providers.llm }));
+  app.get("/health", (c) => c.json({ ok: true, protocol: PROTOCOL_ID, games: [...lf.games.keys()], llm: !!lf.providers.llm, stt: lf.providers.stt?.id ?? null }));
 
   // dashboard static files at /dashboard (K5); no auth - it asks for the admin key itself
   app.route("/", dashboardRoutes());

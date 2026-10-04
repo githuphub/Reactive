@@ -33,6 +33,17 @@ function recognitionCtor(): RecognitionCtor | undefined {
   return g.SpeechRecognition ?? g.webkitSpeechRecognition;
 }
 
+/**
+ * Why a capture produced no transcript. `code` is the Web Speech error ("not-allowed", "network",
+ * "service-not-allowed", "audio-capture", "no-speech" …) or "stt" when server speech-to-text failed.
+ */
+export class MicError extends Error {
+  constructor(readonly code: string, message: string) {
+    super(message);
+    this.name = "MicError";
+  }
+}
+
 /** What this browser supports. */
 export function micSupport(): { browser: boolean; record: boolean } {
   const nav = (globalThis as { navigator?: Navigator }).navigator;
@@ -56,6 +67,7 @@ export class Mic {
   private rec: Recognition | null = null;
   private recText = "";
   private recDone: Promise<void> | null = null;
+  private recError: string | null = null;
   private media: MediaRecorder | null = null;
   private stream: MediaStream | null = null;
   private chunks: Blob[] = [];
@@ -93,13 +105,17 @@ export class Mic {
       rec.interimResults = false;
       rec.maxAlternatives = 1;
       this.recText = "";
+      this.recError = null;
       this.recDone = new Promise<void>((resolve) => {
         rec.onresult = (ev) => {
           let t = "";
           for (let i = 0; i < ev.results.length; i++) t += `${ev.results[i][0]?.transcript ?? ""} `;
           this.recText = t.trim();
         };
-        rec.onerror = () => resolve();
+        rec.onerror = (ev) => {
+          this.recError = ev.error ?? "unknown";
+          resolve();
+        };
         rec.onend = () => resolve();
       });
       this.rec = rec;
@@ -134,6 +150,9 @@ export class Mic {
         /* already stopped */
       }
       await Promise.race([this.recDone, new Promise((r) => setTimeout(r, 2500))]);
+      if (!this.recText && this.recError && this.recError !== "no-speech" && this.recError !== "aborted") {
+        throw new MicError(this.recError, `speech recognition failed: ${this.recError}`);
+      }
       return this.recText;
     }
     if (this.media) {
@@ -144,8 +163,12 @@ export class Mic {
       this.stream?.getTracks().forEach((t) => t.stop());
       this.stream = null;
       if (!blob.size || !this.client) return "";
-      const res = await this.client.stt(blob, { language: (this.opts.language ?? "en").slice(0, 2) });
-      return res.text.trim();
+      try {
+        const res = await this.client.stt(blob, { language: (this.opts.language ?? "en").slice(0, 2) });
+        return res.text.trim();
+      } catch (err) {
+        throw new MicError("stt", (err as Error).message);
+      }
     }
     return "";
   }
