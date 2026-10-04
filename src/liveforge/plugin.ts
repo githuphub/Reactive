@@ -40,7 +40,7 @@ const plugin: GamePlugin = {
     const settings = readSettings(game.seedText);
     const lf = new LiveforgeService(settings);
     setLiveforge(lf);
-    voices.enabled = settings.demo;
+    voices.enabled = false; // spoken villager lines are off by default (🔊 Voices in the Demo panel turns them on)
 
     // offline answers + block ids for local build plans
     lf.client.builder.setBlockIds(LC_BLOCK_IDS);

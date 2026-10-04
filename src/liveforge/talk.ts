@@ -15,7 +15,7 @@ import { lfNpcId } from './ids';
 import { getQuests } from './quests';
 import { isGoalRequest, stripAddress } from './rules';
 import type { LiveforgeService } from './service';
-import { getMic, micFailure, speakAs, voiceBlocker, voices } from './voice';
+import { getMic, micFailure, speakAs, voiceBlocker } from './voice';
 
 type Turn = { role: 'player' | 'npc'; text: string };
 
@@ -249,7 +249,6 @@ export class Talk {
     try {
       await mic.start();
       this.listening = true;
-      voices.enabled = true; // talking by voice → villagers answer aloud
       getHub().caption('🎙 Listening… (release V)', 30);
     } catch (err) {
       this.game.ui.toast(`Mic unavailable: ${(err as Error).message}`, { kind: 'warn' });
