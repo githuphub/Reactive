@@ -140,10 +140,26 @@ export function scenarioButtons(d: ScenarioDeps): DemoButton[] {
     },
     {
       label: '⚡ Forge anything',
-      hint: '"a pickaxe made of lightning"',
+      hint: 'forge.thing: "a pickaxe made of lightning"',
       run: () => {
         game.ui.screens.closeAll();
         d.openForge('a pickaxe made of lightning', 'item');
+      },
+    },
+    {
+      label: '🐔 Forge a creature',
+      hint: 'forge.thing → a spawn egg: right-click a block to hatch it',
+      run: () => {
+        game.ui.screens.closeAll();
+        d.openForge('a fluffy chicken that lays golden eggs', 'item');
+      },
+    },
+    {
+      label: '🚂 Forge a train',
+      hint: 'forge.thing → a vehicle: place it, right-click / E to ride',
+      run: () => {
+        game.ui.screens.closeAll();
+        d.openForge('a steam train', 'item');
       },
     },
     {

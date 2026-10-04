@@ -5,7 +5,7 @@
  * model, tool stats, an effect from the enum and a crafting recipe. It lands in the hotbar.
  * The Building tab drafts a blueprint item instead (`builder.plan`, see ../blueprint/).
  */
-import type { AskResponse, Directive, ForgedItem } from '@liveforge/sdk';
+import { rulesForgedThing, type Directive, type ForgedItem, type ForgedThing } from '@liveforge/sdk';
 import type { Game } from '../../game/game';
 import { findItem, type ToolSpec } from '../../engine/items';
 import type { Screen } from '../../ui/ui';
@@ -20,6 +20,12 @@ import { wireEffects } from './effects';
 import { putInHotbar } from './hotbar';
 import { pixelsFromGrid, pixelsToCanvas, type ToolShape } from './pixel';
 import { EFFECTS, allForged, forgedPixels, forgedSpec, registerForged, type ForgeEffect, type LcForged } from './registry';
+import { getBuffs, type BuffEffect } from './buffs';
+import { Creatures } from './creatures';
+import { Decorations } from './decorations';
+import { Vehicles } from './vehicles/vehicle';
+import { getWearables } from './wearables';
+import { allThings, initThings, onThingChanged, recipeKnown, registerThing, thingItemId, thingPreview, thingSpec, updateThing, useOf, type LcThing } from './things';
 
 const SHAPES: ToolShape[] = ['pickaxe', 'axe', 'shovel', 'hoe', 'sword', 'hammer', 'spear', 'staff', 'bow'];
 
@@ -125,7 +131,15 @@ export function localForge(prompt: string, familyHint?: string): LcForged {
 export type ForgeMode = 'item' | 'building';
 
 /** The `lf_forge` save slot: forged items, then blueprints (older saves are a plain item array). */
-type ForgeSave = LcForged[] | { items?: LcForged[]; blueprints?: LcBlueprint[] };
+type ForgeSave = LcForged[] | { items?: LcForged[]; blueprints?: LcBlueprint[]; things?: LcThing[] };
+
+const CATEGORY_ICON: Record<string, string> = { weapon: '⚔', tool: '⛏', food: '🍖', creature: '🐾', wearable: '🎩', decoration: '🏺', material: '🧱', block: '🧊', vehicle: '🚂' };
+const RARITY_COLOR: Record<string, string> = { common: '#cfcfcf', uncommon: '#6fdc6f', rare: '#5aa8ff', epic: '#c77dff', legendary: '#ffb829' };
+const USE_HINT: Record<string, string> = {
+  weapon: 'hit things with it', tool: 'mine with it', food: 'hold right-click to eat', creature: 'right-click a block to hatch it',
+  wearable: 'right-click to wear it (F5 to see)', decoration: 'right-click to place · R rotates · left-click picks it up',
+  material: 'a crafting material', block: 'right-click to place · left-click picks it up', vehicle: 'right-click to place · right-click / E to ride',
+};
 
 export class Forge {
   private screen: Screen | null = null;
@@ -142,14 +156,41 @@ export class Forge {
 
   constructor(private readonly game: Game, private readonly lf: LiveforgeService) {
     wireEffects(game);
+    initThings(game);
+    const buffs = getBuffs(game);
+    getWearables(game);
+    const creatures = new Creatures(game);
+    const decor = new Decorations(game);
+    const vehicles = new Vehicles(game);
+    onThingChanged((t, replaced) => {
+      if (!replaced) return;
+      creatures.refresh(t);
+      decor.refresh(t);
+      vehicles.refresh(t);
+    });
+    game.events.on('playerAte', (e) => {
+      const t = thingSpec(e.item);
+      if (t && t.thing.effect !== 'none') {
+        buffs.grant(t.thing.effect as BuffEffect, 30);
+        game.ui.toast(`${t.thing.name}: ${t.thing.effect.replace(/_/g, ' ')} for 30 s`, { kind: 'good' });
+      }
+    });
     this.blueprints = new BlueprintForge(game, lf, {
       status: (s) => this.setStatus(s),
       card: (bp) => this.showCard(blueprintCard(bp)),
     });
-    const save = (): ForgeSave => ({ items: allForged().map((s) => ({ ...s })), blueprints: allBlueprints().map((b) => ({ ...b })) });
+    const save = (): ForgeSave => ({ items: allForged().map((s) => ({ ...s })), blueprints: allBlueprints().map((b) => ({ ...b })), things: allThings().map((t) => ({ ...t })) });
     game.save.register('lf_forge', save, (saved: ForgeSave) => {
       const items = Array.isArray(saved) ? saved : saved?.items ?? [];
       const blueprints = Array.isArray(saved) ? [] : saved?.blueprints ?? [];
+      const things = Array.isArray(saved) ? [] : saved?.things ?? [];
+      for (const t of things) {
+        try {
+          registerThing(t);
+        } catch (err) {
+          console.warn('[forge] saved thing skipped', err);
+        }
+      }
       for (const s of items) {
         counter = Math.max(counter, Number(/_(\d+)$/.exec(s.id)?.[1] ?? 0));
         registerForged(s, s.grid ? pixelsFromGrid(s.grid, [...s.palette]) : null);
@@ -157,7 +198,7 @@ export class Forge {
       for (const b of blueprints) registerBlueprint(b);
       // the inventory loaded before these items existed (unknown stacks were dropped): load it again
       const inv = game.save.get('inventory') as Parameters<Game['inventory']['deserialize']>[0] | undefined;
-      if ((items.length || blueprints.length) && inv) game.inventory.deserialize(inv);
+      if ((items.length || blueprints.length || things.length) && inv) game.inventory.deserialize(inv);
     });
   }
 
@@ -178,35 +219,128 @@ export class Forge {
     if (!this.screen) return;
     const building = mode === 'building';
     this.title.textContent = building ? '🏰 FORGE A BUILDING' : '⚒ FORGE ANYTHING';
-    this.input.placeholder = building ? 'Describe a building… e.g. a wizard tower with a spiral staircase' : 'Describe an item… e.g. a pickaxe made of lightning';
-    this.family.style.display = building ? 'none' : '';
+    this.input.placeholder = building ? 'Describe a building… e.g. a wizard tower with a spiral staircase' : 'Describe anything… e.g. a fluffy chicken, a steam train, a lantern';
+    this.family.style.display = 'none';
     this.go.textContent = building ? 'Draft' : 'Forge';
     for (const [m, b] of Object.entries(this.tabs)) b?.classList.toggle('on', m === mode);
     this.setStatus(building ? 'Enter — draft a blueprint · it goes to your hotbar · hold it: R rotates, right-click builds (free)' : 'Enter — forge · 🎤 hold — speak · the item goes to your hotbar');
   }
 
-  /** Forges an item from a prompt; resolves with the spec in the hotbar. */
-  async forge(prompt: string, family?: string): Promise<LcForged | null> {
+  /**
+   * Forges anything from a prompt (`forge.thing`, no category forcing): the rules thing lands in the hotbar at once,
+   * the AI version replaces it in place (same item id) when it arrives. Resolves with the thing record.
+   */
+  async forge(prompt: string, _family?: string): Promise<LcThing | null> {
     const text = prompt.trim().slice(0, 400);
     if (!text || this.busy) return null;
     this.busy = true;
     this.setStatus('⚒ Forging…');
     const t0 = performance.now();
     try {
-      let spec: LcForged;
+      let rec: LcThing;
       try {
-        const h = this.lf.ask('forge.item', { prompt: text, ...(family ? { family } : {}), context: { game: 'livecraft', effects: [...EFFECTS] } });
-        const r: AskResponse<'forge.item'> = await h.instant;
-        spec = fromForged(r.result.item, text, family, r.source);
-        h.onUpgrade((u) => this.upgrade(spec, u.result.item, text, family, performance.now() - t0));
+        const h = this.lf.ask('forge.thing', { prompt: text, context: { game: 'livecraft', world: 'voxel sandbox' } });
+        const r = await h.instant;
+        rec = this.recordOf(r.result as ForgedThing, text, r.source);
+        const id = rec.id;
+        h.onUpgrade((u) => {
+          try {
+            this.giveThing({ ...this.recordOf(u.result as ForgedThing, text, u.source), id }, true, performance.now() - t0);
+          } catch (err) {
+            console.warn('[forge] upgrade failed', err);
+          }
+        });
       } catch {
-        spec = localForge(text, family);
+        rec = this.recordOf(rulesForgedThing({ prompt: text }), text, 'local');
       }
-      this.give(spec, null, performance.now() - t0);
-      return spec;
+      this.giveThing(rec, false, performance.now() - t0);
+      return rec;
     } finally {
       this.busy = false;
     }
+  }
+
+  private recordOf(thing: ForgedThing, prompt: string, source: string): LcThing {
+    return { id: thingItemId(thing), kind: 'thing', thing, prompt, source, version: 0 };
+  }
+
+  private giveThing(rec: LcThing, upgrade: boolean, ms: number): void {
+    if (upgrade && thingSpec(rec.id)) updateThing(rec);
+    else registerThing(rec);
+    const t = thingSpec(rec.id) ?? rec;
+    this.game.save.markDirty('lf_forge');
+    const th = t.thing;
+    const use = useOf(t);
+    if (!upgrade) putInHotbar(this.game, { item: t.id, count: 1 });
+    const model = t.source === 'ai' ? (this.lf.cassette === 'REPLAY' ? 'replay' : 'sonnet') : t.source === 'cache' ? 'cache' : t.source === 'replay' ? 'replay' : 'rules';
+    const statLine = Object.entries(th.stats).filter(([k, v]) => v && k !== 'stackSize').map(([k, v]) => `${k} ${v}`).join(' · ');
+    this.lf.think({
+      source: 'forge', actor: 'forge', kind: 'plan', model, ms: Math.round(ms),
+      text: `${upgrade ? 'Refined' : 'Forged'} ${th.name} (${th.category}, ${th.rarity}): ${th.description}${statLine ? ` · ${statLine}` : ''}${th.vehicle ? ` · ${th.vehicle.mode} ${th.vehicle.speed} b/s` : ''}${th.creature ? ` · ${th.creature.behaviour}` : ''}`,
+      data: { thing: th },
+    });
+    if (!upgrade) {
+      this.lf.signal('item.forged', { item: t.id, name: th.name, category: th.category });
+      try {
+        getQuests().noteForged();
+      } catch {
+        /* quests not ready */
+      }
+    }
+    getHub().caption(`${CATEGORY_ICON[use] ?? '⚒'} ${th.name} (${th.category}): ${USE_HINT[use] ?? 'in your hotbar'}`, 6);
+    this.renderThingCard(t);
+    this.setStatus(upgrade ? '✨ Refined by AI' : t.source === 'rules' || t.source === 'local' ? 'Forged (rules). The AI design may follow…' : 'Forged');
+    if (upgrade) this.game.ui.toast(`✨ Refined by AI: ${th.name}`, { kind: 'good', seconds: 4 });
+    else this.game.ui.toast(`Forged: ${th.name}`, { kind: 'good' });
+  }
+
+  private renderThingCard(t: LcThing): void {
+    if (!this.card || this.mode !== 'item') return;
+    const th = t.thing;
+    const prev = thingPreview(t, 128);
+    prev.style.width = prev.style.height = '128px';
+    prev.style.imageRendering = 'pixelated';
+    const info = document.createElement('div');
+    const h = document.createElement('h3');
+    h.textContent = th.name;
+    const badge = document.createElement('div');
+    badge.className = 'lcx-hint';
+    badge.innerHTML = '';
+    const cat = document.createElement('span');
+    cat.textContent = `${CATEGORY_ICON[th.category] ?? '⚒'} ${th.category} · `;
+    const rar = document.createElement('span');
+    rar.textContent = th.rarity;
+    rar.style.color = RARITY_COLOR[th.rarity] ?? '#ccc';
+    rar.style.fontWeight = 'bold';
+    const src = document.createElement('span');
+    src.textContent = ` · ${t.source}${t.version ? ` v${t.version + 1}` : ''}`;
+    badge.append(cat, rar, src);
+    const desc = document.createElement('div');
+    desc.className = 'lcx-flavor';
+    desc.textContent = th.description || th.flavor;
+    const fl = document.createElement('div');
+    fl.className = 'lcx-hint';
+    fl.textContent = th.flavor && th.flavor !== th.description ? `“${th.flavor}”` : '';
+    const stats = document.createElement('div');
+    stats.className = 'lcx-stats';
+    const rows: [string, string][] = Object.entries(th.stats).filter(([k, v]) => v && !(k === 'stackSize' && v === 1)).map(([k, v]) => [k, String(Math.round(v * 10) / 10)]);
+    if (th.effect !== 'none') rows.push(['effect', th.effect.replace(/_/g, ' ')]);
+    if (th.creature) rows.push(['behaviour', `${th.creature.behaviour}${th.creature.lays ? ` · lays ${th.creature.lays}` : ''}`]);
+    if (th.wearable) rows.push(['slot', th.wearable.slot]);
+    if (th.vehicle) rows.push(['vehicle', `${th.vehicle.mode} · ${th.vehicle.speed} blocks/s · ${th.vehicle.seats} seat${th.vehicle.seats === 1 ? '' : 's'}`]);
+    if (th.recipe) rows.push(['recipe', `${Object.values(th.recipe.key).join(', ')}${recipeKnown(t) ? '' : ' (not craftable here)'}`]);
+    for (const [k, v] of rows) {
+      const a = document.createElement('span');
+      a.textContent = k;
+      const b = document.createElement('span');
+      b.textContent = v;
+      stats.append(a, b);
+    }
+    const use = document.createElement('div');
+    use.className = 'lcx-hint';
+    use.textContent = `In your hotbar: ${USE_HINT[useOf(t)] ?? 'use it'}`;
+    info.append(h, badge, desc, ...(fl.textContent ? [fl] : []), stats, use);
+    this.showCard([prev, info]);
   }
 
   /** `forge.ready` directive: an async forge result or a mesh job finished. */
@@ -317,7 +451,7 @@ export class Forge {
     const row = document.createElement('div');
     row.className = 'lcx-chat-row';
     this.input = document.createElement('input');
-    this.input.placeholder = 'Describe an item… e.g. a pickaxe made of lightning';
+    this.input.placeholder = 'Describe anything… e.g. a fluffy chicken, a steam train, a lantern';
     this.input.maxLength = 400;
     this.family = document.createElement('select');
     for (const f of ['auto', ...SHAPES]) {
@@ -331,7 +465,7 @@ export class Forge {
     const mic = document.createElement('button');
     mic.textContent = '🎤';
     mic.title = 'Hold to speak';
-    row.append(this.input, this.family, go, mic);
+    row.append(this.input, go, mic);
     this.status = document.createElement('div');
     this.status.className = 'lcx-hint';
     this.status.textContent = 'Enter — forge · 🎤 hold — speak · the item goes to your hotbar';
