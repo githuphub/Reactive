@@ -979,6 +979,50 @@ tpl("bush", "decoration", "bush,shrub,hedge,topiary,grass,moss,vine", [8, 6, 8],
   m.box([0, 0, 1], [7, 4, 6], "main").box([1, 0, 0], [6, 4, 7], "main").box([1, 5, 1], [6, 5, 6], "main").dot([2, 3, 0], "berry").dot([6, 4, 7], "berry").dot([0, 2, 3], "berry");
   m.setPivot([3.5, 0, 3.5]);
 });
+// ---- vehicles (decorations / toys; facing +Z, standing on y = 0)
+tpl("train", "decoration", "train,locomotive,steam train,steam engine,engine,choo choo,tram,trolley,railcar,subway", [7, 11, 16], (m) => {
+  held(m, "main", "trim", { main: "#2e4a7a", trim: GOLD, base: "#2a2a2e", wheel: "#1a1a1c", window: "#9fd4ff", roof: "#8a2a2a", lamp: "#ffe27a", smoke: "#d8d8d8" });
+  m.box([1, 1, 0], [5, 2, 15], "base");
+  for (const z of [2, 7, 12]) m.box([0, 0, z], [0, 1, z + 1], "wheel").box([6, 0, z], [6, 1, z + 1], "wheel");
+  m.box([1, 3, 6], [5, 6, 15], "main").line([1, 4, 9], [5, 4, 9], "trim").line([1, 4, 12], [5, 4, 12], "trim");
+  m.box([0, 3, 0], [6, 8, 5], "main").box([0, 6, 2], [0, 7, 3], "window").box([6, 6, 2], [6, 7, 3], "window").box([0, 9, 0], [6, 9, 5], "roof");
+  m.box([2, 7, 12], [4, 8, 14], "trim").dot([3, 9, 13], "base").dot([3, 10, 13], "smoke").dot([3, 5, 15], "lamp");
+  m.box([1, 0, 15], [5, 0, 15], "trim");
+  m.setPivot([3, 0, 8]);
+});
+tpl("car", "decoration", "car,truck,bus,van,jeep,taxi,race car,racecar,sports car,lorry,tractor,ambulance,fire truck,firetruck", [7, 7, 12], (m) => {
+  held(m, "main", "trim", { main: "#d93b2b", trim: "#e6e6e6", wheel: "#1a1a1c", window: "#9fd4ff", lamp: "#ffe27a" });
+  for (const z of [2, 9]) m.box([0, 0, z], [0, 1, z + 1], "wheel").box([6, 0, z], [6, 1, z + 1], "wheel");
+  m.box([1, 1, 0], [5, 3, 11], "main").box([1, 4, 3], [5, 5, 8], "main").box([1, 4, 8], [5, 4, 8], "window").box([1, 4, 3], [5, 4, 3], "window");
+  m.box([0, 5, 4], [0, 5, 7], "window").box([6, 5, 4], [6, 5, 7], "window").box([1, 6, 4], [5, 6, 7], "main");
+  m.dot([1, 2, 11], "lamp").dot([5, 2, 11], "lamp").box([1, 1, 0], [5, 1, 0], "trim");
+  m.setPivot([3, 0, 6]);
+});
+tpl("boat", "decoration", "boat,ship,sailboat,sailing ship,pirate ship,galleon,canoe,kayak,raft,yacht,submarine,ferry", [7, 12, 14], (m) => {
+  held(m, "main", "sail", { main: WOOD, trim: DARK_WOOD, sail: "#f3efe2", flag: "#d93b2b" });
+  m.box([2, 0, 2], [4, 0, 11], "trim").box([1, 1, 1], [5, 2, 12], "main").box([0, 3, 0], [6, 3, 13], "trim").box([2, 1, 13], [4, 2, 13], "main");
+  m.line([3, 4, 6], [3, 11, 6], "trim").box([1, 5, 7], [5, 10, 7], "sail").dot([3, 11, 7], "flag");
+  m.setPivot([3, 0, 7]);
+});
+tpl("cart", "decoration", "cart,wagon,minecart,mine cart,wheelbarrow,carriage,chariot,sled,sleigh", [7, 6, 9], (m) => {
+  held(m, "main", "trim", { main: WOOD, trim: IRON, wheel: "#3a2a1e" });
+  for (const z of [1, 6]) m.box([0, 0, z], [0, 2, z + 1], "wheel").box([6, 0, z], [6, 2, z + 1], "wheel");
+  m.box([1, 1, 0], [5, 1, 8], "main").box([1, 2, 0], [5, 4, 0], "main").box([1, 2, 8], [5, 4, 8], "main").box([1, 2, 1], [1, 4, 7], "main").box([5, 2, 1], [5, 4, 7], "main");
+  m.line([1, 5, 0], [5, 5, 0], "trim").line([1, 5, 8], [5, 5, 8], "trim");
+  m.setPivot([3, 0, 4]);
+});
+tpl("plane", "decoration", "plane,airplane,aeroplane,jet,biplane,aircraft,helicopter,glider,airship,blimp,zeppelin", [13, 6, 12], (m) => {
+  held(m, "main", "trim", { main: "#e6e6e6", trim: "#2e6ad9", window: "#9fd4ff", prop: "#3a3a3e" });
+  m.box([5, 1, 0], [7, 3, 11], "main").box([0, 2, 6], [12, 2, 8], "trim").box([3, 3, 0], [9, 3, 1], "trim").box([6, 4, 0], [6, 5, 1], "trim");
+  m.box([5, 3, 8], [7, 3, 9], "window").box([5, 0, 11], [7, 4, 11], "prop").dot([6, 2, 11], "trim");
+  m.setPivot([6, 0, 6]);
+});
+tpl("rocket", "decoration", "rocket,spaceship,space ship,spacecraft,ufo,space shuttle,shuttle,missile", [7, 16, 7], (m) => {
+  held(m, "main", "trim", { main: "#e6e6e6", trim: "#d93b2b", window: "#9fd4ff", flame: "#ff9a2a" });
+  m.cyl([3, 2, 3], 2, 11, "main").box([2, 13, 2], [4, 14, 4], "trim").dot([3, 15, 3], "trim").box([3, 8, 5], [3, 9, 5], "window");
+  m.box([0, 1, 3], [0, 4, 3], "trim").box([6, 1, 3], [6, 4, 3], "trim").box([3, 1, 0], [3, 4, 0], "trim").box([3, 1, 6], [3, 4, 6], "trim").box([2, 0, 2], [4, 1, 4], "flame");
+  m.setPivot([3, 0, 3]);
+});
 tpl("statue", "decoration", "statue,figure,figurine,idol,sculpture,bust,totem,gnome,garden gnome,monument,effigy,plush,plushie,teddy,teddy bear,stuffed animal,toy,doll,action figure", [8, 16, 6], (m) => {
   held(m, "main", "base", { main: "#c8c8cc", base: "#8a8a90", eye: "#6a6a70" });
   m.box([0, 0, 0], [7, 1, 5], "base").boxX([1, 2, 1], [3, 6, 4], "main").box([1, 7, 1], [6, 11, 4], "main").boxX([0, 7, 2], [0, 11, 3], "main").box([2, 12, 1], [5, 15, 4], "main").dotX([3, 14, 4], "eye");
