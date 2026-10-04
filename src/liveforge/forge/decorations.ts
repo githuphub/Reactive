@@ -78,6 +78,7 @@ export class Decoration extends Entity {
     const g = this.game;
     getParticles(g).burst({ x: this.position.x, y: this.position.y + this.height / 2, z: this.position.z, count: 14, color: Object.values(this.spec.thing.model.palette).slice(0, 4), speed: 2, up: 1, size: 0.08, life: 0.5, spread: this.width / 2 });
     if (!g.inventory.infinite && g.player.mode !== 'creative') giveItem(g, this.spec.id, 1, { dropOverflow: true });
+    else if (g.inventory.count(this.spec.id) === 0) giveItem(g, this.spec.id, 1);
     this.remove();
     g.save.markDirty('lf_decor');
     return true;
