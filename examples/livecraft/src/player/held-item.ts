@@ -14,6 +14,12 @@ import { ATLAS_SIZE, SLOTS_PER_ROW, SLOT_PAD, SLOT_SIZE } from '../engine/consta
  */
 export const heldMeshFactories: ((itemName: string) => THREE.Mesh | null)[] = [];
 
+let heldVersion = 0;
+/** Rebuilds the held model on the next frame (an item's look changed in place, e.g. an AI-refined forge item). */
+export function refreshHeldItem(): void {
+  heldVersion++;
+}
+
 export class HeldItem {
   readonly group = new THREE.Group();
   private mesh: THREE.Mesh | null = null;
@@ -24,6 +30,7 @@ export class HeldItem {
   private readonly spriteCache = new Map<string, THREE.Texture>();
   private readonly atlasTex: THREE.Texture;
   private atlasVersion = -1;
+  private version = 0;
 
   constructor(private readonly atlas: TextureAtlas) {
     // The atlas is stored raw (no colour space) for the terrain shader; this clone is tagged sRGB
@@ -42,7 +49,10 @@ export class HeldItem {
 
   update(dt: number, itemName: string | null, brightness: number, bob: number): void {
     const name = itemName ?? '';
-    if (name !== this.current) this.rebuild(name);
+    if (name !== this.current || this.version !== heldVersion) {
+      this.version = heldVersion;
+      this.rebuild(name);
+    }
     this.swing = Math.max(0, this.swing - dt * 4.5);
     const s = Math.sin((1 - this.swing) * Math.PI) * (this.swing > 0 ? 1 : 0);
     this.group.position.set(0.42 - s * 0.12, -0.42 - s * 0.1 + bob, -0.7 - s * 0.1);
