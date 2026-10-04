@@ -21,7 +21,7 @@ export interface ServerConfig {
   corsOrigins: string[];
   /** Requests per minute per client (SDK key + client IP). */
   rateLimitPerMin: number;
-  /** Behind a reverse proxy (Render, Fly, nginx): take the client IP from the last X-Forwarded-For entry (the one the proxy appended). */
+  /** Behind a reverse proxy (Render, Fly, nginx): take the client IP from CF-Connecting-IP / True-Client-IP, else the first X-Forwarded-For entry. */
   trustProxy: boolean;
   /** Serve this directory (a built web game) at "/" after every API/admin/dashboard route, with an SPA fallback. */
   staticDir: string | null;

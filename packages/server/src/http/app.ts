@@ -25,10 +25,14 @@ function keyFrom(c: Context): string | null {
   return c.req.header(HEADERS.key) ?? c.req.query("key") ?? null;
 }
 
-/** The client's IP: the last X-Forwarded-For hop (added by the proxy) behind a trusted proxy (LIVEFORGE_TRUST_PROXY), else the socket. */
+/** The client's IP behind a trusted proxy (LIVEFORGE_TRUST_PROXY): CF-Connecting-IP / True-Client-IP, else the first X-Forwarded-For entry; else the socket. */
 function clientIp(c: Context, trustProxy: boolean): string {
   if (trustProxy) {
-    const xff = c.req.header("x-forwarded-for")?.split(",").pop()?.trim(); // the last hop is the one our proxy appended (earlier entries are client-controlled)
+    // Edge-set headers first (Cloudflare in front of Render overwrites them, so clients can't spoof them),
+    // then the first X-Forwarded-For entry.
+    const edge = c.req.header("cf-connecting-ip") ?? c.req.header("true-client-ip");
+    if (edge?.trim()) return edge.trim();
+    const xff = c.req.header("x-forwarded-for")?.split(",")[0]?.trim();
     if (xff) return xff;
   }
   try {
