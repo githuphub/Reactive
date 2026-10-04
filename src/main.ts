@@ -18,7 +18,7 @@ async function main(): Promise<void> {
     uiRoot,
     seed: params.get('seed'),
     fresh: params.has('fresh'),
-    creative: params.has('creative'),
+    creative: !params.has('survival'),
   });
   const rd = Number(params.get('rd'));
   if (rd >= 2 && rd <= 10) game.setSetting('renderDistance', rd);
@@ -29,6 +29,8 @@ async function main(): Promise<void> {
   (window as unknown as { game: Game }).game = game;
   await initPlugins(game);
   await game.start();
+  // creative is the default (also over a saved survival world); ?survival opts out
+  if (!params.has('survival') && game.player.mode !== 'creative') game.setGameMode('creative');
 }
 
 main().catch((err) => {
