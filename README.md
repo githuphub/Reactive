@@ -7,13 +7,14 @@ All art is generated in code.
 
 ## Run it
 
-You need the Reactive repo next to this one (`../Liveforge`, or set `LIVEFORGE_DIR`), with its packages built
-(`npm install && npm run build` there).
+Livecraft lives inside the Reactive repo at `examples/livecraft` and links the kit from `../..`. A separate
+checkout also works with the Reactive repo next to it (`../Liveforge`) or `LIVEFORGE_DIR`. Either way the kit's
+packages must be built (`npm install && npm run build` in the Reactive repo).
 
 **1. The Reactive server (port 8790) with the Livecraft manifest**
 
 ```bash
-cd ../Liveforge
+cd ../..             # the Reactive repo root (or ../Liveforge for a separate checkout)
 PORT=8790 LIVEFORGE_MANIFESTS=examples/livecraft.liveforge.yaml npm run dev
 # rules only without a key; with ANTHROPIC_API_KEY in the server env, Sonnet/Haiku upgrade the answers
 # deterministic demo: LIVEFORGE_PROVIDER_MODE=replay (see docs/demo-script.md for record → replay)
@@ -36,8 +37,8 @@ runs on local rules (the badge says *Offline · local rules*).
 | Param | |
 |---|---|
 | `?demo` | Demo panel (top-right), Brain View open, villager voices on |
-| `?lf=http://host:8790` / `?lf=off` | Reactive server URL (default `VITE_LIVEFORGE_URL` or `http://localhost:8790`) / offline |
-| `?lfkey=pk_...` | Publishable key (default `pk_dev_livecraft`) |
+| `?lf=http://host:8790` / `?lf=off` | Reactive server URL (default `VITE_LIVEFORGE_URL`, else `http://localhost:8790` in dev and the page's own origin in a production build) / offline |
+| `?lfkey=pk_...` | Publishable key (default `VITE_LIVEFORGE_KEY` at build time, else `pk_dev_livecraft`) |
 | `?lfworld=` `?lfplayer=` `?lfname=Alex` | Reactive world id (default `lc-<seed>`), player id, display name |
 | `?lfdash=` | Dashboard URL (default `<server>/dashboard`) |
 | `?cassette=replay` | Force the cassette label on the badge |

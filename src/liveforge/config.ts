@@ -3,8 +3,8 @@
  *
  * | Param | Env | Default | |
  * |---|---|---|---|
- * | `?lf=http://host:8790` | `VITE_LIVEFORGE_URL` | `http://localhost:8790` | Server URL. `?lf=off` = offline (local rules only). |
- * | `?lfkey=pk_...` | `VITE_LIVEFORGE_KEY` | `pk_dev_livecraft` | Publishable SDK key (dev-mode key by default). |
+ * | `?lf=http://host:8790` | `VITE_LIVEFORGE_URL` | dev: `http://localhost:8790`, production build: `location.origin` | Server URL. `?lf=off` = offline (local rules only). |
+ * | `?lfkey=pk_...` | `VITE_LIVEFORGE_KEY` (build time) | `pk_dev_livecraft` | Publishable SDK key (dev-mode key by default). |
  * | `?lfworld=w` | `VITE_LIVEFORGE_WORLD` | `lc-<seed>` | Reactive world id (one per Livecraft seed). |
  * | `?lfplayer=p` | | stable random id | Player id. |
  * | `?lfname=Alex` | | `Traveller` | Display name used in prompts and the statue. |
@@ -12,7 +12,8 @@
  * | `?cassette=replay` | `VITE_LIVEFORGE_CASSETTE` | detected | Cassette mode label (live / record / replay). |
  * | `?nodemo` | | demo on | Demo panel, Brain View open, captions (on by default; `?nodemo` hides them). |
  *
- * Only the publishable key lives in the client; provider keys stay on the Reactive server.
+ * Only the publishable key lives in the client; provider keys stay on the Reactive server. A production build served
+ * by the Reactive server itself (LIVEFORGE_STATIC_DIR) talks to the page's own origin, so one URL is the whole demo.
  */
 
 export interface LiveforgeSettings {
@@ -35,6 +36,12 @@ const ID_RE = /^[A-Za-z0-9_\-.:]{1,64}$/;
 function env(name: string): string | undefined {
   const v = (import.meta.env as Record<string, string | undefined>)[name];
   return v && v.trim() ? v.trim() : undefined;
+}
+
+/** Dev: the local Reactive server. Production build: the origin that served the page (Reactive serves the game). */
+function defaultServerUrl(): string {
+  if (import.meta.env.PROD && typeof location !== 'undefined' && /^https?:$/.test(location.protocol)) return location.origin;
+  return 'http://localhost:8790';
 }
 
 function stablePlayerId(): string {
@@ -63,7 +70,7 @@ const safeId = (v: string | null | undefined, fallback: string) => (v && ID_RE.t
 /** Reads the settings once (URL params, env, defaults). `seed` names the default world. */
 export function readSettings(seed: string, search = typeof location !== 'undefined' ? location.search : ''): LiveforgeSettings {
   const q = new URLSearchParams(search);
-  const rawUrl = q.get('lf') ?? env('VITE_LIVEFORGE_URL') ?? 'http://localhost:8790';
+  const rawUrl = q.get('lf') ?? env('VITE_LIVEFORGE_URL') ?? defaultServerUrl();
   const off = /^(0|off|false|no|none)$/i.test(rawUrl);
   const url = off ? null : rawUrl.replace(/\/+$/, '');
   const valid = url && /^https?:\/\//.test(url) ? url : null;

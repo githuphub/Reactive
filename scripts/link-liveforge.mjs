@@ -5,8 +5,9 @@
 //   node scripts/link-liveforge.mjs            (also runs automatically before `npm run dev` / `npm run build`)
 //   LIVEFORGE_DIR=D:/src/Liveforge node scripts/link-liveforge.mjs
 //
-// Liveforge is found via $LIVEFORGE_DIR, else a sibling folder named "Liveforge" next to this repo (or next to any
-// folder above it, so git worktrees under .claude/worktrees find it too). The links are directory junctions on
+// The kit (the Reactive repo, formerly Liveforge) is found via $LIVEFORGE_DIR, else a sibling folder named "Liveforge"
+// next to this repo, else the repo two levels up when Livecraft lives inside it at examples/livecraft, else a
+// "Liveforge" folder next to any folder above this one (so git worktrees under .claude/worktrees find it too). The links are directory junctions on
 // Windows and symlinks elsewhere; they point at the packages themselves, so their `dist/` must be built
 // (`npm install && npm run build` in the Liveforge repo). Idempotent; `--quiet` only prints problems.
 import fs from "node:fs";
@@ -21,10 +22,19 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(here, "..");
 const PACKAGES = { sdk: "sdk-js", three: "sdk-three", protocol: "protocol" };
 
+const isKit = (dir) => fs.existsSync(path.join(dir, "packages/protocol/package.json")) && fs.existsSync(path.join(dir, "packages/sdk-js/package.json"));
+
 function findLiveforge() {
   const env = process.env.LIVEFORGE_DIR;
   if (env) return fs.existsSync(path.join(env, "packages/sdk-js/package.json")) ? path.resolve(env) : null;
-  for (let dir = repoRoot; ; dir = path.dirname(dir)) {
+  // 1) a sibling checkout: ../Liveforge
+  const sibling = path.resolve(repoRoot, "../Liveforge");
+  if (isKit(sibling)) return sibling;
+  // 2) inside the Reactive repo at examples/livecraft: the kit is ../..
+  const host = path.resolve(repoRoot, "../..");
+  if (isKit(host)) return host;
+  // 3) a "Liveforge" folder next to any folder above this repo (git worktrees under .claude/worktrees)
+  for (let dir = path.dirname(repoRoot); ; dir = path.dirname(dir)) {
     const cand = path.join(path.dirname(dir), "Liveforge");
     if (fs.existsSync(path.join(cand, "packages/sdk-js/package.json"))) return cand;
     if (path.dirname(dir) === dir) return null;
@@ -42,7 +52,7 @@ function findNodeModules() {
 
 const lf = findLiveforge();
 if (!lf) {
-  warn("Liveforge not found. Clone it next to this repo (../Liveforge) or set LIVEFORGE_DIR. The game build needs it.");
+  warn("Reactive kit not found. Run from <reactive>/examples/livecraft, clone it next to this repo (../Liveforge) or set LIVEFORGE_DIR. The game build needs it.");
   process.exit(quiet ? 0 : 1);
 }
 const nm = findNodeModules();
