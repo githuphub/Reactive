@@ -13,6 +13,7 @@ import type { RaidRunner } from './raid';
 import type { LiveforgeService } from './service';
 import type { Talk } from './talk';
 import { voices } from './voice';
+import { worldDemoButtons } from './world/demo'; // lane WB
 
 export interface ScenarioDeps {
   game: Game;
@@ -152,6 +153,9 @@ export function scenarioButtons(d: ScenarioDeps): DemoButton[] {
         d.openForge('a wizard tower with a spiral staircase', 'building');
       },
     },
+    // ---- lane WB: rumours, quest chains, makeovers, Hyper3D (src/liveforge/world/demo.ts) ----
+    ...worldDemoButtons(game),
+    // ---- end lane WB ----
   ];
 }
 

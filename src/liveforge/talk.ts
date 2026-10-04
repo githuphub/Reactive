@@ -209,8 +209,10 @@ export class Talk {
   }
 
   private finish(npc: Npc, hist: Turn[], res: AskResult<'npc.reply'>, goalSent: boolean): void {
+    const said = [...hist].reverse().find((t) => t.role === 'player')?.text ?? '';
     hist.push({ role: 'npc', text: res.text });
     if (hist.length > 20) hist.splice(0, hist.length - 20);
+    this.game.events.emit('npcReplied', { npc: lfNpcId(npc.def.id), said, text: res.text, mood: res.mood ?? null }); // lane WB: journal memories
     speakAs(this.lf, lfNpcId(npc.def.id), res.text);
     if (res.emote) void npc.controller.emote(res.emote, { priority: 'schedule' });
     for (const a of res.actions ?? []) {

@@ -54,6 +54,7 @@ export function wireDirectives(game: Game, lf: LiveforgeService, amends: Amends,
   });
 
   c.on('rumour.heard', (d) => {
+    if (getHub().onRumourHeard?.(d)) return; // lane WB: gossip visualiser
     const a = d.args;
     if ((a.heat ?? 0.5) < 0.3) return;
     const n = village.npc(a.npc);

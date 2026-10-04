@@ -28,6 +28,12 @@ const GLYPHS: Record<string, string> = { moon: '🌙', brick: '🧱', hammer: '�
 
 type Listener = (q: Quest) => void;
 
+/**
+ * A custom objective evaluator (lane WB: chained quests with dynamic objectives). Returns progress 0..1, or null to
+ * fall back to the built-in rules for that objective type.
+ */
+export type ObjectiveEvaluator = (objective: Quest['objectives'][number], quest: Quest, giver: string) => number | null;
+
 export class Quests {
   private readonly offered = new Map<string, { quest: Quest; giver: string }>();
   private readonly active = new Map<string, Active>();
@@ -35,6 +41,12 @@ export class Quests {
   private readonly unlocked = new Set<string>();
   private readonly tracker: HTMLElement;
   private readonly completeFns = new Set<Listener>();
+  private readonly acceptFns = new Set<(q: Quest, giver: string) => void>();
+  private readonly evaluators = new Map<string, ObjectiveEvaluator>();
+  /** Optional tracker title (e.g. "Mara's Trust 2/3 · Seeds of Peace"); WB quest chains set it. */
+  titleOf: ((q: Quest) => string | null) | null = null;
+  /** Optional achievement handler (WB journal + rarity toast); return true to skip the plain toast. */
+  onAchievement: ((a: Pick<Achievement, 'id' | 'title' | 'description'> & { icon?: { glyph?: string }; rarity?: string }) => boolean) | null = null;
   private queue: { quest: Quest; giver: string }[] = [];
   private offerScreen: Screen | null = null;
   private talkedTo = new Set<string>();
@@ -70,6 +82,27 @@ export class Quests {
   onComplete(fn: Listener): () => void {
     this.completeFns.add(fn);
     return () => this.completeFns.delete(fn);
+  }
+
+  /** Called whenever a quest is accepted (not on save restore). */
+  onAccept(fn: (q: Quest, giver: string) => void): () => void {
+    this.acceptFns.add(fn);
+    return () => this.acceptFns.delete(fn);
+  }
+
+  /** Registers (or overrides) how an objective type is measured; the evaluator may return null to use the default. */
+  registerObjective(type: string, fn: ObjectiveEvaluator): void {
+    this.evaluators.set(type, fn);
+  }
+
+  /** Active quests with their giver and finished objective ids (journal). */
+  activeList(): { quest: Quest; giver: string; done: string[]; progress: Record<string, number> }[] {
+    return [...this.active.values()].map((a) => ({ quest: a.quest, giver: a.giver, done: [...a.done], progress: { ...a.progress } }));
+  }
+
+  /** Re-renders the tracker (after a chain label changed). */
+  refresh(): void {
+    this.render();
   }
 
   isActive(id: string): boolean {
@@ -117,6 +150,13 @@ export class Quests {
       speakAs(this.lf, giver, line);
     }
     this.game.ui.toast(`Quest accepted: ${quest.title}`, { kind: 'good' });
+    for (const fn of this.acceptFns) {
+      try {
+        fn(quest, giver);
+      } catch (err) {
+        console.error('[quests] onAccept failed', err);
+      }
+    }
     this.render();
   }
 
@@ -138,10 +178,11 @@ export class Quests {
   }
 
   /** Achievement toast (server `achievement.unlocked` or local). */
-  achievement(a: Pick<Achievement, 'id' | 'title' | 'description'> & { icon?: { glyph?: string } }): void {
+  achievement(a: Pick<Achievement, 'id' | 'title' | 'description'> & { icon?: { glyph?: string }; rarity?: string }): void {
     if (this.unlocked.has(a.id)) return;
     this.unlocked.add(a.id);
     this.game.save.markDirty('lf_quests');
+    if (this.onAchievement?.(a)) return; // lane WB: journal record + rarity toast
     const el = document.createElement('div');
     el.className = 'lcx-ach';
     const g = document.createElement('span');
@@ -178,7 +219,9 @@ export class Quests {
         }
         const need = Math.max(1, o.count ?? 1);
         let prog = 0;
-        switch (o.type) {
+        const custom = this.evaluators.get(o.type)?.(o, a.quest, a.giver);
+        if (custom !== undefined && custom !== null) prog = custom;
+        else switch (o.type) {
           case 'repair': {
             const t = a.trackers[o.id];
             prog = t ? Math.min(1, t.restoreProgress() / 0.8) : 0;
@@ -258,7 +301,7 @@ export class Quests {
       const card = document.createElement('div');
       card.className = 'lcx-quest';
       const title = document.createElement('b');
-      title.textContent = `📜 ${a.quest.title}`;
+      title.textContent = `📜 ${this.titleOf?.(a.quest) ?? a.quest.title}`;
       card.appendChild(title);
       for (const o of a.quest.objectives) {
         const row = document.createElement('div');
