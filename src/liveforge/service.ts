@@ -50,6 +50,8 @@ export class LiveforgeService extends Emitter<ServiceEvents> {
   modules: Record<string, boolean> = {};
   /** Server has an LLM provider (from /health); null = unknown. */
   serverLlm: boolean | null = null;
+  /** Server speech-to-text provider id (from /health); null = none configured, undefined = unknown. */
+  serverStt: string | null | undefined = undefined;
   private seenModel: CassetteLabel | null = null;
   private retryTimer: ReturnType<typeof setTimeout> | null = null;
   private warned = false;
@@ -142,8 +144,9 @@ export class LiveforgeService extends Emitter<ServiceEvents> {
     if (!this.settings.url) return;
     try {
       const r = await fetch(`${this.settings.url}/health`);
-      const j = (await r.json()) as { llm?: boolean };
+      const j = (await r.json()) as { llm?: boolean; stt?: string | null };
       this.serverLlm = !!j.llm;
+      this.serverStt = j.stt ?? null;
       this.emit('cassette', this.cassette);
     } catch {
       /* stays unknown */

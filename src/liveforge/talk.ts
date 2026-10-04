@@ -15,7 +15,7 @@ import { lfNpcId } from './ids';
 import { getQuests } from './quests';
 import { isGoalRequest, stripAddress } from './rules';
 import type { LiveforgeService } from './service';
-import { getMic, speakAs, voices } from './voice';
+import { getMic, micFailure, speakAs, voiceBlocker, voices } from './voice';
 
 type Turn = { role: 'player' | 'npc'; text: string };
 
@@ -238,9 +238,12 @@ export class Talk {
   }
 
   private async startListening(): Promise<void> {
-    const mic = getMic(this.lf);
+    const blocked = voiceBlocker(this.lf);
+    const mic = blocked ? null : getMic(this.lf);
     if (!mic) {
-      this.game.ui.toast('No microphone / speech recognition here: press T to type', { kind: 'warn' });
+      const msg = blocked ?? 'No microphone or speech recognition here: press T to type';
+      this.game.ui.toast(msg, { kind: 'warn' });
+      getHub().caption(`🎙 ${msg}`, 8);
       return;
     }
     try {
@@ -261,8 +264,11 @@ export class Talk {
     let said = '';
     try {
       said = (await mic.stop()).trim();
-    } catch {
-      said = '';
+    } catch (err) {
+      const msg = micFailure(err);
+      this.game.ui.toast(msg, { kind: 'warn' });
+      getHub().caption(`🎙 ${msg}`, 8);
+      return;
     }
     if (!said) {
       this.game.ui.toast('Didn’t catch that. Press T to type instead.');
