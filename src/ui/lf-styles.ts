@@ -113,6 +113,9 @@ const CSS = `
 /* ---------- forge ---------- */
 .lcx-forge { width: min(620px, 92vw); background: rgba(16, 12, 24, 0.95); border: 1px solid rgba(190, 150, 255, 0.4); border-radius: 8px; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
 .lcx-forge h2 { margin: 0; letter-spacing: 3px; color: #d9c4ff; font-size: 20px; }
+.lcx-tabs { display: flex; gap: 4px; }
+.lcx-tab { font: 13px var(--lc-font, system-ui); padding: 5px 14px; border-radius: 5px 5px 0 0; border: 1px solid #3a3150; border-bottom-color: rgba(190, 150, 255, 0.4); background: #15111f; color: #a99cc6; cursor: pointer; }
+.lcx-tab.on { background: #3a2a5c; color: #fff; border-color: rgba(190, 150, 255, 0.6); }
 .lcx-forge .lcx-chat-row select { font: 14px var(--lc-font, system-ui); background: #0b0d14; color: #fff; border: 1px solid #445; border-radius: 5px; }
 .lcx-card { display: flex; gap: 14px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.12); border-radius: 6px; padding: 10px; }
 .lcx-card canvas { width: 96px; height: 96px; image-rendering: pixelated; background: rgba(0,0,0,0.35); border-radius: 4px; flex: none; }

@@ -1,5 +1,5 @@
 /**
- * The four presentation scenarios and the utilities behind the Demo panel. Each scenario stages its
+ * The presentation scenarios and the utilities behind the Demo panel. Each scenario stages its
  * preconditions (time, place, inventory, seeded play style via signals) and shows a caption.
  */
 import type { Game } from '../game/game';
@@ -20,7 +20,7 @@ export interface ScenarioDeps {
   talk: Talk;
   raid: RaidRunner;
   amends: Amends;
-  openForge(prefill?: string): void;
+  openForge(prefill?: string, mode?: 'item' | 'building'): void;
   brain: { toggle(): void; isVisible: boolean; clear(): void };
   captions: { enabled: boolean; setEnabled(on: boolean): void };
 }
@@ -141,7 +141,15 @@ export function scenarioButtons(d: ScenarioDeps): DemoButton[] {
       hint: '"a pickaxe made of lightning"',
       run: () => {
         game.ui.screens.closeAll();
-        d.openForge('a pickaxe made of lightning');
+        d.openForge('a pickaxe made of lightning', 'item');
+      },
+    },
+    {
+      label: '🏰 Forge a building',
+      hint: 'builder.plan → a blueprint: R rotates, right-click builds',
+      run: () => {
+        game.ui.screens.closeAll();
+        d.openForge('a wizard tower with a spiral staircase', 'building');
       },
     },
   ];

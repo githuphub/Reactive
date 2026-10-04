@@ -3,6 +3,7 @@
  * optional base tool; `forge.item` returns a ForgedItem (rules instantly, Sonnet as the upgrade), which becomes a
  * Livecraft item: a 16×16 icon (rules pixel art from the palette, or the AI's pixel grid), an extruded voxel held
  * model, tool stats, an effect from the enum and a crafting recipe. It lands in the hotbar.
+ * The Building tab drafts a blueprint item instead (`builder.plan`, see ../blueprint/).
  */
 import type { AskResponse, Directive, ForgedItem } from '@liveforge/sdk';
 import type { Game } from '../../game/game';
@@ -12,7 +13,11 @@ import { getHub } from '../hub';
 import { getQuests } from '../quests';
 import type { LiveforgeService } from '../service';
 import { getMic } from '../voice';
+import { blueprintCard } from '../blueprint/card';
+import { BlueprintForge } from '../blueprint/draft';
+import { allBlueprints, registerBlueprint, type LcBlueprint } from '../blueprint/registry';
 import { wireEffects } from './effects';
+import { putInHotbar } from './hotbar';
 import { pixelsFromGrid, pixelsToCanvas, type ToolShape } from './pixel';
 import { EFFECTS, allForged, forgedPixels, forgedSpec, registerForged, type ForgeEffect, type LcForged } from './registry';
 
@@ -116,33 +121,68 @@ export function localForge(prompt: string, familyHint?: string): LcForged {
   };
 }
 
+/** What the Forge screen makes: a voxel item, or a building blueprint. */
+export type ForgeMode = 'item' | 'building';
+
+/** The `lf_forge` save slot: forged items, then blueprints (older saves are a plain item array). */
+type ForgeSave = LcForged[] | { items?: LcForged[]; blueprints?: LcBlueprint[] };
+
 export class Forge {
   private screen: Screen | null = null;
   private input!: HTMLInputElement;
   private family!: HTMLSelectElement;
   private card!: HTMLElement;
   private status!: HTMLElement;
+  private title!: HTMLElement;
+  private go!: HTMLButtonElement;
+  private readonly tabs: Partial<Record<ForgeMode, HTMLButtonElement>> = {};
+  private mode: ForgeMode = 'item';
   private busy = false;
+  private readonly blueprints: BlueprintForge;
 
   constructor(private readonly game: Game, private readonly lf: LiveforgeService) {
     wireEffects(game);
-    game.save.register('lf_forge', () => allForged().map((s) => ({ ...s })), (saved: LcForged[]) => {
-      for (const s of saved ?? []) {
+    this.blueprints = new BlueprintForge(game, lf, {
+      status: (s) => this.setStatus(s),
+      card: (bp) => this.showCard(blueprintCard(bp)),
+    });
+    const save = (): ForgeSave => ({ items: allForged().map((s) => ({ ...s })), blueprints: allBlueprints().map((b) => ({ ...b })) });
+    game.save.register('lf_forge', save, (saved: ForgeSave) => {
+      const items = Array.isArray(saved) ? saved : saved?.items ?? [];
+      const blueprints = Array.isArray(saved) ? [] : saved?.blueprints ?? [];
+      for (const s of items) {
         counter = Math.max(counter, Number(/_(\d+)$/.exec(s.id)?.[1] ?? 0));
         registerForged(s, s.grid ? pixelsFromGrid(s.grid, [...s.palette]) : null);
       }
+      for (const b of blueprints) registerBlueprint(b);
       // the inventory loaded before these items existed (unknown stacks were dropped): load it again
       const inv = game.save.get('inventory') as Parameters<Game['inventory']['deserialize']>[0] | undefined;
-      if (saved?.length && inv) game.inventory.deserialize(inv);
+      if ((items.length || blueprints.length) && inv) game.inventory.deserialize(inv);
     });
   }
 
-  /** Opens the Forge screen (optionally pre-filled). */
-  open(prefill = ''): void {
+  /** Opens the Forge screen (optionally pre-filled, optionally in a mode). */
+  open(prefill = '', mode?: ForgeMode): void {
+    const first = !this.screen;
     if (!this.screen) this.screen = this.build();
+    if (mode || first) this.setMode(mode ?? this.mode);
     if (prefill) this.input.value = prefill;
     if (!this.game.ui.screens.has('lf-forge')) this.game.ui.screens.open(this.screen);
     setTimeout(() => this.input.focus(), 30);
+  }
+
+  /** Item or Building: the title, placeholder, base-tool picker, button and hint follow. */
+  setMode(mode: ForgeMode): void {
+    if (mode !== this.mode && this.card) this.card.style.display = 'none';
+    this.mode = mode;
+    if (!this.screen) return;
+    const building = mode === 'building';
+    this.title.textContent = building ? '🏰 FORGE A BUILDING' : '⚒ FORGE ANYTHING';
+    this.input.placeholder = building ? 'Describe a building… e.g. a wizard tower with a spiral staircase' : 'Describe an item… e.g. a pickaxe made of lightning';
+    this.family.style.display = building ? 'none' : '';
+    this.go.textContent = building ? 'Draft' : 'Forge';
+    for (const [m, b] of Object.entries(this.tabs)) b?.classList.toggle('on', m === mode);
+    this.setStatus(building ? 'Enter — draft a blueprint · it goes to your hotbar · hold it: R rotates, right-click builds (free)' : 'Enter — forge · 🎤 hold — speak · the item goes to your hotbar');
   }
 
   /** Forges an item from a prompt; resolves with the spec in the hotbar. */
@@ -187,17 +227,8 @@ export class Forge {
   private give(spec: LcForged, replace: LcForged | null, ms: number): void {
     registerForged(spec, spec.grid ? pixelsFromGrid(spec.grid, [...spec.palette]) : null);
     this.game.save.markDirty('lf_forge');
-    const inv = this.game.inventory;
     const stack = { item: spec.id, count: 1, data: { name: spec.name, tags: ['forged', ...(spec.effect ? [spec.effect] : [])], colors: [spec.palette[0], spec.palette[3]], effect: spec.effect } };
-    let slot = replace ? inv.slots.findIndex((s) => s?.item === replace.id) : -1;
-    if (slot < 0) slot = inv.slots.slice(0, 9).findIndex((s) => !s);
-    if (slot < 0) {
-      slot = inv.selected;
-      const old = inv.get(slot);
-      if (old) inv.add(old);
-    }
-    inv.set(slot, stack);
-    if (slot < 9) inv.select(slot);
+    putInHotbar(this.game, stack, replace?.id);
     const model = spec.source === 'ai' ? (this.lf.cassette === 'REPLAY' ? 'replay' : 'sonnet') : spec.source === 'cache' ? 'cache' : 'rules';
     this.lf.think({
       source: 'forge', actor: 'forge', kind: 'plan', model, ms: Math.round(ms),
@@ -220,10 +251,15 @@ export class Forge {
     if (this.status) this.status.textContent = s;
   }
 
+  private showCard(children: HTMLElement[]): void {
+    if (!this.card) return;
+    this.card.replaceChildren(...children);
+    this.card.style.display = '';
+  }
+
   private renderCard(spec: LcForged): void {
     if (!this.card) return;
-    this.card.replaceChildren();
-    this.card.style.display = '';
+    this.showCard([]);
     const px = forgedPixels(spec.id);
     if (px) this.card.appendChild(pixelsToCanvas(px));
     const info = document.createElement('div');
@@ -263,8 +299,21 @@ export class Forge {
     const root = document.createElement('div');
     const box = document.createElement('div');
     box.className = 'lcx-forge';
-    const h = document.createElement('h2');
-    h.textContent = '⚒ FORGE ANYTHING';
+    this.title = document.createElement('h2');
+    this.title.textContent = '⚒ FORGE ANYTHING';
+    const tabs = document.createElement('div');
+    tabs.className = 'lcx-tabs';
+    for (const [m, label] of [['item', '⚒ Item'], ['building', '🏰 Building']] as const) {
+      const b = document.createElement('button');
+      b.className = 'lcx-tab';
+      b.textContent = label;
+      b.addEventListener('click', () => {
+        this.setMode(m);
+        this.input.focus();
+      });
+      this.tabs[m] = b;
+      tabs.appendChild(b);
+    }
     const row = document.createElement('div');
     row.className = 'lcx-chat-row';
     this.input = document.createElement('input');
@@ -277,7 +326,7 @@ export class Forge {
       o.textContent = f;
       this.family.appendChild(o);
     }
-    const go = document.createElement('button');
+    const go = (this.go = document.createElement('button'));
     go.textContent = 'Forge';
     const mic = document.createElement('button');
     mic.textContent = '🎤';
@@ -289,9 +338,9 @@ export class Forge {
     this.card = document.createElement('div');
     this.card.className = 'lcx-card';
     this.card.style.display = 'none';
-    box.append(h, row, this.status, this.card);
+    box.append(this.title, tabs, row, this.status, this.card);
     root.appendChild(box);
-    const doForge = () => void this.forge(this.input.value, this.family.value || undefined);
+    const doForge = () => void (this.mode === 'building' ? this.blueprints.draft(this.input.value) : this.forge(this.input.value, this.family.value || undefined));
     go.addEventListener('click', doForge);
     this.input.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {

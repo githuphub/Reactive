@@ -4,7 +4,7 @@
  * - Service + config (`?lf=`, `VITE_LIVEFORGE_URL`, default http://localhost:8790; game `livecraft`), offline-safe.
  * - Signals from game events (signals.ts), agent tools for every named villager (tools.ts, build.ts),
  *   chat + voice (talk.ts), proximity barks, directives (directives.ts), raids (raid.ts), quests (quests.ts),
- *   the grief/amends chain (amends.ts), forge-anything (forge/).
+ *   the grief/amends chain (amends.ts), forge-anything (forge/), forged building blueprints (blueprint/).
  * - UI: Brain View (B), Demo panel + captions + status badge (`?demo`, or "Demo" in the pause menu).
  *
  * Console: `lf` (the service), `lfHub`.
@@ -31,7 +31,8 @@ import { wireSignals } from './signals';
 import { Talk } from './talk';
 import { registerAllTools } from './tools';
 import { voices } from './voice';
-import { initForge } from './forge/forge';
+import { initForge, type ForgeMode } from './forge/forge';
+import { BlueprintPlacer } from './blueprint/placer';
 
 const plugin: GamePlugin = {
   name: 'liveforge',
@@ -75,6 +76,7 @@ const plugin: GamePlugin = {
     const raid = new RaidRunner(game, lf);
     const amends = new Amends(game, lf);
     const forge = initForge(game, lf);
+    new BlueprintPlacer(game, lf);
     wireDirectives(game, lf, amends, (d) => forge.onReady(d));
     wireBarks(game, lf, () => talk.current !== null);
 
@@ -94,7 +96,7 @@ const plugin: GamePlugin = {
     }, 10_000);
 
     // demo panel + keys
-    const deps = { game, lf, talk, raid, amends, openForge: (p?: string) => forge.open(p), brain, captions };
+    const deps = { game, lf, talk, raid, amends, openForge: (p?: string, mode?: ForgeMode) => forge.open(p, mode), brain, captions };
     const panel = new DemoPanel(scenarioButtons(deps), utilityButtons(deps), { visible: settings.demo });
     game.input.onKey((e) => {
       if (!game.ready || game.ui.screens.isOpen) return false;
