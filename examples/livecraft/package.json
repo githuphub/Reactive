@@ -1,0 +1,22 @@
+{
+  "name": "livecraft",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "link:liveforge": "node scripts/link-liveforge.mjs",
+    "predev": "node scripts/link-liveforge.mjs --quiet",
+    "dev": "vite",
+    "prebuild": "node scripts/link-liveforge.mjs --quiet",
+    "build": "vite build",
+    "pretypecheck": "node scripts/link-liveforge.mjs --quiet",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "@types/three": "^0.186.0",
+    "three": "^0.186.1",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.2"
+  }
+}
