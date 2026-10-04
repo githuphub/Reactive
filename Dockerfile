@@ -13,6 +13,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends python3 make g+
 COPY package.json package-lock.json tsconfig.json tsconfig.base.json ./
 COPY packages ./packages
 RUN npm ci --no-audit --no-fund
+# the dashboard's demo mode bundles examples/counterforge.liveforge.yaml, so the manifests come in before the build
+COPY examples/*.liveforge.yaml ./examples/
 RUN npm run build
 COPY examples ./examples
 
